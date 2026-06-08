@@ -1,48 +1,70 @@
-import { Crown } from 'lucide-react';
+import { Crown, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useLangStore } from '../../store/langStore';
 
 interface PremiumGateProps {
   children: React.ReactNode;
+  /** Optional module name shown on the lock screen */
+  label?: string;
 }
 
-export function PremiumGate({ children }: PremiumGateProps) {
+export function PremiumGate({ children, label }: PremiumGateProps) {
   const { user } = useAuthStore();
-  const lang = useLangStore(s => s.lang);
-  const isEn = lang === 'en';
+  const isEn = useLangStore(s => s.lang) === 'en';
 
   if (user?.isPremium) return <>{children}</>;
 
   return (
-    <div className="relative rounded-2xl overflow-hidden">
-      {/* Content — visible but non-interactive */}
-      <div className="pointer-events-none select-none">
-        {children}
+    <div className="flex flex-col items-center justify-center min-h-[420px] py-16 px-6 text-center">
+      {/* Lock icon */}
+      <div className="relative mb-6">
+        <div className="w-20 h-20 rounded-full bg-yellow-500/10 border border-yellow-600/30 flex items-center justify-center">
+          <Lock size={36} className="text-yellow-500" />
+        </div>
+        <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-yellow-500 flex items-center justify-center shadow-lg">
+          <Crown size={14} className="text-black" fill="currentColor" />
+        </div>
       </div>
 
-      {/* Top ribbon — only blocks interactions via pointer-events-none above */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between gap-3 bg-gray-950/85 backdrop-blur-sm border-b border-yellow-800/40 px-4 py-2.5 z-10">
-        <div className="flex items-center gap-2 min-w-0">
-          <Crown size={14} className="text-yellow-400 shrink-0" />
-          <span className="text-yellow-300 text-xs font-bold shrink-0">Premium</span>
-          <span className="text-gray-400 text-xs truncate">
-            {isEn ? '— preview mode, interactions disabled' : '— mode aperçu, interactions désactivées'}
-          </span>
-        </div>
-        {!user ? (
+      {/* Title */}
+      <h2 className="text-2xl font-bold text-white mb-2">
+        {label
+          ? (isEn ? `${label} — Premium` : `${label} — Premium`)
+          : (isEn ? 'Premium Module' : 'Module Premium')}
+      </h2>
+
+      {/* Description */}
+      <p className="text-gray-400 text-sm max-w-sm mb-8">
+        {isEn
+          ? 'This module is reserved for Premium members. Upgrade your account to unlock it.'
+          : 'Ce module est réservé aux membres Premium. Passez à la version supérieure pour le débloquer.'}
+      </p>
+
+      {/* CTA */}
+      {!user ? (
+        <div className="flex flex-col items-center gap-3">
           <Link
             to="/login"
-            className="shrink-0 px-3 py-1 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg text-xs transition-colors"
+            className="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-xl text-sm transition-colors shadow-lg shadow-yellow-500/20"
           >
-            {isEn ? 'Log in' : 'Se connecter'}
+            {isEn ? 'Log in to access Premium' : 'Se connecter pour accéder au Premium'}
           </Link>
-        ) : (
-          <span className="shrink-0 text-[10px] text-yellow-700 font-semibold">
-            👑 {isEn ? 'Upgrade to interact' : 'Upgrade pour interagir'}
-          </span>
-        )}
-      </div>
+          <p className="text-xs text-gray-600">
+            {isEn ? 'Already have an account? Log in above.' : 'Déjà un compte ? Connecte-toi ci-dessus.'}
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-3">
+          <div className="px-8 py-3 bg-yellow-500/10 border border-yellow-600/30 rounded-xl text-yellow-400 text-sm font-semibold flex items-center gap-2">
+            <Crown size={14} />
+            {isEn ? 'Upgrade to Premium to unlock' : 'Passe en Premium pour débloquer'}
+          </div>
+          <p className="text-xs text-gray-600">
+            {isEn ? 'Contact an admin to upgrade your account.' : 'Contacte un admin pour upgrader ton compte.'}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
