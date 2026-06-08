@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Crown, LogOut, ChevronDown, ChevronUp,
   Eye, EyeOff, Check, AlertTriangle, Palette,
-  User, Shield, Settings,
+  User, Shield, Settings, ZoomIn,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { authApi } from '../services/api';
@@ -16,6 +16,7 @@ import {
 import { Hand } from '../components/poker/Card';
 import { useLangStore } from '../store/langStore';
 import { useModeStore } from '../store/modeStore';
+import { useZoomStore, ZOOM_LEVELS } from '../store/zoomStore';
 import { Button } from '../components/ui/Button';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -94,6 +95,7 @@ export function ProfilePage() {
   const { user, logout, deleteAccount } = useAuthStore();
   const { lang, setLang } = useLangStore();
   const { mode, setMode } = useModeStore();
+  const { zoom, setZoom } = useZoomStore();
   const {
     bgTheme, tableColor, trainingCardStyle, displayCardStyle,
     setBgTheme, setTableColor, setTrainingCardStyle, setDisplayCardStyle,
@@ -333,6 +335,41 @@ export function ProfilePage() {
                   }`}
                 >
                   {l === 'fr' ? '🇫🇷 FR' : '🇬🇧 EN'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Zoom / text size */}
+          <div className="mb-4 pb-4 border-b border-gray-800">
+            <div className="flex items-center gap-2 mb-3">
+              <ZoomIn size={14} className="text-teal-400" />
+              <div>
+                <p className="text-sm font-semibold text-white">{isEn ? 'Text size' : 'Taille du texte'}</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {isEn ? 'Adjust the interface zoom for better readability' : 'Ajuste le zoom de l\'interface pour une meilleure lisibilité'}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {ZOOM_LEVELS.map(({ value, labelFr, labelEn, hint }) => (
+                <button
+                  key={value}
+                  onClick={() => setZoom(value)}
+                  className={`flex-1 min-w-[60px] flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border text-center transition-all ${
+                    zoom === value
+                      ? 'bg-teal-900/40 border-teal-600 text-teal-300'
+                      : 'border-gray-700 text-gray-500 hover:text-white hover:border-gray-500'
+                  }`}
+                >
+                  <span style={{ fontSize: `${Math.max(10, value * 0.13)}px` }} className="font-black leading-none">A</span>
+                  <span className="text-[10px] font-semibold">{isEn ? labelEn : labelFr}</span>
+                  <span className="text-[9px] opacity-60">{hint}</span>
+                  {zoom === value && (
+                    <span className="inline-flex items-center gap-0.5 text-[9px] text-teal-400 font-semibold">
+                      <Check size={8} /> {isEn ? 'Active' : 'Actif'}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
