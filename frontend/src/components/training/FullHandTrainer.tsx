@@ -404,17 +404,15 @@ export function FullHandTrainer() {
           potDisplay={`${currentPotSize}bb`}
           heroCards={scenario.heroHand as string[]}
           boardCards={board as string[]}
-          boardCardSize={isMobile ? 'sm' : 'lg'}
-          compact={isMobile}
+          boardCardSize="lg"
+          compact={false}
         />
       </div>
 
-      {/* Mobile: hero cards displayed separately below the table */}
-      {isMobile && (
-        <div className="flex items-center justify-center gap-3">
-          <Hand cards={scenario.heroHand as any} size="md" gap="gap-2" />
-        </div>
-      )}
+      {/* Mobile: hero cards displayed separately below the table (CSS, no JS) */}
+      <div className="sm:hidden flex items-center justify-center gap-3">
+        <Hand cards={scenario.heroHand as any} size="md" gap="gap-2" />
+      </div>
 
       {/* ── Stack info bar ── */}
       <StackBar

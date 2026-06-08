@@ -536,16 +536,14 @@ export function PreflopTrainer() {
                     />
                   </div>
 
-                  {/* Mobile: hero cards displayed separately below the table */}
-                  {isMobile && (
-                    <div className="flex flex-col items-center gap-1.5">
-                      <Hand
-                        cards={bbExercise.hand as CardStr[]}
-                        size="md"
-                        gap="gap-3"
-                      />
-                    </div>
-                  )}
+                  {/* Mobile: hero cards displayed separately below the table (CSS, no JS) */}
+                  <div className="sm:hidden flex flex-col items-center gap-1.5">
+                    <Hand
+                      cards={bbExercise.hand as CardStr[]}
+                      size="md"
+                      gap="gap-3"
+                    />
+                  </div>
 
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -601,19 +599,17 @@ export function PreflopTrainer() {
                     />
                   </div>
 
-                  {/* Mobile: show hero cards prominently below the table */}
-                  {isMobile && (
-                    <div className="flex flex-col items-center gap-1.5">
-                      <Hand
-                        cards={preflopExercise.hand as CardStr[]}
-                        size="md"
-                        gap="gap-3"
-                      />
-                      {preflopEnabled && (
-                        <span className="text-gold-400 text-xs font-semibold">{heroStack} bb</span>
-                      )}
-                    </div>
-                  )}
+                  {/* Mobile: show hero cards prominently below the table (CSS, no JS) */}
+                  <div className="sm:hidden flex flex-col items-center gap-1.5">
+                    <Hand
+                      cards={preflopExercise.hand as CardStr[]}
+                      size="md"
+                      gap="gap-3"
+                    />
+                    {preflopEnabled && (
+                      <span className="text-gold-400 text-xs font-semibold">{heroStack} bb</span>
+                    )}
+                  </div>
 
                   <motion.div
                     initial={{ opacity: 0 }}

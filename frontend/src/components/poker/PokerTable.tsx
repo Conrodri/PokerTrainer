@@ -293,24 +293,22 @@ export function PokerTable({
         </div>{/* end absolute inset-0 */}
       </div>{/* end table oval (paddingBottom 46%) */}
 
-      {/* ── Hero hole cards + stack — desktop only (compact=false)
-          On mobile the trainer displays them separately below the table.        */}
-      {hasHeroCards && !compact && (
+      {/* ── Hero hole cards + stack — hidden on mobile via CSS, shown on sm+ ──
+          Using Tailwind `hidden sm:flex` so this works regardless of JS state. */}
+      {hasHeroCards && (
         <div
+          className="hidden sm:flex flex-col items-center"
           style={{
             marginTop:  heroCardsMarginTop,
             position:   'relative',
             zIndex:     25,
-            display:    'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap:        compact ? 4 : 6,
+            gap:        6,
           }}
         >
           {/* Cards row */}
-          <div style={{ display: 'flex', gap: compact ? 3 : bCardSize === 'lg' ? 8 : 5 }}>
+          <div style={{ display: 'flex', gap: bCardSize === 'lg' ? 8 : 5 }}>
             {heroCards!.map((c, i) => (
-              <MiniCard key={i} card={c} size={compact ? 'sm' : bCardSize} />
+              <MiniCard key={i} card={c} size={bCardSize} />
             ))}
           </div>
 
