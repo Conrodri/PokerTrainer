@@ -130,25 +130,11 @@ export function PokerTable({
   const heroPos      = seatPositions[0];
   const hasHeroStack = hasHeroCards && !!seatInfos?.[heroPos]?.stack;
 
-  // Hero cards and stack are rendered in normal flow BELOW the table oval.
-  // A negative marginTop pulls them up so they visually overlap the table edge
-  // at the hero seat position (sy=78% of oval height = 78% of 46% of width).
-  //
-  // Overlap formula:
-  //   table oval height = 46% of width
-  //   hero seat bottom  = (78% of oval height) + seatSize/2
-  //                     = (0.78 × 0.46) × W + seatSize/2
-  //                     = 35.88% of W + seatSize/2
-  //   table bottom      = 46% of W
-  //   distance from seat bottom to table bottom = (46% - 35.88%) × W - seatSize/2
-  //                                             = 10.12% × W - seatSize/2
-  //   → marginTop = -(10.12% of W - seatSize/2) = calc(-10.12% + seatSize/2 px)
-  //
-  // This keeps the oval at a fixed 46% aspect ratio (no visual distortion)
-  // while placing hero cards flush with the seat — at any viewport width.
-  const heroCardsMarginTop = compact
-    ? `calc(-10.12% + 17px)`   // seatSize=34 → 17px
-    : `calc(-10.12% + 26px)`;  // seatSize=52 → 26px
+  // On compact (mobile) mode, hero cards are NOT rendered inside the table —
+  // the parent trainer is responsible for displaying them separately below.
+  // On desktop (non-compact) mode, they appear in flow with a negative
+  // margin-top to visually overlap the hero seat at the table edge.
+  const heroCardsMarginTop = `calc(-10.12% + 26px)`;  // seatSize=52 → 26px
 
   return (
     <div className={`select-none w-full ${className}`}>
@@ -307,10 +293,9 @@ export function PokerTable({
         </div>{/* end absolute inset-0 */}
       </div>{/* end table oval (paddingBottom 46%) */}
 
-      {/* ── Hero hole cards + stack — rendered in normal flow BELOW the oval ──
-          Negative marginTop pulls them up to overlap the table edge at the hero
-          seat, at any viewport width (see heroCardsMarginTop formula above).   */}
-      {hasHeroCards && (
+      {/* ── Hero hole cards + stack — desktop only (compact=false)
+          On mobile the trainer displays them separately below the table.        */}
+      {hasHeroCards && !compact && (
         <div
           style={{
             marginTop:  heroCardsMarginTop,

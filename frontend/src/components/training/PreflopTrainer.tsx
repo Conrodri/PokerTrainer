@@ -7,6 +7,8 @@ import { Position, ExerciseResult, BBDefenseExercise } from '../../types/poker';
 import { trainingApi } from '../../services/api';
 import { RangeMatrix } from '../poker/RangeMatrix';
 import { PokerTable } from '../poker/PokerTable';
+import { Hand } from '../poker/Card';
+import { CardStr } from '../../types/poker';
 import { Button } from '../ui/Button';
 import { ProgressBar } from '../ui/ProgressBar';
 import { SessionStatsBar } from '../ui/SessionStatsBar';
@@ -520,7 +522,7 @@ export function PreflopTrainer() {
                 <Spinner />
               ) : (
                 <>
-                  <div className="w-full max-w-xs sm:max-w-full">
+                  <div className="w-full max-w-xs sm:max-w-full mx-auto">
                     <PokerTable
                       heroPosition="BB"
                       interactive={false}
@@ -533,6 +535,17 @@ export function PreflopTrainer() {
                       } as any}
                     />
                   </div>
+
+                  {/* Mobile: hero cards displayed separately below the table */}
+                  {isMobile && (
+                    <div className="flex flex-col items-center gap-1.5">
+                      <Hand
+                        cards={bbExercise.hand as CardStr[]}
+                        size="md"
+                        gap="gap-3"
+                      />
+                    </div>
+                  )}
 
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -575,7 +588,7 @@ export function PreflopTrainer() {
                 <Spinner />
               ) : preflopExercise ? (
                 <>
-                  <div className="w-full max-w-xs sm:max-w-full">
+                  <div className="w-full max-w-xs sm:max-w-full mx-auto">
                     <PokerTable
                       heroPosition={preflopExercise.position}
                       interactive={false}
@@ -587,6 +600,20 @@ export function PreflopTrainer() {
                         : undefined}
                     />
                   </div>
+
+                  {/* Mobile: show hero cards prominently below the table */}
+                  {isMobile && (
+                    <div className="flex flex-col items-center gap-1.5">
+                      <Hand
+                        cards={preflopExercise.hand as CardStr[]}
+                        size="md"
+                        gap="gap-3"
+                      />
+                      {preflopEnabled && (
+                        <span className="text-gold-400 text-xs font-semibold">{heroStack} bb</span>
+                      )}
+                    </div>
+                  )}
 
                   <motion.div
                     initial={{ opacity: 0 }}

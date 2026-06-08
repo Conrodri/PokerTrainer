@@ -10,6 +10,7 @@ import { VerdictBanner } from '../ui/VerdictBanner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { PokerTable, SeatInfo } from '../poker/PokerTable';
+import { Hand } from '../poker/Card';
 import { Position } from '../../types/poker';
 import { useLangStore } from '../../store/langStore';
 
@@ -607,7 +608,7 @@ export function BetSizingTrainer() {
             </div>
 
             {/* Poker table */}
-            <div className="w-full max-w-xs sm:max-w-full">
+            <div className="w-full max-w-xs sm:max-w-full mx-auto">
               <PokerTable
                 heroPosition={ex.heroPosition}
                 interactive={false}
@@ -623,6 +624,13 @@ export function BetSizingTrainer() {
                 } as Partial<Record<Position, SeatInfo>>}
               />
             </div>
+
+            {/* Mobile: hero cards displayed separately below the table */}
+            {isMobile && (
+              <div className="flex items-center justify-center gap-3">
+                <Hand cards={ex.heroHand as any} size="md" gap="gap-2" />
+              </div>
+            )}
 
             {/* Context block */}
             <div className="w-full rounded-2xl border border-gray-700 overflow-hidden text-sm">

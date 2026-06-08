@@ -313,7 +313,7 @@ export function PostflopTrainer() {
             </div>
 
             {/* ── Poker table with cards + on-table stack / bet info ── */}
-            <div className="w-full max-w-xs sm:max-w-full">
+            <div className="w-full max-w-xs sm:max-w-full mx-auto">
               <PokerTable
                 heroPosition={ex.heroPosition as Position}
                 interactive={false}
@@ -332,6 +332,13 @@ export function PostflopTrainer() {
                 } as Partial<Record<Position, SeatInfo>>}
               />
             </div>
+
+            {/* Mobile: show hero cards separately below the table */}
+            {isMobile && (
+              <div className="flex items-center justify-center gap-3">
+                <Hand cards={ex.heroHand as CardStr[]} size="md" gap="gap-2" />
+              </div>
+            )}
 
             {/* ── Bloc de contexte narratif ── */}
             <div className="w-full rounded-2xl border border-gray-700 overflow-hidden text-sm">
