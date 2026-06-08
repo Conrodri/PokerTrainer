@@ -864,6 +864,17 @@ export function TrainingPage() {
     { id: 'betsizing', label: isEn ? 'Bet Sizing'  : 'Bet Sizing',    icon: '📐', premium: true },
   ];
 
+  // Sync activeModule when URL param changes (e.g. navbar dropdown click)
+  useEffect(() => {
+    const mod = (searchParams.get('module') as TrainingModule) || 'preflop';
+    if (mod !== activeModule) {
+      setActiveModule(mod);
+      setModule(mod);
+      resetSession();
+      setShowMyRanges(false);
+    }
+  }, [searchParams]);
+
   useEffect(() => { startSession(activeModule); }, [activeModule]);
 
   const handleTabChange = (mod: TrainingModule) => {
