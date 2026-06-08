@@ -605,7 +605,7 @@ export function BetSizingTrainer() {
             </div>
 
             {/* Poker table */}
-            <div className="w-full pb-6">
+            <div className="w-full">
               <PokerTable
                 heroPosition={ex.heroPosition}
                 interactive={false}

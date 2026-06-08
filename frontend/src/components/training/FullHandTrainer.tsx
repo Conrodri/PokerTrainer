@@ -394,7 +394,7 @@ export function FullHandTrainer() {
       <Stepper phase={phase} lastStreet={scenario.lastStreet} isEn={isEn} />
 
       {/* ── Poker table ── */}
-      <div className="w-full pb-8">
+      <div className="w-full">
         <PokerTable
           heroPosition={scenario.heroPosition as Position}
           interactive={false}

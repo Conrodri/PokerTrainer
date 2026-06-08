@@ -126,19 +126,35 @@ export function PokerTable({
 
   const seatSize = compact ? 34 : 52;
 
-  // Extra height when hero cards / hero stack are shown
-  const hasHeroCards  = !!heroCards?.length;
-  const heroPos       = seatPositions[0];
-  const hasHeroStack  = hasHeroCards && !!seatInfos?.[heroPos]?.stack;
-  const paddingBottom = hasHeroStack
-    ? (compact ? '65%' : '72%')
-    : hasHeroCards
-      ? (compact ? '58%' : '64%')
-      : '46%';
+  const hasHeroCards = !!heroCards?.length;
+  const heroPos      = seatPositions[0];
+  const hasHeroStack = hasHeroCards && !!seatInfos?.[heroPos]?.stack;
+
+  // Hero cards and stack are rendered in normal flow BELOW the table oval.
+  // A negative marginTop pulls them up so they visually overlap the table edge
+  // at the hero seat position (sy=78% of oval height = 78% of 46% of width).
+  //
+  // Overlap formula:
+  //   table oval height = 46% of width
+  //   hero seat bottom  = (78% of oval height) + seatSize/2
+  //                     = (0.78 × 0.46) × W + seatSize/2
+  //                     = 35.88% of W + seatSize/2
+  //   table bottom      = 46% of W
+  //   distance from seat bottom to table bottom = (46% - 35.88%) × W - seatSize/2
+  //                                             = 10.12% × W - seatSize/2
+  //   → marginTop = -(10.12% of W - seatSize/2) = calc(-10.12% + seatSize/2 px)
+  //
+  // This keeps the oval at a fixed 46% aspect ratio (no visual distortion)
+  // while placing hero cards flush with the seat — at any viewport width.
+  const heroCardsMarginTop = compact
+    ? `calc(-10.12% + 17px)`   // seatSize=34 → 17px
+    : `calc(-10.12% + 26px)`;  // seatSize=52 → 26px
 
   return (
-    <div className={`relative w-full select-none ${className}`} style={{ paddingBottom }}>
-      <div className="absolute inset-0">
+    <div className={`select-none w-full ${className}`}>
+      {/* ── Table oval (fixed 46% aspect ratio regardless of hero cards) ── */}
+      <div className="relative w-full" style={{ paddingBottom: '46%' }}>
+        <div className="absolute inset-0">
 
         {/* ── Outer wood border ── */}
         <div
@@ -234,55 +250,6 @@ export function PokerTable({
           );
         })}
 
-        {/* ── Hero hole cards (below hero seat, on the table felt edge) ── */}
-        {hasHeroCards && (
-          <div
-            style={{
-              position:  'absolute',
-              left:      '50%',
-              top:       compact ? '87%' : '85%',
-              transform: 'translateX(-50%)',
-              display:   'flex',
-              gap:       compact ? 3 : bCardSize === 'lg' ? 8 : 5,
-              zIndex:    25,
-            }}
-          >
-            {heroCards!.map((c, i) => (
-              <MiniCard key={i} card={c} size={compact ? 'sm' : bCardSize} />
-            ))}
-          </div>
-        )}
-
-        {/* ── Hero stack — below hero cards ── */}
-        {/* heroCardH: pixel height of one hero card — used to push the stack badge below the cards */}
-        {hasHeroStack && (() => {
-          const heroCardH = compact ? 38 : bCardSize === 'lg' ? 72 : 55;
-          return (
-          <div
-            style={{
-              position:      'absolute',
-              left:          '50%',
-              top:           `calc(${compact ? '87%' : '85%'} + ${heroCardH + 9}px)`,
-              transform:     'translateX(-50%)',
-              fontSize:      compact ? 9 : 12,
-              fontWeight:    800,
-              color:         '#d4af37',
-              letterSpacing: '-0.02em',
-              background:    'rgba(8, 14, 26, 0.85)',
-              border:        '1px solid rgba(212,175,55,0.45)',
-              borderRadius:  compact ? 4 : 6,
-              padding:       compact ? '1px 6px' : '3px 10px',
-              boxShadow:     '0 2px 8px rgba(0,0,0,0.75), 0 0 0 1px rgba(212,175,55,0.1)',
-              zIndex:        26,
-              whiteSpace:    'nowrap',
-              pointerEvents: 'none',
-            }}
-          >
-            {seatInfos![heroPos]!.stack}
-          </div>
-          );
-        })()}
-
         {/* ── Dealer button ── */}
         <AnimatePresence mode="wait">
           <TokenChip
@@ -337,8 +304,54 @@ export function PokerTable({
             </svg>
           </div>
         )}
-      </div>
-    </div>
+        </div>{/* end absolute inset-0 */}
+      </div>{/* end table oval (paddingBottom 46%) */}
+
+      {/* ── Hero hole cards + stack — rendered in normal flow BELOW the oval ──
+          Negative marginTop pulls them up to overlap the table edge at the hero
+          seat, at any viewport width (see heroCardsMarginTop formula above).   */}
+      {hasHeroCards && (
+        <div
+          style={{
+            marginTop:  heroCardsMarginTop,
+            position:   'relative',
+            zIndex:     25,
+            display:    'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap:        compact ? 4 : 6,
+          }}
+        >
+          {/* Cards row */}
+          <div style={{ display: 'flex', gap: compact ? 3 : bCardSize === 'lg' ? 8 : 5 }}>
+            {heroCards!.map((c, i) => (
+              <MiniCard key={i} card={c} size={compact ? 'sm' : bCardSize} />
+            ))}
+          </div>
+
+          {/* Hero stack badge */}
+          {hasHeroStack && (
+            <div
+              style={{
+                fontSize:      compact ? 9 : 12,
+                fontWeight:    800,
+                color:         '#d4af37',
+                letterSpacing: '-0.02em',
+                background:    'rgba(8, 14, 26, 0.85)',
+                border:        '1px solid rgba(212,175,55,0.45)',
+                borderRadius:  compact ? 4 : 6,
+                padding:       compact ? '1px 6px' : '3px 10px',
+                boxShadow:     '0 2px 8px rgba(0,0,0,0.75), 0 0 0 1px rgba(212,175,55,0.1)',
+                whiteSpace:    'nowrap',
+                pointerEvents: 'none',
+              }}
+            >
+              {seatInfos![heroPos]!.stack}
+            </div>
+          )}
+        </div>
+      )}
+    </div>{/* end outer wrapper */}
   );
 }
 

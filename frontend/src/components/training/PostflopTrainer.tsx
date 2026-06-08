@@ -311,7 +311,7 @@ export function PostflopTrainer() {
             </div>
 
             {/* ── Poker table with cards + on-table stack / bet info ── */}
-            <div className="w-full pb-8">
+            <div className="w-full">
               <PokerTable
                 heroPosition={ex.heroPosition as Position}
                 interactive={false}

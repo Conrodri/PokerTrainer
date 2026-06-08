@@ -517,7 +517,7 @@ export function PreflopTrainer() {
                 <Spinner />
               ) : (
                 <>
-                  <div className="w-full pb-8">
+                  <div className="w-full">
                     <PokerTable
                       heroPosition="BB"
                       interactive={false}
@@ -571,7 +571,7 @@ export function PreflopTrainer() {
                 <Spinner />
               ) : preflopExercise ? (
                 <>
-                  <div className={`w-full${preflopEnabled ? ' pb-8' : ''}`}>
+                  <div className="w-full">
                     <PokerTable
                       heroPosition={preflopExercise.position}
                       interactive={false}
