@@ -10,6 +10,7 @@ import { LoginPage } from './pages/LoginPage';
 import { TablePage } from './pages/TablePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { PokerRulesPage } from './components/training/PokerRulesPage';
+import { GlossaryPage } from './pages/GlossaryPage';
 import { Tutorial } from './components/tutorial/Tutorial';
 import { useAuthStore } from './store/authStore';
 import { useTrainingStore } from './store/trainingStore';
@@ -48,6 +49,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/rules" element={<PokerRulesPage />} />
+          <Route path="/glossary" element={<GlossaryPage />} />
           <Route path="/training" element={<TrainingPage />} />
           <Route path="/table" element={<TablePage />} />
           <Route path="/stats" element={<StatsPage />} />

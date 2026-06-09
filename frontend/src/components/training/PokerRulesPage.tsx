@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
@@ -6,6 +6,7 @@ import { useLangStore } from '../../store/langStore';
 import { Hand } from '../poker/Card';
 import { PokerTable } from '../poker/PokerTable';
 import { Position } from '../../types/poker';
+import { PokerTerm } from '../ui/PokerTerm';
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 
@@ -260,17 +261,23 @@ export function PokerRulesPage() {
       {/* ── Section 3: Comment se déroule une partie ── */}
       <Section title={`🎲 ${isEn ? 'How a hand plays out' : 'Comment se déroule une partie'}`}>
         <div className="flex flex-col gap-3 mb-4">
-          {steps.map(step => (
-            <div key={step.num} className="flex items-start gap-3">
-              <div className={`${step.color} text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shrink-0 mt-0.5`}>
-                {step.num}
+          {steps.map(step => {
+            const STEP_TERM: Record<number, string> = { 1: 'preflop', 2: 'flop', 3: 'turn', 4: 'river', 5: 'showdown' };
+            const termId = STEP_TERM[step.num];
+            return (
+              <div key={step.num} className="flex items-start gap-3">
+                <div className={`${step.color} text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shrink-0 mt-0.5`}>
+                  {step.num}
+                </div>
+                <div>
+                  <span className="font-bold text-white text-sm">
+                    {termId ? <PokerTerm id={termId}>{step.label}</PokerTerm> : step.label}
+                  </span>
+                  <span className="text-gray-400 text-xs ml-2">— {isEn ? step.descEn : step.descFr}</span>
+                </div>
               </div>
-              <div>
-                <span className="font-bold text-white text-sm">{step.label}</span>
-                <span className="text-gray-400 text-xs ml-2">— {isEn ? step.descEn : step.descFr}</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Example hand */}
@@ -299,17 +306,24 @@ export function PokerRulesPage() {
       {/* ── Section 4: Tes actions ── */}
       <Section title={`⚡ ${isEn ? 'Your actions' : 'Tes actions'}`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {actions.map(a => (
-            <div key={a.label} className={`rounded-xl p-3 border ${a.color}`}>
-              <div className="flex items-center gap-2 mb-1">
-                <span className={`px-2 py-0.5 rounded text-xs font-bold text-white ${a.badge}`}>{a.label}</span>
-                <span>{a.emoji}</span>
+          {actions.map(a => {
+            const ACTION_TERM: Record<string, string> = { FOLD: 'fold', CHECK: 'check', CALL: 'call', RAISE: 'raise' };
+            return (
+              <div key={a.label} className={`rounded-xl p-3 border ${a.color}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`px-2 py-0.5 rounded text-xs font-bold text-white ${a.badge}`}>
+                    {ACTION_TERM[a.label]
+                      ? <PokerTerm id={ACTION_TERM[a.label]}>{a.label}</PokerTerm>
+                      : a.label}
+                  </span>
+                  <span>{a.emoji}</span>
+                </div>
+                <p className="text-xs leading-relaxed">
+                  {isEn ? a.descEn : a.descFr}
+                </p>
               </div>
-              <p className="text-xs leading-relaxed">
-                {isEn ? a.descEn : a.descFr}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Section>
 
@@ -321,21 +335,30 @@ export function PokerRulesPage() {
             : 'Ta place à la table est très importante au poker !'}
         </p>
         <div className="flex flex-col gap-3 mb-4">
-          {positions.map(pos => (
-            <div key={pos.label} className={`rounded-xl p-3 border ${pos.colorClass} flex items-start gap-3`}>
-              <div className={`${pos.dotClass} rounded-full w-2.5 h-2.5 shrink-0 mt-1`} />
-              <div>
-                <span className="font-bold text-sm">{pos.label}</span>
-                <span className="ml-2 text-xs opacity-80">— {isEn ? pos.descEn : pos.descFr}</span>
+          {positions.map(pos => {
+            const POS_LABEL: Record<string, ReactNode> = {
+              'BTN (Button)': <><PokerTerm id="btn">BTN</PokerTerm> (Button)</>,
+              'CO, HJ': <><PokerTerm id="co">CO</PokerTerm>, <PokerTerm id="hj">HJ</PokerTerm></>,
+              'UTG, SB': <><PokerTerm id="utg">UTG</PokerTerm>, <PokerTerm id="sb">SB</PokerTerm></>,
+            };
+            return (
+              <div key={pos.label} className={`rounded-xl p-3 border ${pos.colorClass} flex items-start gap-3`}>
+                <div className={`${pos.dotClass} rounded-full w-2.5 h-2.5 shrink-0 mt-1`} />
+                <div>
+                  <span className="font-bold text-sm">
+                    {POS_LABEL[pos.label] ?? pos.label}
+                  </span>
+                  <span className="ml-2 text-xs opacity-80">— {isEn ? pos.descEn : pos.descFr}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div className="bg-green-900/20 border border-green-700 rounded-xl px-4 py-3">
           <p className="text-green-300 font-bold text-sm">
             {isEn
-              ? '✅ In position = you act LAST = huge advantage!'
-              : '✅ En position = tu parles EN DERNIER = gros avantage !'}
+              ? <>✅ <PokerTerm id="ip">In position</PokerTerm> = you act LAST = huge advantage!</>
+              : <>✅ <PokerTerm id="ip">En position</PokerTerm> = tu parles EN DERNIER = gros avantage !</>}
           </p>
         </div>
       </Section>

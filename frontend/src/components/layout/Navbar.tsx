@@ -82,6 +82,12 @@ export function Navbar() {
               <span>{isEn ? 'Rules' : 'Règles'}</span>
             </Link>
 
+            {/* Glossary */}
+            <Link to="/glossary" className={linkCls(location.pathname.startsWith('/glossary'))}>
+              <span className="text-sm">📖</span>
+              <span>{isEn ? 'Glossary' : 'Lexique'}</span>
+            </Link>
+
             {/* Training dropdown */}
             <div className="relative" ref={dropRef}>
               <button
@@ -188,6 +194,7 @@ export function Navbar() {
                     {/* Main nav links */}
                     <MobileNavLink to="/" icon={<Home size={15} />} label={t.nav.home} active={location.pathname === '/'} />
                     <MobileNavLink to="/rules" icon={<span>📚</span>} label={isEn ? 'Rules' : 'Règles'} active={location.pathname.startsWith('/rules')} />
+                    <MobileNavLink to="/glossary" icon={<span>📖</span>} label={isEn ? 'Glossary' : 'Lexique'} active={location.pathname.startsWith('/glossary')} />
                     <MobileNavLink to="/stats" icon={<BarChart2 size={15} />} label={t.nav.stats} active={location.pathname.startsWith('/stats')} />
                     <MobileNavLink to="/leaderboard" icon={<Trophy size={15} />} label={t.nav.leaderboard} active={location.pathname.startsWith('/leaderboard')} />
 
