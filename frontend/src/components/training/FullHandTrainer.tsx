@@ -107,33 +107,42 @@ function Stepper({
   const lastIdx = lastStreet ? STEP_KEYS.indexOf(lastStreet) : 3;
 
   return (
-    <div className="flex items-center w-full">
+    <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${STEP_KEYS.length}, 1fr)` }}>
       {STEP_KEYS.map((key, i) => {
         const isActive    = i === activeIdx;
         const isCompleted = i <= completedIdx;
         const isLocked    = i > lastIdx;
         const lineActive  = i > 0 && i <= completedIdx + 1 && completedIdx >= 0;
         return (
-          <React.Fragment key={key}>
+          <div key={key} className="flex flex-col items-center relative">
+            {/* Left half of connector — from previous step center to this step center */}
             {i > 0 && (
-              <div className={`flex-1 h-0.5 mx-1 transition-colors ${lineActive ? 'bg-green-600' : 'bg-gray-700'}`} />
+              <div
+                className={`absolute top-4 right-1/2 left-0 h-0.5 -translate-y-1/2 transition-colors ${lineActive ? 'bg-green-600' : 'bg-gray-700'}`}
+              />
             )}
-            <div className="flex flex-col items-center gap-0.5">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
-                isCompleted  ? 'border-green-600 bg-green-900/40 text-green-400' :
-                isActive     ? 'border-gold-500 bg-gold-900/30 text-gold-400 shadow-[0_0_8px_rgba(234,179,8,0.3)]' :
-                isLocked     ? 'border-gray-700 bg-gray-900/60 text-gray-600' :
-                               'border-gray-600 bg-gray-900 text-gray-500'
-              }`}>
-                {isCompleted  ? <Check size={14} /> :
-                 isLocked     ? <Lock size={11} /> :
-                 (i + 1).toString()}
-              </div>
-              <span className={`text-[10px] font-semibold ${isActive ? 'text-gold-400' : isCompleted ? 'text-green-500' : isLocked ? 'text-gray-700' : 'text-gray-500'}`}>
-                {isEn ? STEP_LABELS[key].en : STEP_LABELS[key].fr}
-              </span>
+            {/* Right half of connector — from this step center to next step center */}
+            {i < STEP_KEYS.length - 1 && (
+              <div
+                className={`absolute top-4 left-1/2 right-0 h-0.5 -translate-y-1/2 transition-colors ${isCompleted ? 'bg-green-600' : 'bg-gray-700'}`}
+              />
+            )}
+            {/* Circle */}
+            <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
+              isCompleted ? 'border-green-600 bg-green-900/40 text-green-400' :
+              isActive    ? 'border-gold-500 bg-gold-900/30 text-gold-400 shadow-[0_0_8px_rgba(234,179,8,0.3)]' :
+              isLocked    ? 'border-gray-700 bg-gray-900/60 text-gray-600' :
+                            'border-gray-600 bg-gray-900 text-gray-500'
+            }`}>
+              {isCompleted ? <Check size={14} /> :
+               isLocked    ? <Lock size={11} /> :
+               (i + 1).toString()}
             </div>
-          </React.Fragment>
+            {/* Label */}
+            <span className={`mt-0.5 text-[10px] font-semibold ${isActive ? 'text-gold-400' : isCompleted ? 'text-green-500' : isLocked ? 'text-gray-700' : 'text-gray-500'}`}>
+              {isEn ? STEP_LABELS[key].en : STEP_LABELS[key].fr}
+            </span>
+          </div>
         );
       })}
     </div>
