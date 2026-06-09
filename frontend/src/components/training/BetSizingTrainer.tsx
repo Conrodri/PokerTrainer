@@ -807,6 +807,64 @@ export function BetSizingTrainer() {
             xp={sessionStats.xp}
           />
 
+          {/* Bet sizing calculation panel — beginner only */}
+          {mode === 'beginner' && (() => {
+            const correctCfg = SIZING[ex.correctKey];
+            const correctBb  = ex.correctKey === 'check' ? 0 : sizingBb(ex.potSize, ex.correctKey);
+            const totalAfterBet = ex.potSize + correctBb;
+            const villainPotOdds = correctBb > 0
+              ? Math.round((correctBb / totalAfterBet) * 100)
+              : null;
+            return (
+              <div className="w-full rounded-2xl border border-gray-700 overflow-hidden text-xs">
+                <div className="px-4 py-2.5 bg-gray-800/50 border-b border-gray-700 flex items-center gap-2 text-gray-400 font-semibold">
+                  <span>🧮</span>
+                  {isEn ? 'Sizing calculation' : 'Calcul du sizing'}
+                </div>
+                <div className="px-4 py-3 bg-gray-900/50 flex flex-col gap-2">
+                  {ex.correctKey === 'check' ? (
+                    <p className="text-gray-400">
+                      {isEn
+                        ? 'Optimal play is to check — no bet required.'
+                        : 'La décision optimale est de checker — aucune mise requise.'}
+                    </p>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 flex-wrap font-mono">
+                        <span className="text-gray-400">{isEn ? 'Pot' : 'Pot'} =</span>
+                        <span className="text-yellow-400 font-bold">{ex.potSize}bb</span>
+                        <span className="text-gray-600">×</span>
+                        <span className="text-blue-300 font-bold">{correctCfg.pct}%</span>
+                        <span className="text-gray-600">=</span>
+                        <span className="text-green-400 font-bold">{correctBb}bb</span>
+                      </div>
+                      <p className="text-gray-400 leading-relaxed">
+                        {isEn
+                          ? `${ex.potSize}bb × ${correctCfg.pct / 100} = ${correctBb}bb into ${ex.potSize}bb pot.`
+                          : `${ex.potSize}bb × ${correctCfg.pct / 100} = ${correctBb}bb dans un pot de ${ex.potSize}bb.`}
+                      </p>
+                      {villainPotOdds !== null && (
+                        <div className="mt-1 pt-2 border-t border-gray-800">
+                          <p className="text-gray-500 mb-1">
+                            {isEn ? 'Pot odds villain faces:' : 'Pot odds de l\'adversaire :'}
+                          </p>
+                          <p className="font-mono text-purple-300">
+                            ( {correctBb} / {totalAfterBet} ) × 100 = <strong>{villainPotOdds}%</strong>
+                          </p>
+                          <p className="text-gray-500 mt-0.5">
+                            {isEn
+                              ? `Villain must call ${correctBb}bb into a ${totalAfterBet}bb pot → needs ${villainPotOdds}%+ equity to call profitably.`
+                              : `L'adversaire doit payer ${correctBb}bb pour un pot de ${totalAfterBet}bb → il lui faut ${villainPotOdds}%+ d'équité pour call rentable.`}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* GTO explanation */}
           <ExplanationPanel text={isEn ? ex.explanation.en : ex.explanation.fr} className="p-5" />
         </motion.div>

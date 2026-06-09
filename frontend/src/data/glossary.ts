@@ -1,4 +1,4 @@
-export type GlossaryCategory = 'action' | 'position' | 'concept' | 'strength' | 'street';
+export type GlossaryCategory = 'action' | 'position' | 'concept' | 'strength' | 'street' | 'board';
 
 export interface GlossaryEntry {
   id: string;
@@ -234,6 +234,64 @@ export const GLOSSARY: GlossaryEntry[] = [
     definitionFr: 'Brelan formé avec une seule carte en main + une paire sur la board. Moins camouflé qu\'un set.',
     definitionEn: 'Three of a kind formed with one hole card + a pair on the board. Less disguised than a set.',
     category: 'strength',
+  },
+
+  // ── Textures de board ─────────────────────────────────────────────────────────
+  {
+    id: 'dry',
+    fr: 'Board sec (dry)', en: 'Dry board',
+    definitionFr: 'Board qui offre peu de tirages possibles. Ex : K♠ 7♦ 2♣. Peu de draws flush ou quinte. Les mains faites dominent et les bluffs sont plus risqués.',
+    definitionEn: 'Board that offers few possible draws. E.g.: K♠ 7♦ 2♣. Few flush or straight draws. Made hands dominate; bluffs are riskier.',
+    category: 'board',
+  },
+  {
+    id: 'wet',
+    fr: 'Board mouillé (wet)', en: 'Wet board',
+    definitionFr: 'Board avec de nombreux tirages possibles (flush draw, straight draw). Ex : 9♠ 8♥ 7♦. Les adversaires ont souvent des draws, les protections de mains sont importantes.',
+    definitionEn: 'Board with many possible draws (flush draw, straight draw). E.g.: 9♠ 8♥ 7♦. Opponents often have draws; hand protection becomes important.',
+    category: 'board',
+  },
+  {
+    id: 'static',
+    fr: 'Board statique', en: 'Static board',
+    definitionFr: 'Board dont le classement des mains ne changera probablement pas avec les prochaines cartes. Typiquement sec et non-connecté. Les mains dominantes restent dominantes.',
+    definitionEn: 'Board where hand rankings are unlikely to change with future cards. Typically dry and unconnected. Dominant hands stay dominant.',
+    category: 'board',
+  },
+  {
+    id: 'dynamic',
+    fr: 'Board dynamique', en: 'Dynamic board',
+    definitionFr: 'Board dont la hiérarchie des mains peut radicalement changer avec la turn ou la river. Beaucoup de draws = board dynamique. Nécessite de jouer plus vite (bet/raise pour protection).',
+    definitionEn: 'Board where hand rankings can change dramatically with the turn or river. Many draws = dynamic board. Requires playing faster (bet/raise for protection).',
+    category: 'board',
+  },
+  {
+    id: 'rainbow',
+    fr: 'Board arc-en-ciel (rainbow)', en: 'Rainbow board',
+    definitionFr: 'Les 3 cartes du flop ont des couleurs différentes. Aucun flush draw possible immédiatement. Ex : K♠ 9♥ 3♦.',
+    definitionEn: 'The 3 flop cards have different suits. No immediate flush draw possible. E.g.: K♠ 9♥ 3♦.',
+    category: 'board',
+  },
+  {
+    id: 'monotone',
+    fr: 'Board monotone', en: 'Monotone board',
+    definitionFr: 'Les 3 cartes du flop (ou plus) ont la même couleur. Flush déjà possible avec 2 cartes en main de cette couleur. Board très dangereux pour les mains sans couleur.',
+    definitionEn: 'All 3 flop cards (or more) share the same suit. A flush is immediately possible with 2 matching hole cards. Very dangerous board for non-flush hands.',
+    category: 'board',
+  },
+  {
+    id: 'twotone',
+    fr: 'Board bicolore (two-tone)', en: 'Two-tone board',
+    definitionFr: 'Deux cartes du flop ont la même couleur. Un flush draw est possible. Ni trop sec ni trop mouillé — la turn déterminera si le tirage se complète.',
+    definitionEn: 'Two flop cards share the same suit. A flush draw is possible. Neither too dry nor too wet — the turn will determine if the draw completes.',
+    category: 'board',
+  },
+  {
+    id: 'connected',
+    fr: 'Board connecté', en: 'Connected board',
+    definitionFr: 'Les cartes du board sont proches en valeur, permettant des tirages quinte. Ex : 8-9-T. Plus le board est connecté, plus il est dynamique et dangereux.',
+    definitionEn: 'Board cards are close in rank, enabling straight draws. E.g.: 8-9-T. The more connected the board, the more dynamic and dangerous it is.',
+    category: 'board',
   },
 
   // ── Streets ───────────────────────────────────────────────────────────────────

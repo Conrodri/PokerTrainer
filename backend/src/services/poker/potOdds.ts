@@ -274,10 +274,9 @@ export function buildThresholdExplanation(
     }
     return [
       `The **minimum threshold** (the "pot odds") is the smallest equity that makes calling profitable in the long run.`,
-      `When you call, you risk **${call}bb** to try to win what is already on the table.`,
-      `• Step 1 — what you pay: **${call}bb**.`,
-      `• Step 2 — what you can win in total: the pot (${pot}) + villain's bet (${bet}) + your call (${call}) = **${total}bb**.`,
-      `• Step 3 — threshold = your call ÷ the total = ${call} ÷ ${total} = **${req}%**.`,
+      `• Step 1 — **amount you must pay**: ${call}bb.`,
+      `• Step 2 — **total pot if you call**: existing pot (${pot}bb) + villain's bet (${bet}bb) + your call (${call}bb) = **${total}bb**.`,
+      `• Step 3 — formula:\n**( amount to pay / total pot if call ) × 100 = ( ${call} / ${total} ) × 100 = ${req}%**`,
       `In plain words: you must win at least **${req}%** of the time. Your equity is **${heroEquity}%** → ${profitable ? `that is **above** the threshold, so **calling is profitable** ✅` : `that is **below** the threshold, so you should **fold** ❌`}.`,
     ].join('\n\n');
   }
@@ -291,10 +290,9 @@ export function buildThresholdExplanation(
   }
   return [
     `Le **seuil minimum** (les « pot odds ») est l'équité la plus basse qui rend le call rentable sur le long terme.`,
-    `Quand tu suis, tu risques **${call}bb** pour tenter de remporter ce qui est déjà sur la table.`,
-    `• Étape 1 — ce que tu paies : **${call}bb**.`,
-    `• Étape 2 — ce que tu peux remporter en tout : le pot (${pot}) + la mise de l'adversaire (${bet}) + ta mise (${call}) = **${total}bb**.`,
-    `• Étape 3 — le seuil = ta mise ÷ le total = ${call} ÷ ${total} = **${req}%**.`,
+    `• Étape 1 — **montant à payer** : ${call}bb.`,
+    `• Étape 2 — **pot total si tu suis** : pot existant (${pot}bb) + mise adverse (${bet}bb) + ta mise (${call}bb) = **${total}bb**.`,
+    `• Étape 3 — formule :\n**( montant à payer / pot total si call ) × 100 = ( ${call} / ${total} ) × 100 = ${req}%**`,
     `En clair : il faut gagner au moins **${req}%** du temps. Ton équité est de **${heroEquity}%** → ${profitable ? `c'est **au-dessus** du seuil, donc **suivre est rentable** ✅` : `c'est **en-dessous** du seuil, donc il faut **se coucher** ❌`}.`,
   ].join('\n\n');
 }

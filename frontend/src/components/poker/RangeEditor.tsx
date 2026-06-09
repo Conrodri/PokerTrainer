@@ -18,12 +18,11 @@ export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSav
 
   const handleCellClick = (row: number, col: number) => {
     const next = matrix.map(r => [...r]);
-    // Cycle: fold (0) → 100% (1) → 50% (0.5) → 33% (0.33) → fold (0)
+    // Cycle: Fold (0) → Raise (1) → Call (0.5) → Fold (0)
     const cur = next[row][col];
-    if      (cur <= 0)    next[row][col] = 1;
-    else if (cur >= 1)    next[row][col] = 0.5;
-    else if (cur >= 0.5)  next[row][col] = 0.33;
-    else                  next[row][col] = 0;
+    if      (cur <= 0)   next[row][col] = 1;
+    else if (cur >= 0.8) next[row][col] = 0.5;
+    else                 next[row][col] = 0;
     onChange(next);
   };
 
@@ -92,7 +91,7 @@ export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSav
               const r = hovered.length === 2 ? RANKS_ORDER.indexOf(hovered[0]) : (hovered.endsWith('s') ? RANKS_ORDER.indexOf(hovered[0]) : RANKS_ORDER.indexOf(hovered[1]));
               const c = hovered.length === 2 ? RANKS_ORDER.indexOf(hovered[0]) : (hovered.endsWith('s') ? RANKS_ORDER.indexOf(hovered[1]) : RANKS_ORDER.indexOf(hovered[0]));
               const freq = matrix[r]?.[c] ?? 0;
-              return freq === 0 ? 'Fold' : `${Math.round(freq * 100)}%`;
+              return freq === 0 ? 'Fold' : freq >= 0.8 ? 'Raise' : 'Call';
             })()}
           </span>
         </motion.div>
@@ -100,10 +99,9 @@ export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSav
 
       {/* Legend */}
       <div className="flex gap-4 text-xs text-gray-400 justify-center flex-wrap">
-        <LegendItem color="rgba(22,130,60,0.8)"  label="100%" />
-        <LegendItem color="rgba(200,150,20,0.7)" label="50%" />
-        <LegendItem color="rgba(180,120,0,0.6)"  label="33%" />
-        <LegendItem color="#1a202c"              label="Fold" />
+        <LegendItem color="rgba(22,130,60,0.85)"  label="Raise" />
+        <LegendItem color="rgba(200,150,20,0.75)" label="Call" />
+        <LegendItem color="#1a202c"               label="Fold" />
       </div>
 
       {/* Action buttons */}

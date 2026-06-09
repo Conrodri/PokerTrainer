@@ -3,9 +3,9 @@
  * Full profile management UI: create/rename/delete named profiles,
  * add stack-depth sub-ranges within each profile, edit per-position ranges.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Trash2, Check, ChevronDown, ChevronUp, Save, RotateCcw, Zap } from 'lucide-react';
+import { X, Plus, Trash2, Check, ChevronDown, ChevronUp, Save, RotateCcw, Zap, Download, Upload } from 'lucide-react';
 import { profilesApi, rangesApi, trainingApi, RangeProfile, RangeStackRange } from '../../services/api';
 import { RangeEditor } from './RangeEditor';
 import { Position } from '../../types/poker';
@@ -136,6 +136,9 @@ export function RangeProfilesPanel({
   const [showAddRange,   setShowAddRange]   = useState(false);
   const [renamingId,     setRenamingId]     = useState<string | null>(null);
   const [renameVal,      setRenameVal]      = useState('');
+
+  // File import ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const selectedProfile = profiles.find(p => p.id === selectedProfileId) ?? null;
@@ -300,6 +303,61 @@ export function RangeProfilesPanel({
     if (gtoMatrix) setLocalMatrix(gtoMatrix.map(r => [...r]));
   };
 
+  // ── Export profile to JSON file ───────────────────────────────────────────
+  const handleExport = () => {
+    if (!selectedProfile) return;
+    const blob = new Blob([JSON.stringify(selectedProfile, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `range-${selectedProfile.name.replace(/\s+/g, '_')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ── Import profile from JSON file ─────────────────────────────────────────
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = ''; // reset so same file can be re-imported
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const raw = JSON.parse(ev.target?.result as string);
+        // Minimal validation: expect { name, stackRanges }
+        if (!raw?.name || !Array.isArray(raw.stackRanges)) {
+          alert(isEn ? 'Invalid file format.' : 'Format de fichier invalide.');
+          return;
+        }
+        // Create the profile
+        const created = await profilesApi.create(raw.name + (isEn ? ' (imported)' : ' (importé)'));
+        // Create stack ranges with their data
+        for (const sr of raw.stackRanges as any[]) {
+          const newSr = await profilesApi.createStackRange(created.id, sr.label ?? 'Range', sr.stackMin ?? 0, sr.stackMax ?? null);
+          // Restore per-position cells
+          if (sr.data && typeof sr.data === 'object') {
+            for (const [pos, cells] of Object.entries(sr.data)) {
+              if (Array.isArray(cells) && cells.length === 169) {
+                await profilesApi.updateStackRange(created.id, newSr.id, {
+                  position: pos as any,
+                  cells: cells as number[],
+                });
+              }
+            }
+          }
+        }
+        // Reload profiles
+        const data = await profilesApi.list();
+        setProfiles(data);
+        setSelectedProfileId(created.id);
+        setSelectedRangeId(null);
+      } catch {
+        alert(isEn ? 'Failed to import profile.' : "Échec de l'importation.");
+      }
+    };
+    reader.readAsText(file);
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -317,6 +375,15 @@ export function RangeProfilesPanel({
         <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={20} /></button>
       </div>
 
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        className="hidden"
+        onChange={handleImport}
+      />
+
       {loading ? (
         <div className="h-32 flex items-center justify-center">
           <div className="animate-spin h-8 w-8 border-2 border-felt-500 border-t-transparent rounded-full" />
@@ -329,10 +396,19 @@ export function RangeProfilesPanel({
               <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">
                 {isEn ? 'Profiles' : 'Profils'}
               </p>
-              <button onClick={() => { setShowAddProfile(v => !v); }}
-                className="flex items-center gap-1 text-xs text-felt-400 hover:text-felt-300 transition-colors">
-                <Plus size={13} /> {isEn ? 'New profile' : 'Nouveau profil'}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                  title={isEn ? 'Import profile from JSON' : 'Importer un profil JSON'}
+                >
+                  <Upload size={13} /> {isEn ? 'Import' : 'Importer'}
+                </button>
+                <button onClick={() => { setShowAddProfile(v => !v); }}
+                  className="flex items-center gap-1 text-xs text-felt-400 hover:text-felt-300 transition-colors">
+                  <Plus size={13} /> {isEn ? 'New profile' : 'Nouveau profil'}
+                </button>
+              </div>
             </div>
 
             <AnimatePresence initial={false}>
@@ -398,6 +474,13 @@ export function RangeProfilesPanel({
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <p className="text-white font-semibold text-sm">{selectedProfile.name}</p>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleExport}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-600 bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 transition-all"
+                    title={isEn ? 'Export profile as JSON' : 'Exporter le profil en JSON'}
+                  >
+                    <Download size={12} /> {isEn ? 'Export' : 'Exporter'}
+                  </button>
                   <button
                     onClick={handleActivate}
                     disabled={activating}

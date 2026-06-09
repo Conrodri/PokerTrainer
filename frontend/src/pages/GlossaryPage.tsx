@@ -11,6 +11,7 @@ const CATEGORIES: { id: GlossaryCategory; fr: string; en: string; emoji: string 
   { id: 'concept',  fr: 'Concepts',          en: 'Concepts',       emoji: '🧠' },
   { id: 'strength', fr: 'Force des mains',   en: 'Hand strength',  emoji: '💪' },
   { id: 'street',   fr: 'Streets (phases)',  en: 'Streets',        emoji: '🃏' },
+  { id: 'board',    fr: 'Textures de board', en: 'Board textures', emoji: '🎴' },
 ];
 
 // ─── GlossaryPage ──────────────────────────────────────────────────────────────

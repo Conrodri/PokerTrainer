@@ -18,6 +18,13 @@
     background-color: var(--app-bg, #0d2318);
     @apply text-white antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;   /* prevent horizontal scroll on narrow viewports */
+  }
+
+  /* Prevent overflow on the root */
+  #root {
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 
   ::-webkit-scrollbar {

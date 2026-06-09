@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronRight, Zap, Target,
+  ChevronRight, ChevronDown, ChevronUp, Zap, Target,
   Check, Lock, Trophy, Shuffle, Info,
 } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
@@ -17,7 +17,8 @@ import { TrainerIntro } from '../ui/TrainerIntro';
 import { StatChip } from '../ui/StatChip';
 import { PokerTable, POSITION_COLORS } from '../poker/PokerTable';
 import { CardStr, Position } from '../../types/poker';
-import { postflopApi } from '../../services/api';
+import { postflopApi, trainingApi } from '../../services/api';
+import { RangeMatrix } from '../poker/RangeMatrix';
 import { handToDisplay } from '../../utils/pokerUtils';
 import { useLangStore } from '../../store/langStore';
 
@@ -205,6 +206,10 @@ export function FullHandTrainer() {
   const [xpTotal, setXpTotal]   = useState(0);
   const mode = useModeStore(s => s.mode);
 
+  // Range matrix for preflop beginner display
+  const [rangeMatrix, setRangeMatrix] = useState<number[][] | null>(null);
+  const [showRange,   setShowRange]   = useState(false);
+
   const loadScenario = async () => {
     setPhase('loading');
     setAnswered({});
@@ -227,6 +232,15 @@ export function FullHandTrainer() {
   useEffect(() => {
     if (phase.endsWith('_result')) window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [phase]);
+
+  // Fetch range matrix when scenario loads (or position changes)
+  useEffect(() => {
+    if (!scenario) { setRangeMatrix(null); return; }
+    trainingApi.getRangeMatrix(scenario.heroPosition as any)
+      .then(d => setRangeMatrix((d as any)?.matrix ?? null))
+      .catch(() => setRangeMatrix(null));
+    setShowRange(false);
+  }, [scenario?.heroPosition]);
 
   // ── Current board based on phase ────────────────────────────────────────────
 
@@ -480,6 +494,43 @@ export function FullHandTrainer() {
                         {decision.preflop.isInRange ? (isEn ? 'Yes ✓' : 'Oui ✓') : (isEn ? 'No ✗' : 'Non ✗')}
                       </p>
                     </div>
+                  </div>
+                )}
+
+                {/* Range matrix — beginner only, collapsible */}
+                {mode === 'beginner' && rangeMatrix && (
+                  <div className="w-full">
+                    <button
+                      onClick={() => setShowRange(v => !v)}
+                      className="flex items-center justify-between w-full px-4 py-2.5 rounded-xl border transition-colors mb-1 border-gray-700 bg-gray-800/50 hover:bg-gray-800 text-sm font-semibold"
+                    >
+                      <span className="flex items-center gap-1.5 text-felt-300">
+                        <Target size={14} className="text-felt-400 shrink-0" />
+                        {isEn ? `GTO range — ${scenario.heroPosition}` : `Range GTO — ${scenario.heroPosition}`}
+                      </span>
+                      {showRange
+                        ? <ChevronUp   size={16} className="text-gray-400 shrink-0" />
+                        : <ChevronDown size={16} className="text-gray-400 shrink-0" />
+                      }
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {showRange && (
+                        <motion.div
+                          key="range-matrix"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden flex flex-col items-center gap-2 pt-2"
+                        >
+                          <RangeMatrix
+                            matrix={rangeMatrix}
+                            highlightNotation={scenario.heroNotation}
+                            size="sm"
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 )}
 
