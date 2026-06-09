@@ -47,6 +47,9 @@ export const authApi = {
     api.post('/auth/login', data).then(r => r.data.data),
   me: () => api.get('/auth/me').then(r => r.data.data),
 
+  dismissTutorial: () =>
+    api.patch('/auth/dismiss-tutorial').then(r => r.data),
+
   updateProfile: (data: { username?: string }) =>
     api.put('/auth/profile', data).then(r => r.data.data),
 

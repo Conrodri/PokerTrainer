@@ -6,6 +6,7 @@ interface User {
   username: string;
   email: string;
   isPremium?: boolean;
+  tutorialDone?: boolean;
 }
 
 interface AuthState {
@@ -17,6 +18,7 @@ interface AuthState {
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   fetchMe: () => Promise<void>;
+  dismissTutorial: () => Promise<void>;
   deleteAccount: (password: string) => Promise<void>;
 }
 
@@ -53,6 +55,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem('token');
     set({ user: null, token: null });
+  },
+
+  dismissTutorial: async () => {
+    // Persist to DB (fire-and-forget, non-blocking)
+    authApi.dismissTutorial().catch(() => {/* ignore if offline/unauthenticated */});
+    // Always update local state so the tutorial won't show again this session
+    set(state => ({ user: state.user ? { ...state.user, tutorialDone: true } : null }));
   },
 
   deleteAccount: async (password: string) => {

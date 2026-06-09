@@ -80,6 +80,23 @@ export async function login(req: Request, res: Response): Promise<void> {
   }
 }
 
+export async function dismissTutorial(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = (req as any).user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, error: 'Unauthorized' } as ApiResponse);
+      return;
+    }
+    await prisma.user.update({
+      where: { id: userId },
+      data: { tutorialDone: true },
+    });
+    res.json({ success: true, data: { tutorialDone: true } } as ApiResponse);
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to update tutorial status' } as ApiResponse);
+  }
+}
+
 export async function getMe(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as any).user?.userId;

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, ChevronRight, ChevronLeft, BookOpen } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, BookOpen, EyeOff } from 'lucide-react';
 import { useT } from '../../i18n';
 import { Button } from '../ui/Button';
 import { Link } from 'react-router-dom';
 import { useLangStore } from '../../store/langStore';
+import { useAuthStore } from '../../store/authStore';
 
 // AnimatePresence removed — slide transitions are instant (faster, no jank)
 
@@ -17,17 +18,23 @@ interface TutorialProps {
 export function Tutorial({ onClose }: TutorialProps) {
   const t = useT();
   const [slide, setSlide] = useState(0);
-  const [dontShow, setDontShow] = useState(false);
   const { lang } = useLangStore();
+  const { dismissTutorial } = useAuthStore();
   const isEn = lang === 'en';
 
   const handleClose = () => {
-    if (dontShow) localStorage.setItem('poker-tutorial-done', '1');
     onClose();
   };
 
   const handleFinish = () => {
     localStorage.setItem('poker-tutorial-done', '1');
+    onClose();
+  };
+
+  /** "Never show again" — saves to localStorage + DB */
+  const handleNeverShow = () => {
+    localStorage.setItem('poker-tutorial-done', '1');
+    dismissTutorial(); // fire-and-forget, gracefully ignores errors
     onClose();
   };
 
@@ -111,21 +118,16 @@ export function Tutorial({ onClose }: TutorialProps) {
           </div>
         </div>
 
-        {/* Don't show again */}
-        {isLast && (
-          <div className="px-6 pb-4 shrink-0 flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="dont-show"
-              checked={dontShow}
-              onChange={e => setDontShow(e.target.checked)}
-              className="rounded"
-            />
-            <label htmlFor="dont-show" className="text-xs text-gray-500 cursor-pointer">
-              {t.tutorial.dont_show}
-            </label>
-          </div>
-        )}
+        {/* Never show again — visible on every slide */}
+        <div className="px-6 pb-5 shrink-0 flex justify-center">
+          <button
+            onClick={handleNeverShow}
+            className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-400 transition-colors group"
+          >
+            <EyeOff size={13} className="group-hover:text-gray-400 transition-colors" />
+            {isEn ? 'Never show this again' : 'Ne plus jamais afficher'}
+          </button>
+        </div>
       </motion.div>
     </div>
   );
@@ -254,8 +256,3 @@ function Slide4({ isEn, onFinish }: { isEn: boolean; onFinish: () => void }) {
   );
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-
-export function shouldShowTutorial(): boolean {
-  return !localStorage.getItem('poker-tutorial-done');
-}
