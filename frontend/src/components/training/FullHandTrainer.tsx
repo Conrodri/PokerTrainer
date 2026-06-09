@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronRight, Zap, Target,
@@ -107,15 +107,16 @@ function Stepper({
   const lastIdx = lastStreet ? STEP_KEYS.indexOf(lastStreet) : 3;
 
   return (
-    <div className="flex items-center gap-1 w-full">
+    <div className="flex items-center w-full">
       {STEP_KEYS.map((key, i) => {
         const isActive    = i === activeIdx;
         const isCompleted = i <= completedIdx;
         const isLocked    = i > lastIdx;
+        const lineActive  = i > 0 && i <= completedIdx + 1 && completedIdx >= 0;
         return (
-          <div key={key} className="flex items-center flex-1">
+          <React.Fragment key={key}>
             {i > 0 && (
-              <div className={`flex-1 h-0.5 mx-1 transition-colors ${isCompleted && i <= completedIdx + 1 ? 'bg-green-600' : 'bg-gray-700'}`} />
+              <div className={`flex-1 h-0.5 mx-1 transition-colors ${lineActive ? 'bg-green-600' : 'bg-gray-700'}`} />
             )}
             <div className="flex flex-col items-center gap-0.5">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
@@ -132,7 +133,7 @@ function Stepper({
                 {isEn ? STEP_LABELS[key].en : STEP_LABELS[key].fr}
               </span>
             </div>
-          </div>
+          </React.Fragment>
         );
       })}
     </div>

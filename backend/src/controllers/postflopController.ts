@@ -84,8 +84,8 @@ function handRankLabel(rank: HandRank): { fr: string; en: string } {
   return labels[rank] ?? { fr: 'Main inconnue', en: 'Unknown hand' };
 }
 
-const EQUITY_SAMPLES     = 20;   // villain hands sampled
-const EQUITY_RUNS        = 300;  // runouts per sample → 20 × 300 = 6 000 total
+const EQUITY_SAMPLES     = 8;    // villain hands sampled
+const EQUITY_RUNS        = 300;  // runouts per sample → 8 × 300 = 2 400 total
 
 // ─── Threat analysis ──────────────────────────────────────────────────────────
 // Analyse the remaining deck to identify which villain hand categories beat hero,

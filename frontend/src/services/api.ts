@@ -7,7 +7,7 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL
     ? `${import.meta.env.VITE_API_URL}/api`
     : '/api',
-  timeout: 10000,
+  timeout: 35000,   // 35s — enough for Render free-tier cold start (~25s) + computation
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -219,5 +219,13 @@ export const statsApi = {
   getHistory: (days = 30) =>
     api.get('/stats/history', { params: { days } }).then(r => r.data.data),
 };
+
+/** Fire-and-forget ping to wake up the Render backend (free tier spins down after inactivity). */
+export function pingBackend(): void {
+  const base = import.meta.env.VITE_API_URL
+    ? `${import.meta.env.VITE_API_URL}/api`
+    : '/api';
+  fetch(`${base}/health`, { method: 'GET' }).catch(() => {/* ignore */});
+}
 
 export default api;

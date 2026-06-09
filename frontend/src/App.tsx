@@ -13,6 +13,7 @@ import { PokerRulesPage } from './components/training/PokerRulesPage';
 import { Tutorial, shouldShowTutorial } from './components/tutorial/Tutorial';
 import { useAuthStore } from './store/authStore';
 import { useTrainingStore } from './store/trainingStore';
+import { pingBackend } from './services/api';
 
 export default function App() {
   const { fetchMe } = useAuthStore();
@@ -20,6 +21,8 @@ export default function App() {
   const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
+    // Wake up Render backend immediately so it's ready when the user hits a module
+    pingBackend();
     fetchMe();
     startSession('preflop');
     if (shouldShowTutorial()) {
