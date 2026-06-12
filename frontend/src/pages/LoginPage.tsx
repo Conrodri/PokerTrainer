@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/Button';
+import { OnboardingModal } from '../components/onboarding/OnboardingModal';
+import { isOnboardingDone } from '../components/onboarding/onboardingState';
 import { useT } from '../i18n';
 
 type Mode = 'login' | 'register';
@@ -13,18 +15,28 @@ export function LoginPage() {
   const { login, register, isLoading, error } = useAuthStore();
   const [mode, setMode] = useState<Mode>('login');
   const [form, setForm] = useState({ username: '', email: '', password: '' });
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (mode === 'login') await login(form.email, form.password);
       else await register(form.username, form.email, form.password);
-      navigate('/training');
+      // Show the onboarding questionnaire if it hasn't been completed on this device yet.
+      if (!isOnboardingDone()) {
+        setShowOnboarding(true);
+      } else {
+        navigate('/training');
+      }
     } catch {/* error shown via store */}
   };
 
   return (
     <div className="max-w-md mx-auto pt-10">
+      <AnimatePresence>
+        {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}
+      </AnimatePresence>
+
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}

@@ -68,10 +68,10 @@ export function Navbar() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-40 bg-felt-dark/95 backdrop-blur-sm border-b border-felt-900">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
 
           {/* ── Logo ── */}
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl shrink-0">
+          <Link to="/" className="flex items-center gap-2 font-bold text-xl shrink-0 mr-2">
             <span className="text-2xl">🃏</span>
             <span className="text-gold-400 font-serif hidden xl:block">PokerTrainer</span>
           </Link>
@@ -176,9 +176,9 @@ export function Navbar() {
           </nav>
 
           {/* ── Right side ── */}
-          <div className="flex items-center gap-1 shrink-0">
-            {/* Premium CTA — only for non-premium users */}
-            {!user?.isPremium && (
+          <div className="flex items-center gap-1 shrink-0 ml-2 lg:ml-3">
+            {/* Premium CTA — only for logged-in non-premium users */}
+            {user && !user.isPremium && (
               <Link
                 to="/premium"
                 className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg bg-gold-600/20 hover:bg-gold-600/30 border border-gold-600/40 text-gold-400 hover:text-gold-300 text-xs font-bold transition-colors"
@@ -272,8 +272,8 @@ export function Navbar() {
                     {/* Bottom actions */}
                     <div className="mx-3 my-1.5 border-t border-gray-800" />
 
-                    {/* Premium CTA in mobile menu */}
-                    {!user?.isPremium && (
+                    {/* Premium CTA in mobile menu — logged-in non-premium only */}
+                    {user && !user.isPremium && (
                       <Link
                         to="/premium"
                         onClick={() => setMobileOpen(false)}

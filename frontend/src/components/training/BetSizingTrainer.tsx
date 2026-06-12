@@ -8,6 +8,8 @@ import { SessionStatsBar } from '../ui/SessionStatsBar';
 import { useModeStore } from '../../store/modeStore';
 import { VerdictBanner } from '../ui/VerdictBanner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
+import { RichLine } from '../ui/RichText';
+import { BeginnerGuide } from '../ui/BeginnerGuide';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { PokerTable, SeatInfo } from '../poker/PokerTable';
 import { Hand } from '../poker/Card';
@@ -520,9 +522,9 @@ export function BetSizingTrainer() {
         whatContent={
           <>
             <p className="text-gray-400 text-sm leading-relaxed mb-4">
-              {isEn
+              <RichLine text={isEn
                 ? 'The correct bet size depends on your range, the board texture, your position, and stack depth. A wrong size leaks EV on every single hand — even when you make the right strategic decision.'
-                : 'La bonne taille de mise dépend de votre range, la texture du board, votre position et la profondeur des stacks. Une mauvaise taille fait fuir de l\'EV sur chaque main — même quand la décision stratégique est correcte.'}
+                : 'La bonne taille de mise dépend de votre range, la texture du board, votre position et la profondeur des stacks. Une mauvaise taille fait fuir de l\'EV sur chaque main — même quand la décision stratégique est correcte.'} />
             </p>
             <div className="grid grid-cols-2 gap-2">
               {[
@@ -606,6 +608,14 @@ export function BetSizingTrainer() {
                 </div>
               )}
             </div>
+
+            {/* Beginner explanation of the exercise — collapsed by default */}
+            <BeginnerGuide
+              title={isEn ? 'What you must do' : 'Ce qu\'on te demande'}
+              text={isEn
+                ? `You have decided to **bet** — but the big question is: **how much**?\nThe pot is **${ex.potSize}bb**. You can bet a small, medium or large slice of it (or sometimes more than the pot = an overbet). Each size sends a different message and gives your opponent different odds.\n👉 Your job: pick the bet size that fits the situation. Look at the hints — your hand strength and the board texture — to decide.\n💡 Rule of thumb: bet **small** on calm boards, **big** when there are draws to charge or when you have the nuts.`
+                : `Tu as décidé de **miser** — mais la grande question est : **combien** ?\nLe pot est de **${ex.potSize}bb**. Tu peux en miser une petite, moyenne ou grande part (ou parfois plus que le pot = une surenchère). Chaque taille envoie un message différent et donne des cotes différentes à l'adversaire.\n👉 Ton travail : choisis la taille de mise adaptée à la situation. Regarde les indices — la force de ta main et la texture du board — pour décider.\n💡 Règle simple : mise **petit** sur les boards calmes, **gros** quand il y a des tirages à faire payer ou quand tu as les nuts.`}
+            />
 
             {/* Poker table */}
             <div className="w-full max-w-xs sm:max-w-xl mx-auto">

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Zap, Target, ChevronDown } from 'lucide-react';
 import { statsApi } from '../services/api';
 import { LeaderboardEntry, LeaderboardModuleStat } from '../types/poker';
 import { useAuthStore } from '../store/authStore';
+import { Button } from '../components/ui/Button';
 import { useT } from '../i18n';
 import { useLangStore } from '../store/langStore';
 
@@ -108,11 +110,12 @@ export function LeaderboardPage() {
   const { user }  = useAuthStore();
 
   useEffect(() => {
+    if (!user) return;
     statsApi.getLeaderboard(20)
       .then(setLeaders)
       .catch(() => setLeaders([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user]);
 
   const toggleExpand = (username: string) => {
     setExpanded(prev => {
@@ -129,6 +132,26 @@ export function LeaderboardPage() {
     'bg-amber-900/20 border-amber-800',
   ];
   const rankColors = ['text-gold-400', 'text-gray-300', 'text-amber-600'];
+
+  // ── Login gate — leaderboard requires an account (like Stats) ──
+  if (!user) return (
+    <div className="flex flex-col items-center gap-6 py-20 text-center">
+      <div className="text-6xl">🏆</div>
+      <h2 className="text-2xl font-bold text-white">
+        {isEn ? 'Sign in to see the leaderboard' : 'Connecte-toi pour voir le classement'}
+      </h2>
+      <p className="text-gray-400 max-w-sm">
+        {isEn
+          ? 'Create a free account or log in to compare your progress with other players.'
+          : 'Crée un compte gratuit ou connecte-toi pour comparer ta progression avec les autres joueurs.'}
+      </p>
+      <Link to="/login">
+        <Button size="lg" variant="gold">
+          {isEn ? 'Log in / Sign up' : 'Connexion / Inscription'}
+        </Button>
+      </Link>
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl mx-auto">

@@ -8,6 +8,7 @@ import { SessionStatsBar } from '../ui/SessionStatsBar';
 import { VerdictBanner } from '../ui/VerdictBanner';
 import { Spinner } from '../ui/Spinner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
+import { BeginnerGuide } from '../ui/BeginnerGuide';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { useModeStore } from '../../store/modeStore';
 import { CardStr } from '../../types/poker';
@@ -69,7 +70,7 @@ export function OutsTrainer() {
           whatTitle={isEn ? "What are outs?" : "Qu'est-ce que les outs ?"}
           whatContent={
             <>
-              <p className="text-gray-400 text-sm leading-relaxed mb-4">
+              <p className="text-gray-400 text-xs leading-snug mb-2.5">
                 <RichLine text={isEn
                   ? "A card remaining in the deck that improves your hand. For example, with a flush draw (4 cards of the same suit), there are 9 remaining cards of that suit = 9 outs."
                   : "Une carte restante dans le deck qui améliore votre main. Exemple : avec un tirage couleur (4 cartes de la même couleur), il reste 9 cartes de cette couleur = 9 outs."} />
@@ -79,10 +80,10 @@ export function OutsTrainer() {
                   { emoji: '🔵', label: isEn ? 'Flop → ×4' : 'Flop → ×4', desc: isEn ? '2 cards to come — multiply outs by 4' : '2 cartes à venir — outs × 4' },
                   { emoji: '🟡', label: isEn ? 'Turn → ×2' : 'Turn → ×2', desc: isEn ? '1 card to come — multiply outs by 2' : '1 carte à venir — outs × 2' },
                 ].map(s => (
-                  <div key={s.label} className="bg-gray-800/50 rounded-xl p-3 border border-gray-700 text-center">
-                    <div className="text-xl mb-1">{s.emoji}</div>
-                    <div className="text-white font-bold text-sm">{s.label}</div>
-                    <div className="text-gray-500 text-xs mt-1 leading-tight"><RichLine text={s.desc} /></div>
+                  <div key={s.label} className="bg-gray-800/50 rounded-lg px-2 py-1.5 border border-gray-700 text-center">
+                    <div className="text-base mb-0.5">{s.emoji}</div>
+                    <div className="text-white font-bold text-xs">{s.label}</div>
+                    <div className="text-gray-500 text-[10px] mt-0.5 leading-tight"><RichLine text={s.desc} /></div>
                   </div>
                 ))}
               </div>
@@ -148,6 +149,14 @@ export function OutsTrainer() {
               <Spinner />
             ) : ex ? (
               <>
+                {/* Beginner explanation of the exercise — collapsed by default */}
+                <BeginnerGuide
+                  title={isEn ? 'What you must do' : 'Ce qu\'on te demande'}
+                  text={isEn
+                    ? `Your hand is **not finished yet** — but the next card could make it strong (a flush, a straight, a pair...).\nAn **out** is a card still hidden in the deck that would improve your hand.\n👉 Your job: look at your 2 cards + the board, and **count how many cards** can help you. Then pick that number below.\n💡 Example: if you need one more heart for a flush draw and you can see 4 hearts already, there are 9 hearts left = **9 outs**.`
+                    : `Ta main n'est **pas encore terminée** — mais la prochaine carte pourrait la rendre forte (une couleur, une suite, une paire...).\nUn **out**, c'est une carte encore cachée dans le paquet qui améliorerait ta main.\n👉 Ton travail : regarde tes 2 cartes + le board, et **compte combien de cartes** peuvent t'aider. Puis choisis ce nombre ci-dessous.\n💡 Exemple : s'il te manque un cœur pour un tirage couleur et que tu vois déjà 4 cœurs, il reste 9 cœurs = **9 outs**.`}
+                />
+
                 {/* Cards */}
                 <div
                   className="rounded-2xl border p-4 flex flex-col items-center gap-4"

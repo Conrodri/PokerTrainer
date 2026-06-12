@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { RANKS_ORDER, getNotationFromIndices, frequencyBg, handToDisplay } from '../../utils/pokerUtils';
+import { RANKS_ORDER, getNotationFromIndices, actionBg, actionLabel, handToDisplay } from '../../utils/pokerUtils';
 
 interface RangeMatrixProps {
   matrix: number[][];
@@ -31,7 +31,7 @@ export function RangeMatrix({
   const [hovered, setHovered] = useState<string | null>(null);
   const cellSize = cellSizes[size];
 
-  const getColor = cellColor ?? frequencyBg;
+  const getColor = cellColor ?? actionBg;
 
   return (
     <div className="flex flex-col gap-3">
@@ -106,7 +106,7 @@ export function RangeMatrix({
             {(() => {
               const val = matrix[getRowFromNotation(hovered)]?.[getColFromNotation(hovered)];
               if (val === undefined) return 'Hors range';
-              return tooltipValue ? tooltipValue(val) : `${Math.round(val * 100)}% range`;
+              return tooltipValue ? tooltipValue(val) : actionLabel(val);
             })()}
           </span>
         </motion.div>
@@ -115,9 +115,8 @@ export function RangeMatrix({
       {showLegend && (
         <div className="flex gap-4 text-xs text-gray-400 justify-center flex-wrap">
           {(legend ?? [
-            { color: 'rgba(22,130,60,0.8)',  label: 'Raise (>80%)' },
-            { color: 'rgba(200,150,20,0.7)', label: 'Mixte (40-80%)' },
-            { color: 'rgba(180,100,0,0.5)',  label: 'Rare (<40%)' },
+            { color: 'rgba(22,130,60,0.85)', label: 'Raise' },
+            { color: 'rgba(37,99,235,0.80)', label: 'Call' },
             { color: '#1a202c',              label: 'Fold' },
           ]).map(item => (
             <LegendItem key={item.label} color={item.color} label={item.label} />

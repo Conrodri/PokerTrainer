@@ -9,6 +9,8 @@ import { SessionStatsBar } from '../ui/SessionStatsBar';
 import { VerdictBanner } from '../ui/VerdictBanner';
 import { Spinner } from '../ui/Spinner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
+import { RichLine } from '../ui/RichText';
+import { BeginnerGuide } from '../ui/BeginnerGuide';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { useModeStore } from '../../store/modeStore';
 import { handToDisplay } from '../../utils/pokerUtils';
@@ -73,20 +75,20 @@ export function EquityTrainer() {
           whatTitle={isEn ? 'What is equity?' : "Qu'est-ce que l'équité ?"}
           whatContent={
             <>
-              <p className="text-gray-400 text-sm leading-relaxed mb-3">
-                {isEn
+              <p className="text-gray-400 text-xs leading-snug mb-2.5">
+                <RichLine text={isEn
                   ? 'Your percentage chance of winning the pot at showdown. Two hands can be close (55/45) or very unbalanced (80/20) depending on the board and card combinations.'
-                  : 'Le pourcentage de chances de gagner le pot au showdown. Deux mains peuvent être proches (55/45) ou très déséquilibrées (80/20) selon le board et les combinaisons de cartes.'}
+                  : 'Le pourcentage de chances de gagner le pot au showdown. Deux mains peuvent être proches (55/45) ou très déséquilibrées (80/20) selon le board et les combinaisons de cartes.'} />
               </p>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {[
                   { emoji: '🔴', label: isEn ? 'Dominated hand' : 'Main dominée', desc: isEn ? 'e.g. A♠K♦ vs A♣K♣ — 30/70' : 'ex. A♠K♦ vs A♣K♣ — 30/70' },
                   { emoji: '🟡', label: isEn ? 'Coin flip' : 'Coin flip', desc: isEn ? 'e.g. J♠J♦ vs A♠K♠ — 53/47' : 'ex. V♠V♦ vs A♠K♠ — 53/47' },
                 ].map(s => (
-                  <div key={s.label} className="bg-gray-800/50 rounded-xl p-3 border border-gray-700 text-center">
-                    <div className="text-xl mb-1">{s.emoji}</div>
-                    <div className="text-white font-bold">{s.label}</div>
-                    <div className="text-gray-500 mt-0.5 leading-tight">{s.desc}</div>
+                  <div key={s.label} className="bg-gray-800/50 rounded-lg px-2 py-1.5 border border-gray-700 text-center">
+                    <div className="text-base mb-0.5">{s.emoji}</div>
+                    <div className="text-white font-bold text-xs">{s.label}</div>
+                    <div className="text-gray-500 text-[10px] mt-0.5 leading-tight">{s.desc}</div>
                   </div>
                 ))}
               </div>
@@ -144,6 +146,14 @@ export function EquityTrainer() {
               <Spinner />
             ) : equityExercise ? (
               <>
+                {/* Beginner explanation of the exercise — collapsed by default */}
+                <BeginnerGuide
+                  title={isEn ? 'What you must do' : 'Ce qu\'on te demande'}
+                  text={isEn
+                    ? `Two players show their cards. ${equityExercise.board.length > 0 ? 'Some shared cards (the board) are already on the table.' : 'No shared card yet — this is pre-flop.'}\n**Equity** = the chance a hand has to win if we go all the way to the end.\n👉 Your job: just guess **which of the two hands is more likely to win**. Tap on Hand 1 or Hand 2.\n💡 A bigger pair, two high cards, or cards that fit the board usually win more often.`
+                    : `Deux joueurs montrent leurs cartes. ${equityExercise.board.length > 0 ? 'Des cartes communes (le board) sont déjà sur la table.' : 'Aucune carte commune encore — on est pré-flop.'}\nL'**équité** = la chance qu'a une main de gagner si on va jusqu'au bout.\n👉 Ton travail : devine simplement **quelle main a le plus de chances de gagner**. Clique sur Main 1 ou Main 2.\n💡 Une plus grosse paire, deux grosses cartes, ou des cartes qui collent au board gagnent plus souvent.`}
+                />
+
                 {/* Board */}
                 {equityExercise.board.length > 0 && (
                   <div className="flex flex-col items-center gap-2">

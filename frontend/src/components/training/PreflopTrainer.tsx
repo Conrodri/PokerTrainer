@@ -14,6 +14,8 @@ import { ProgressBar } from '../ui/ProgressBar';
 import { SessionStatsBar } from '../ui/SessionStatsBar';
 import { Spinner } from '../ui/Spinner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
+import { RichLine } from '../ui/RichText';
+import { BeginnerGuide } from '../ui/BeginnerGuide';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { useModeStore } from '../../store/modeStore';
 import { VerdictBanner } from '../ui/VerdictBanner';
@@ -385,10 +387,10 @@ export function PreflopTrainer() {
           whatTitle={isEn ? "What is pre-flop play?" : "Qu'est-ce que le jeu pré-flop ?"}
           whatContent={
             <>
-              <p className="text-gray-400 text-sm leading-relaxed mb-4">
-                {isEn
+              <p className="text-gray-400 text-xs leading-snug mb-2.5">
+                <RichLine text={isEn
                   ? "Before any community cards are dealt, each player must decide whether to open (raise), fold, or defend based on their 2 hole cards and their position at the table."
-                  : "Avant que les cartes communes soient posées, chaque joueur doit décider d'ouvrir, se coucher ou défendre selon ses 2 cartes en main et sa position à la table."}
+                  : "Avant que les cartes communes soient posées, chaque joueur doit décider d'ouvrir, se coucher ou défendre selon ses 2 cartes en main et sa position à la table."} />
               </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {[
@@ -397,10 +399,10 @@ export function PreflopTrainer() {
                   { emoji: '🔄', label: 'SB', desc: isEn ? 'vs BB heads-up' : 'vs BB tête-à-tête' },
                   { emoji: '🛡️', label: 'BB', desc: isEn ? 'Defend vs raise' : 'Défendre vs relance' },
                 ].map(s => (
-                  <div key={s.label} className="bg-gray-800/50 rounded-xl p-3 border border-gray-700 text-center">
-                    <div className="text-xl mb-1">{s.emoji}</div>
-                    <div className="text-white font-bold text-sm">{s.label}</div>
-                    <div className="text-gray-500 text-xs mt-1 leading-tight">{s.desc}</div>
+                  <div key={s.label} className="bg-gray-800/50 rounded-lg px-2 py-1.5 border border-gray-700 text-center">
+                    <div className="text-base mb-0.5">{s.emoji}</div>
+                    <div className="text-white font-bold text-xs">{s.label}</div>
+                    <div className="text-gray-500 text-[10px] mt-0.5 leading-tight">{s.desc}</div>
                   </div>
                 ))}
               </div>
@@ -454,6 +456,40 @@ export function PreflopTrainer() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center gap-4 sm:gap-6"
         >
+
+          {/* Beginner explanation of the position-selection step */}
+          <BeginnerGuide
+            title={isEn ? 'What is this screen?' : 'C\'est quoi cet écran ?'}
+            text={isEn
+              ? `In poker, your **position** is your seat compared to the dealer button (the **D**). It decides the order in which you speak.\nThe later you speak, the more you know about your opponents — so the **more hands you can play**:\n🛡️ **BB** = you defend your blind against a raise.\n👉 Click a seat to pick your position, or hit **Random position** to practice them all.`
+              : `Au poker, ta **position** c'est ta place par rapport au bouton du donneur (le **D**). Elle décide dans quel ordre tu parles.\nPlus tu parles **tard**, plus tu as d'infos sur tes adversaires — donc **plus tu peux jouer de mains** :\n🛡️ **BB** = tu défends ta blinde face à une relance.\n👉 Clique une place pour choisir ta position, ou appuie sur **Position aléatoire** pour t'entraîner sur toutes.`}
+          >
+            <div className="flex flex-col gap-3">
+              {/* Early positions — tight */}
+              <div className="flex flex-col gap-1.5 rounded-xl border border-blue-800/30 bg-blue-950/30 px-3 py-2.5">
+                <p className="text-xs font-semibold text-blue-200">
+                  🪑 <strong>UTG / HJ</strong> — {isEn ? 'early, you speak first → only strong hands like:' : 'tôt, tu parles en premier → seulement de bonnes mains comme :'}
+                </p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <ExampleHand cards={['As', 'Ks']} label="AKs" />
+                  <ExampleHand cards={['Ah', 'Ad']} label="AA" />
+                  <ExampleHand cards={['Qh', 'Qs']} label="QQ" />
+                </div>
+              </div>
+              {/* Late positions — wide */}
+              <div className="flex flex-col gap-1.5 rounded-xl border border-green-800/30 bg-green-950/30 px-3 py-2.5">
+                <p className="text-xs font-semibold text-green-200">
+                  🪑 <strong>CO / BTN</strong> — {isEn ? 'late, you speak last → many more hands, even:' : 'tard, tu parles en dernier → beaucoup plus de mains, même :'}
+                </p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <ExampleHand cards={['As', 'Ks']} label="AKs" />
+                  <ExampleHand cards={['Ad', '5d']} label="A5s" />
+                  <ExampleHand cards={['7c', '6c']} label="76s" />
+                  <ExampleHand cards={['Kh', '9c']} label="K9o" />
+                </div>
+              </div>
+            </div>
+          </BeginnerGuide>
 
           {/* Interactive poker table — compact on mobile */}
           <div className="w-full max-w-xs sm:max-w-xl">
@@ -535,6 +571,13 @@ export function PreflopTrainer() {
                 <Spinner />
               ) : (
                 <>
+                  <BeginnerGuide
+                    title={isEn ? 'What you must do' : 'Ce qu\'on te demande'}
+                    text={isEn
+                      ? `You are in the **big blind (BB)** — you already put 1 chip in the middle without seeing your cards.\n**${bbExercise.opener}** raised to **${bbExercise.openSize}bb** before you. Now it's your turn with **${handToDisplay(bbExercise.notation)}**.\nYou have 3 choices:\n🚫 **Fold** = give up, you lose only your 1 blind.\n✅ **Call** = pay to keep playing and see the flop.\n💰 **3-Bet** = re-raise to show you have a strong hand.\nAsk yourself: is my hand strong enough to keep playing against ${bbExercise.opener}?`
+                      : `Tu es à la **grosse blinde (BB)** — tu as déjà mis 1 jeton au milieu sans voir tes cartes.\n**${bbExercise.opener}** a relancé à **${bbExercise.openSize}bb** avant toi. C'est ton tour avec **${handToDisplay(bbExercise.notation)}**.\nTu as 3 choix :\n🚫 **Fold** = tu abandonnes, tu perds seulement ta blinde.\n✅ **Call** = tu paies pour continuer et voir le flop.\n💰 **3-Bet** = tu re-relances pour montrer que ta main est forte.\nPose-toi la question : est-ce que ma main est assez forte pour continuer contre ${bbExercise.opener} ?`}
+                  />
+
                   <div className="w-full max-w-xs sm:max-w-xl mx-auto">
                     <PokerTable
                       heroPosition="BB"
@@ -590,6 +633,13 @@ export function PreflopTrainer() {
                 <Spinner />
               ) : preflopExercise ? (
                 <>
+                  <BeginnerGuide
+                    title={isEn ? 'What you must do' : 'Ce qu\'on te demande'}
+                    text={isEn
+                      ? `Nobody has played yet — it's your turn to open. You are sitting at **${preflopExercise.position}** and you got **${handToDisplay(preflopExercise.notation)}**.\nYou have 2 choices:\n💰 **Raise** = your hand is good enough, you bet to attack.\n🚫 **Fold** = your hand is too weak, you throw it away and wait for a better one.\n👉 Tip: the **earlier** you speak (UTG, HJ), the **stronger** your hand must be. The **later** you speak (CO, BTN), the **more** hands you can play.`
+                      : `Personne n'a encore joué — c'est à toi d'ouvrir. Tu es assis en **${preflopExercise.position}** et tu as reçu **${handToDisplay(preflopExercise.notation)}**.\nTu as 2 choix :\n💰 **Raise** = ta main est assez bonne, tu mises pour attaquer.\n🚫 **Fold** = ta main est trop faible, tu la jettes et tu attends mieux.\n👉 Astuce : plus tu parles **tôt** (UTG, HJ), plus ta main doit être **forte**. Plus tu parles **tard** (CO, BTN), plus tu peux jouer de mains.`}
+                  />
+
                   <div className="w-full max-w-xs sm:max-w-xl mx-auto">
                     <PokerTable
                       heroPosition={preflopExercise.position}
@@ -883,6 +933,16 @@ export function PreflopTrainer() {
         </>
       )}
 
+    </div>
+  );
+}
+
+// ─── Example hand (card icons + notation label) ────────────────────────────────
+function ExampleHand({ cards, label }: { cards: CardStr[]; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <Hand cards={cards} size="xs" gap="gap-0.5" animate={false} />
+      <span className="text-[10px] font-mono font-bold text-gray-300">{label}</span>
     </div>
   );
 }

@@ -13,6 +13,8 @@ import { useModeStore } from '../../store/modeStore';
 import { VerdictBanner } from '../ui/VerdictBanner';
 import { Spinner } from '../ui/Spinner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
+import { RichLine } from '../ui/RichText';
+import { BeginnerGuide } from '../ui/BeginnerGuide';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { StatChip } from '../ui/StatChip';
 import { PokerTable, POSITION_COLORS } from '../poker/PokerTable';
@@ -333,9 +335,9 @@ export function FullHandTrainer() {
           whatContent={
             <>
               <p className="text-gray-400 text-sm leading-relaxed mb-4">
-                {isEn
+                <RichLine text={isEn
                   ? 'Follow a complete hand across 2 to 4 streets. At each stage, choose the best action and see how each decision impacts the hand result.'
-                  : 'Suivez une main complète sur 2 à 4 rues. À chaque étape, choisissez la meilleure action et voyez comment chaque décision impacte le résultat de la main.'}
+                  : 'Suivez une main complète sur 2 à 4 rues. À chaque étape, choisissez la meilleure action et voyez comment chaque décision impacte le résultat de la main.'} />
               </p>
               <div className="grid grid-cols-4 gap-2">
                 {[
@@ -475,6 +477,24 @@ export function FullHandTrainer() {
             exit={{ opacity: 0, scale: 0.97 }}
             className="flex flex-col items-center gap-5"
           >
+            {/* Beginner explanation of the current step */}
+            <BeginnerGuide
+              title={isEn
+                ? `What you must do — ${STEP_LABELS[currentStep].en}`
+                : `Ce qu'on te demande — ${STEP_LABELS[currentStep].fr}`}
+              text={'preflop' in decision
+                ? (isEn
+                    ? `You're playing **one full hand** from start to finish. Right now it's the **pre-flop** step.\nYou got **${handToDisplay(scenario.heroNotation)}** in **${scenario.heroPosition}**. Decide if this hand is worth playing: **Raise** to attack, or **Fold** to wait for better.\n👉 If you fold, the hand stops. If you raise correctly, you move on to the flop and keep going.`
+                    : `Tu joues **une main complète** du début à la fin. Là, c'est l'étape **pré-flop**.\nTu as **${handToDisplay(scenario.heroNotation)}** en **${scenario.heroPosition}**. Décide si la main vaut la peine d'être jouée : **Raise** pour attaquer, ou **Fold** pour attendre mieux.\n👉 Si tu fold, la main s'arrête. Si tu raises correctement, tu passes au flop et tu continues.`)
+                : (isEn
+                    ? `Same hand continues — now on the **${STEP_LABELS[currentStep].en}**. New community cards are on the table.\n${decision.street.villainAction === 'bet'
+                        ? `**${decision.street.villainPosition}** bet **${decision.street.villainBetSize}bb**. React: **Fold**, **Call**, or **Raise**.`
+                        : `**${decision.street.villainPosition}** checked. It's your turn: **Check** for a free card, or **Bet** to attack.`}\n👉 Use the hints (your hand strength + equity) to pick the smart action and reach the showdown.`
+                    : `La même main continue — maintenant au **${STEP_LABELS[currentStep].fr}**. De nouvelles cartes communes sont sur la table.\n${decision.street.villainAction === 'bet'
+                        ? `**${decision.street.villainPosition}** a misé **${decision.street.villainBetSize}bb**. Réagis : **Fold**, **Call**, ou **Raise**.`
+                        : `**${decision.street.villainPosition}** a checké. C'est ton tour : **Check** pour une carte gratuite, ou **Bet** pour attaquer.`}\n👉 Sers-toi des indices (force de ta main + équité) pour choisir l'action maligne et atteindre le showdown.`)}
+            />
+
             {/* Preflop-specific content */}
             {'preflop' in decision && (
               <>

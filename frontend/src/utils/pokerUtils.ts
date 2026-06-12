@@ -99,3 +99,22 @@ export function frequencyBg(freq: number): string {
   if (freq < 0.8) return `rgba(200,150,20,${0.5 + freq * 0.5})`;
   return `rgba(22,130,60,${0.5 + freq * 0.5})`;
 }
+
+/**
+ * Simplified 3-action colouring for range matrices: Raise / Call / Fold.
+ *  - freq === 0      → Fold  (dark)
+ *  - 0 < freq < 0.5  → Call  (blue)
+ *  - freq >= 0.5     → Raise (green)
+ */
+export function actionBg(freq: number): string {
+  if (freq === 0)   return '#1a202c';              // Fold
+  if (freq < 0.5)   return 'rgba(37,99,235,0.80)'; // Call
+  return 'rgba(22,130,60,0.85)';                   // Raise
+}
+
+/** Label for the simplified Raise / Call / Fold scheme. */
+export function actionLabel(freq: number, isEn = false): string {
+  if (freq === 0) return isEn ? 'Fold' : 'Fold';
+  if (freq < 0.5) return isEn ? 'Call' : 'Call';
+  return isEn ? 'Raise' : 'Raise';
+}

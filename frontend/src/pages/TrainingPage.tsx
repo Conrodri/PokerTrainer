@@ -918,8 +918,8 @@ export function TrainingPage() {
         ))}
       </div>
 
-      {/* Range toolbar — preflop, visible to all (locked for non-premium) */}
-      {isRangeModule && (
+      {/* Range toolbar — preflop only, and only once the trainer has started (hidden on the intro) */}
+      {isRangeModule && trainerStarted && (
         <div className="flex items-center gap-2 -mt-2 flex-wrap">
 
           {isExercising && isPremium && (
@@ -970,7 +970,7 @@ export function TrainingPage() {
 
       {/* My Ranges panel — visible to all, locked for non-premium */}
       <AnimatePresence>
-        {isRangeModule && showMyRanges && (
+        {isRangeModule && trainerStarted && showMyRanges && (
           <MyRangesPanel
             onClose={() => setShowMyRanges(false)}
             positions={PREFLOP_POSITIONS}

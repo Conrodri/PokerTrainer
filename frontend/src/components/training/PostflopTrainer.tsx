@@ -9,9 +9,10 @@ import { ProgressBar } from '../ui/ProgressBar';
 import { SessionStatsBar } from '../ui/SessionStatsBar';
 import { useModeStore } from '../../store/modeStore';
 import { VerdictBanner } from '../ui/VerdictBanner';
-import { RichText } from '../ui/RichText';
+import { RichText, RichLine } from '../ui/RichText';
 import { Spinner } from '../ui/Spinner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
+import { BeginnerGuide } from '../ui/BeginnerGuide';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { StatChip } from '../ui/StatChip';
 import { PokerTable, SeatInfo } from '../poker/PokerTable';
@@ -206,9 +207,9 @@ export function PostflopTrainer() {
           whatContent={
             <>
               <p className="text-gray-400 text-sm leading-relaxed mb-4">
-                {isEn
+                <RichLine text={isEn
                   ? "After the preflop action (raises, calls), the dealer places community cards on the table. You must decide how to play your hand based on the visible board and your 2 hole cards."
-                  : "Après l'action préflop (relances, appels), le dealer place des cartes communes sur la table. Vous devez décider comment jouer votre main selon le board visible et vos 2 cartes en main."}
+                  : "Après l'action préflop (relances, appels), le dealer place des cartes communes sur la table. Vous devez décider comment jouer votre main selon le board visible et vos 2 cartes en main."} />
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {[
@@ -311,6 +312,18 @@ export function PostflopTrainer() {
             <div className={`px-4 py-1.5 rounded-full border text-sm font-bold ${streetColor}`}>
               {isEn ? ex.streetLabel.en : ex.streetLabel.fr}
             </div>
+
+            {/* Beginner explanation of the exercise — collapsed by default */}
+            <BeginnerGuide
+              title={isEn ? 'What you must do' : 'Ce qu\'on te demande'}
+              text={isEn
+                ? `The first community cards are out. You hold **${handToDisplay(ex.heroNotation)}** and you're playing against **${ex.villainPosition}**.\n${ex.villainAction === 'bet'
+                    ? `${ex.villainPosition} just **bet ${ex.villainBetSize}bb**. You must react: **Fold** (give up), **Call** (pay to continue), or **Raise** (bet even more).`
+                    : `${ex.villainPosition} **checked** (bet nothing). It's your turn: **Check** (free card) or **Bet** (put chips in to attack).`}\n👉 Look at the hints below: how strong is your hand, your chance to win (equity), and what the board looks like. Then pick the action that makes the most sense.`
+                : `Les premières cartes communes sont sorties. Tu as **${handToDisplay(ex.heroNotation)}** et tu joues contre **${ex.villainPosition}**.\n${ex.villainAction === 'bet'
+                    ? `${ex.villainPosition} vient de **miser ${ex.villainBetSize}bb**. Tu dois réagir : **Fold** (abandonner), **Call** (payer pour continuer), ou **Raise** (miser encore plus).`
+                    : `${ex.villainPosition} a **checké** (rien misé). C'est ton tour : **Check** (carte gratuite) ou **Bet** (miser pour attaquer).`}\n👉 Regarde les indices ci-dessous : la force de ta main, ta chance de gagner (équité) et la tête du board. Puis choisis l'action la plus logique.`}
+            />
 
             {/* ── Poker table ── */}
             <div className="w-full max-w-xs sm:max-w-xl mx-auto">

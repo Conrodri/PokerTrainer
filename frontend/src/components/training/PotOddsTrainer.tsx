@@ -9,6 +9,7 @@ import { VerdictBanner } from '../ui/VerdictBanner';
 import { RichText, RichLine } from '../ui/RichText';
 import { Spinner } from '../ui/Spinner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
+import { BeginnerGuide } from '../ui/BeginnerGuide';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { useModeStore } from '../../store/modeStore';
 import { Hand } from '../poker/Card';
@@ -186,6 +187,14 @@ export function PotOddsTrainer() {
               <Spinner />
             ) : ex ? (
               <>
+                {/* Beginner explanation of the exercise — collapsed by default */}
+                <BeginnerGuide
+                  title={isEn ? 'What you must do' : 'Ce qu\'on te demande'}
+                  text={isEn
+                    ? `There are already **${ex.potSize}bb** in the middle (the pot). Your opponent bets **${ex.betSize}bb**.\nTo keep playing you must pay these **${ex.betSize}bb** — that's a **Call**. If you don't want to pay, you **Fold**.\n🎲 Your **equity** (${ex.heroEquity}%) is your chance of winning the hand.\n👉 The question: do you win **often enough** to make paying worth it? If your chance to win is bigger than the price you pay, **Call**. If not, **Fold**.`
+                    : `Il y a déjà **${ex.potSize}bb** au milieu (le pot). Ton adversaire mise **${ex.betSize}bb**.\nPour continuer à jouer tu dois payer ces **${ex.betSize}bb** — c'est un **Call**. Si tu ne veux pas payer, tu fais **Fold**.\n🎲 Ton **équité** (${ex.heroEquity}%) c'est ta chance de gagner la main.\n👉 La question : est-ce que tu gagnes **assez souvent** pour que ça vaille le coup de payer ? Si ta chance de gagner est plus grande que le prix à payer, fais **Call**. Sinon, fais **Fold**.`}
+                />
+
                 {/* Cards display */}
                 <CardDisplay heroCards={ex.heroCards as [CardStr, CardStr]} board={ex.board as CardStr[]} street={ex.street} isEn={isEn} />
 

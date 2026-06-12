@@ -98,13 +98,15 @@ export interface PokerTableProps {
   seatInfos?: Partial<Record<Position, SeatInfo>>;
   /** Override the size of the board cards (defaults to 'md' on full table, 'sm' on compact) */
   boardCardSize?: 'sm' | 'md' | 'lg';
+  /** Also show the hero's stack badge (off by default — trainers hide it to avoid overlapping hole cards) */
+  showHeroStack?: boolean;
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function PokerTable({
   heroPosition, onPositionChange, interactive = true, className = '', compact = false,
-  activePlayers, potDisplay, heroCards, boardCards, seatInfos, boardCardSize,
+  activePlayers, potDisplay, heroCards, boardCards, seatInfos, boardCardSize, showHeroStack = false,
 }: PokerTableProps) {
   // Effective board-card size: explicit prop > compact default > full default
   const bCardSize = boardCardSize ?? (compact ? 'sm' : 'md');
@@ -225,6 +227,7 @@ export function PokerTable({
               heroLabel={isEn ? 'YOU' : 'VOUS'}
               onClick={() => handleClick(idx)}
               info={seatInfos?.[pos]}
+              showHeroStack={showHeroStack}
             />
           );
         })}
@@ -307,9 +310,10 @@ interface SeatNodeProps {
   heroLabel: string;
   onClick: () => void;
   info?: SeatInfo;
+  showHeroStack?: boolean;
 }
 
-function SeatNode({ seat, position, color, isHero, isClickable, isActive, compact, seatSize, heroLabel, onClick, info }: SeatNodeProps) {
+function SeatNode({ seat, position, color, isHero, isClickable, isActive, compact, seatSize, heroLabel, onClick, info, showHeroStack }: SeatNodeProps) {
   const posFontSize = compact ? 9 : 12;
 
   // Bet chips: midpoint between seat and chip-token position (chips pushed toward pot)
@@ -375,7 +379,7 @@ function SeatNode({ seat, position, color, isHero, isClickable, isActive, compac
       </motion.button>
 
       {/* ── Stack badge — below the seat or below the bet chip when aligned on same x-axis ── */}
-      {isActive && !isHero && info?.stack && (
+      {isActive && (!isHero || showHeroStack) && info?.stack && (
         <div
           style={{
             position:      'absolute',
