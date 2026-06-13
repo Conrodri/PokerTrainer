@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Info, Zap, Target } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
@@ -14,6 +14,9 @@ import { Spinner } from '../ui/Spinner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
 import { BeginnerGuide } from '../ui/BeginnerGuide';
 import { TrainerIntro } from '../ui/TrainerIntro';
+import { QuotaLockPanel } from '../ui/QuotaLockPanel';
+import { useAuthStore } from '../../store/authStore';
+import { useQuotaStore } from '../../store/quotaStore';
 import { StatChip } from '../ui/StatChip';
 import { PokerTable, SeatInfo } from '../poker/PokerTable';
 import { CardStr, Position } from '../../types/poker';
@@ -121,11 +124,19 @@ function EquityDetailPanel({ detail, equity, isEn }: {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function PostflopTrainer({ locked = false }: { locked?: boolean } = {}) {
+export function PostflopTrainer() {
   const lang     = useLangStore(s => s.lang);
   const isEn     = lang === 'en';
   const isMobile = useIsMobile();
   const { sessionStats, recordResult, setTrainerStarted } = useTrainingStore();
+
+  // Premium access / daily free-quota for non-premium users
+  const user      = useAuthStore(s => s.user);
+  const isPremium = !!user?.isPremium;
+  const loggedIn  = !!user;
+  const quota     = useQuotaStore();
+  const freeRemaining = isPremium ? Infinity : quota.remaining.postflop;
+  const [quotaBlocked, setQuotaBlocked] = useState(false);
 
   const [showIntro, setShowIntro]   = useState(true);
   const [phase, setPhase]           = useState<Phase>('exercise');
@@ -134,6 +145,12 @@ export function PostflopTrainer({ locked = false }: { locked?: boolean } = {}) {
   const [selected, setSelected]     = useState<ActionKey | null>(null);
   const [xpEarned, setXpEarned]     = useState(0);
   const mode = useModeStore(s => s.mode);
+
+  // Refresh free-quota counts when a non-premium user opens the module
+  useEffect(() => {
+    if (loggedIn && !isPremium) quota.refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedIn, isPremium]);
   const [streetFilter, setStreetFilter] = useState<StreetFilter>(
     () => (localStorage.getItem(STREET_KEY) as StreetFilter) || 'random'
   );
@@ -155,8 +172,20 @@ export function PostflopTrainer({ locked = false }: { locked?: boolean } = {}) {
       const data   = await postflopApi.getExercise(street);
       setExercise(data);
       setPhase('exercise');
-    } catch { /* stays on spinner */ }
+      if (!isPremium) quota.decrement('postflop'); // server consumed one credit
+    } catch (e: any) {
+      if (e?.response?.status === 402) {            // daily free allowance used up
+        quota.set('postflop', 0);
+        setQuotaBlocked(true);
+      } /* else: stays on spinner */
+    }
     finally  { setIsLoading(false); }
+  };
+
+  const backToIntro = () => {
+    setQuotaBlocked(false);
+    setShowIntro(true);
+    setTrainerStarted(false);
   };
 
   const handleStart = () => {
@@ -237,8 +266,20 @@ export function PostflopTrainer({ locked = false }: { locked?: boolean } = {}) {
           startLabel={isEn ? 'Start training' : "Commencer l'entraînement"}
           onStart={handleStart}
           mode={mode}
-          locked={locked}
+          locked={!isPremium && (!loggedIn || freeRemaining <= 0)}
+          lockedVariant={!loggedIn ? 'login' : 'quota'}
+          freeInfo={!isPremium && loggedIn && freeRemaining > 0
+            ? { remaining: freeRemaining, limit: quota.limit }
+            : undefined}
         />
+      </div>
+    );
+  }
+
+  if (quotaBlocked) {
+    return (
+      <div className="flex flex-col gap-5 max-w-2xl mx-auto">
+        <QuotaLockPanel limit={quota.limit} onBackToIntro={backToIntro} />
       </div>
     );
   }

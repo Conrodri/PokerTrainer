@@ -16,7 +16,10 @@ import { ExplanationPanel } from '../ui/ExplanationPanel';
 import { RichLine } from '../ui/RichText';
 import { BeginnerGuide } from '../ui/BeginnerGuide';
 import { TrainerIntro } from '../ui/TrainerIntro';
+import { QuotaLockPanel } from '../ui/QuotaLockPanel';
 import { StatChip } from '../ui/StatChip';
+import { useAuthStore } from '../../store/authStore';
+import { useQuotaStore } from '../../store/quotaStore';
 import { PokerTable, POSITION_COLORS } from '../poker/PokerTable';
 import { CardStr, Position } from '../../types/poker';
 import { postflopApi, trainingApi } from '../../services/api';
@@ -195,11 +198,19 @@ function EquityBadge({ equity, label }: { equity: number; label: string }) {
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
-export function FullHandTrainer({ locked = false }: { locked?: boolean } = {}) {
+export function FullHandTrainer() {
   const lang     = useLangStore(s => s.lang);
   const isEn     = lang === 'en';
   const isMobile = useIsMobile();
   const { sessionStats, recordResult, setTrainerStarted } = useTrainingStore();
+
+  // Premium access / daily free-quota for non-premium users
+  const user      = useAuthStore(s => s.user);
+  const isPremium = !!user?.isPremium;
+  const loggedIn  = !!user;
+  const quota     = useQuotaStore();
+  const freeRemaining = isPremium ? Infinity : quota.remaining.fullhand;
+  const [quotaBlocked, setQuotaBlocked] = useState(false);
 
   const [showIntro, setShowIntro] = useState(true);
   const [phase, setPhase]       = useState<HandPhase>('loading');
@@ -220,8 +231,14 @@ export function FullHandTrainer({ locked = false }: { locked?: boolean } = {}) {
       const data = await postflopApi.getFullHandScenario();
       setScenario(data);
       setPhase('preflop');
-    } catch {
-      setPhase('loading'); // stays on spinner — user can retry
+      if (!isPremium) quota.decrement('fullhand'); // server consumed one credit
+    } catch (e: any) {
+      if (e?.response?.status === 402) {            // daily free allowance used up
+        quota.set('fullhand', 0);
+        setQuotaBlocked(true);
+      } else {
+        setPhase('loading'); // stays on spinner — user can retry
+      }
     }
   };
 
@@ -230,6 +247,18 @@ export function FullHandTrainer({ locked = false }: { locked?: boolean } = {}) {
     setTrainerStarted(true);
     loadScenario();
   };
+
+  const backToIntro = () => {
+    setQuotaBlocked(false);
+    setShowIntro(true);
+    setTrainerStarted(false);
+  };
+
+  // Refresh free-quota counts when a non-premium user opens the module
+  useEffect(() => {
+    if (loggedIn && !isPremium) quota.refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedIn, isPremium]);
 
   useEffect(() => {
     if (phase.endsWith('_result')) window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -373,8 +402,20 @@ export function FullHandTrainer({ locked = false }: { locked?: boolean } = {}) {
           startLabel={isEn ? 'Start training' : "Commencer l'entraînement"}
           onStart={handleStart}
           mode={mode}
-          locked={locked}
+          locked={!isPremium && (!loggedIn || freeRemaining <= 0)}
+          lockedVariant={!loggedIn ? 'login' : 'quota'}
+          freeInfo={!isPremium && loggedIn && freeRemaining > 0
+            ? { remaining: freeRemaining, limit: quota.limit }
+            : undefined}
         />
+      </div>
+    );
+  }
+
+  if (quotaBlocked) {
+    return (
+      <div className="flex flex-col gap-5 max-w-2xl mx-auto">
+        <QuotaLockPanel limit={quota.limit} onBackToIntro={backToIntro} />
       </div>
     );
   }

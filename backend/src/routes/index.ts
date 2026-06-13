@@ -5,6 +5,7 @@ import statsRoutes from './stats';
 import rangesRoutes from './ranges';
 import postflopRoutes from './postflop';
 import profilesRoutes from './profiles';
+import quotaRoutes from './quota';
 
 const router = Router();
 
@@ -14,6 +15,7 @@ router.use('/stats', statsRoutes);
 router.use('/ranges', rangesRoutes);
 router.use('/postflop', postflopRoutes);
 router.use('/profiles', profilesRoutes);
+router.use('/quota', quotaRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Info, Zap, BookOpen, ExternalLink } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
@@ -11,6 +11,10 @@ import { ExplanationPanel } from '../ui/ExplanationPanel';
 import { RichLine } from '../ui/RichText';
 import { BeginnerGuide } from '../ui/BeginnerGuide';
 import { TrainerIntro } from '../ui/TrainerIntro';
+import { QuotaLockPanel } from '../ui/QuotaLockPanel';
+import { useAuthStore } from '../../store/authStore';
+import { useQuotaStore } from '../../store/quotaStore';
+import { quotaApi } from '../../services/api';
 import { PokerTable, SeatInfo } from '../poker/PokerTable';
 import { Hand } from '../poker/Card';
 import { Position } from '../../types/poker';
@@ -464,12 +468,20 @@ function SourcesFooter({ isEn }: { isEn: boolean }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function BetSizingTrainer({ locked = false }: { locked?: boolean } = {}) {
+export function BetSizingTrainer() {
   const lang     = useLangStore(s => s.lang);
   const isEn     = lang === 'en';
   const isMobile = useIsMobile();
   const { sessionStats, recordResult, setTrainerStarted } = useTrainingStore();
   const mode     = useModeStore(s => s.mode);
+
+  // Premium access / daily free-quota for non-premium users
+  const user      = useAuthStore(s => s.user);
+  const isPremium = !!user?.isPremium;
+  const loggedIn  = !!user;
+  const quota     = useQuotaStore();
+  const freeRemaining = isPremium ? Infinity : quota.remaining.betsizing;
+  const [quotaBlocked, setQuotaBlocked] = useState(false);
 
   const [showIntro, setShowIntro] = useState(true);
   const [phase,     setPhase]     = useState<Phase>('exercise');
@@ -478,7 +490,24 @@ export function BetSizingTrainer({ locked = false }: { locked?: boolean } = {}) 
   const [selected,  setSelected]  = useState<SizingKey | null>(null);
   const [xpEarned,  setXpEarned]  = useState(0);
 
-  const nextExercise = (q = queue) => {
+  // Refresh free-quota counts when a non-premium user opens the module
+  useEffect(() => {
+    if (loggedIn && !isPremium) quota.refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedIn, isPremium]);
+
+  // Bet sizing is generated client-side, so we explicitly spend a credit
+  // server-side before revealing each exercise (premium users never consume).
+  const nextExercise = async (q = queue) => {
+    if (!isPremium) {
+      try {
+        const r = await quotaApi.consume('betsizing');
+        if (r && !r.unlimited && typeof r.remaining === 'number') quota.set('betsizing', r.remaining);
+      } catch (e: any) {
+        if (e?.response?.status === 402) { quota.set('betsizing', 0); setQuotaBlocked(true); }
+        return; // network/other error: don't reveal an exercise off the books
+      }
+    }
     let remaining = q;
     if (remaining.length === 0) remaining = shuffle(EXERCISES);
     const [ex, ...rest] = remaining;
@@ -492,6 +521,12 @@ export function BetSizingTrainer({ locked = false }: { locked?: boolean } = {}) 
     setShowIntro(false);
     setTrainerStarted(true);
     nextExercise(shuffle(EXERCISES));
+  };
+
+  const backToIntro = () => {
+    setQuotaBlocked(false);
+    setShowIntro(true);
+    setTrainerStarted(false);
   };
 
   const handleAnswer = async (key: SizingKey) => {
@@ -560,11 +595,23 @@ export function BetSizingTrainer({ locked = false }: { locked?: boolean } = {}) 
         startLabel={isEn ? 'Start training' : "Commencer l'entraînement"}
         onStart={handleStart}
         mode={mode}
-        locked={locked}
+        locked={!isPremium && (!loggedIn || freeRemaining <= 0)}
+        lockedVariant={!loggedIn ? 'login' : 'quota'}
+        freeInfo={!isPremium && loggedIn && freeRemaining > 0
+          ? { remaining: freeRemaining, limit: quota.limit }
+          : undefined}
       />
       <SourcesFooter isEn={isEn} />
     </div>
   );
+
+  if (quotaBlocked) {
+    return (
+      <div className="flex flex-col gap-5 max-w-2xl mx-auto">
+        <QuotaLockPanel limit={quota.limit} onBackToIntro={backToIntro} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5 max-w-2xl mx-auto">

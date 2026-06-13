@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { GraduationCap, Play, Zap, Check, Crown, Lock } from 'lucide-react';
+import { GraduationCap, Play, Zap, Check, Crown, Lock, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from './Button';
 import { RichText } from './RichText';
@@ -21,11 +21,18 @@ interface TrainerIntroProps {
   /** When true, the module is a Premium preview: the intro is fully visible
    *  but the start button is replaced by a Premium upsell CTA. */
   locked?: boolean;
+  /** Tailors the locked-state copy/CTA. 'premium' (default) = upgrade prompt,
+   *  'login' = sign-in prompt, 'quota' = daily free allowance used up. */
+  lockedVariant?: 'premium' | 'login' | 'quota';
+  /** For non-premium logged-in users with credits left: shows a free-allowance
+   *  banner above the (working) start button. */
+  freeInfo?: { remaining: number; limit: number };
 }
 
 export function TrainerIntro({
   emoji, title, description, whatTitle, whatContent,
-  steps, beginnerHint, advancedHint, startLabel, onStart, mode, locked = false,
+  steps, beginnerHint, advancedHint, startLabel, onStart, mode,
+  locked = false, lockedVariant = 'premium', freeInfo,
 }: TrainerIntroProps) {
   const isEn = useLangStore(s => s.lang) === 'en';
   const setMode = useModeStore(s => s.setMode);
@@ -129,27 +136,77 @@ export function TrainerIntro({
         </div>
       </div>
 
-      {/* Start button — or Premium upsell when locked */}
+      {/* Start button — or Premium / login / quota upsell when locked */}
       {locked ? (
-        <div className="flex flex-col items-center gap-2">
-          <Link to="/premium" className="w-full">
-            <Button size="lg" variant="gold" fullWidth>
-              <Crown size={16} className="inline mr-2" fill="currentColor" />
-              {isEn ? 'Unlock with Premium' : 'Débloquer avec Premium'}
-            </Button>
-          </Link>
-          <p className="flex items-center gap-1.5 text-xs text-gray-500">
-            <Lock size={11} />
-            {isEn
-              ? 'This module is reserved for Premium members'
-              : 'Ce module est réservé aux membres Premium'}
-          </p>
-        </div>
+        lockedVariant === 'login' ? (
+          <div className="flex flex-col items-center gap-2">
+            <Link to="/login" className="w-full">
+              <Button size="lg" variant="gold" fullWidth>
+                <Lock size={16} className="inline mr-2" />
+                {isEn ? 'Log in to play' : 'Se connecter pour jouer'}
+              </Button>
+            </Link>
+            <p className="flex items-center gap-1.5 text-xs text-gray-500 text-center">
+              <Gift size={11} />
+              {isEn
+                ? 'Log in for 5 free exercises per day — or go Premium for unlimited'
+                : 'Connecte-toi pour 5 exercices gratuits par jour — ou passe Premium pour un accès illimité'}
+            </p>
+          </div>
+        ) : lockedVariant === 'quota' ? (
+          <div className="flex flex-col items-center gap-2">
+            <Link to="/premium" className="w-full">
+              <Button size="lg" variant="gold" fullWidth>
+                <Crown size={16} className="inline mr-2" fill="currentColor" />
+                {isEn ? 'Go Premium for unlimited' : 'Passer Premium — accès illimité'}
+              </Button>
+            </Link>
+            <p className="flex items-center gap-1.5 text-xs text-gray-500 text-center">
+              <Lock size={11} />
+              {isEn
+                ? "You've used your 5 free exercises today — come back tomorrow or go Premium"
+                : 'Tu as utilisé tes 5 exercices gratuits du jour — reviens demain ou passe Premium'}
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            <Link to="/premium" className="w-full">
+              <Button size="lg" variant="gold" fullWidth>
+                <Crown size={16} className="inline mr-2" fill="currentColor" />
+                {isEn ? 'Unlock with Premium' : 'Débloquer avec Premium'}
+              </Button>
+            </Link>
+            <p className="flex items-center gap-1.5 text-xs text-gray-500">
+              <Lock size={11} />
+              {isEn
+                ? 'This module is reserved for Premium members'
+                : 'Ce module est réservé aux membres Premium'}
+            </p>
+          </div>
+        )
       ) : (
-        <Button size="lg" variant="gold" onClick={onStart} fullWidth>
-          <Play size={16} className="inline mr-2" />
-          {startLabel}
-        </Button>
+        <div className="flex flex-col items-center gap-2">
+          {freeInfo && (
+            <div className="flex items-center gap-2 text-xs font-medium text-blue-300 bg-blue-900/25 border border-blue-700/40 rounded-full px-3 py-1">
+              <Gift size={13} className="text-blue-400" />
+              <span>
+                {isEn
+                  ? `${freeInfo.remaining}/${freeInfo.limit} free exercises left today`
+                  : `${freeInfo.remaining}/${freeInfo.limit} exercices gratuits restants aujourd'hui`}
+              </span>
+            </div>
+          )}
+          <Button size="lg" variant="gold" onClick={onStart} fullWidth>
+            <Play size={16} className="inline mr-2" />
+            {startLabel}
+          </Button>
+          {freeInfo && (
+            <Link to="/premium" className="text-[11px] text-gray-500 hover:text-yellow-400 transition-colors flex items-center gap-1">
+              <Crown size={10} />
+              {isEn ? 'Premium = unlimited access' : 'Premium = accès illimité'}
+            </Link>
+          )}
+        </div>
       )}
     </motion.div>
   );

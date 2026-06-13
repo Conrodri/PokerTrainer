@@ -214,6 +214,15 @@ export const postflopApi = {
     api.get('/postflop/full-hand').then(r => r.data.data),
 };
 
+// Daily free-quota for non-premium users on premium modules
+export const quotaApi = {
+  /** { isPremium, limit, modules: { postflop:{used,remaining,limit}, ... } | null } */
+  get: () => api.get('/quota').then(r => r.data.data),
+  /** Spend one credit. Resolves with { unlimited, remaining, limit } or rejects with a 402. */
+  consume: (module: string) =>
+    api.post('/quota/consume', { module }).then(r => r.data.data),
+};
+
 // Stats
 export const statsApi = {
   getMyStats: () => api.get('/stats/me').then(r => r.data.data),

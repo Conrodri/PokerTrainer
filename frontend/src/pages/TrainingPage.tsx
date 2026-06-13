@@ -990,12 +990,12 @@ export function TrainingPage() {
         {activeModule === 'equity'    && <EquityTrainer />}
         {activeModule === 'outs'      && <OutsTrainer />}
 
-        {/* Premium modules: non-premium users still see the full intro
-            (to understand what they're missing); the start button becomes
-            a Premium upsell via the `locked` flag. */}
-        {activeModule === 'postflop'  && <PostflopTrainer  locked={!isPremium} />}
-        {activeModule === 'fullhand'  && <FullHandTrainer  locked={!isPremium} />}
-        {activeModule === 'betsizing' && <BetSizingTrainer locked={!isPremium} />}
+        {/* Premium modules: non-premium users still see the full intro and get
+            a daily free allowance; the trainers handle access internally
+            (premium / logged-in free quota / locked). */}
+        {activeModule === 'postflop'  && <PostflopTrainer />}
+        {activeModule === 'fullhand'  && <FullHandTrainer />}
+        {activeModule === 'betsizing' && <BetSizingTrainer />}
       </motion.div>
     </div>
   );

@@ -23,8 +23,25 @@ model User {
   customRanges    CustomRange[]
   rangePresets    RangePreset[]
   rangeProfiles   RangeProfile[]
+  freeUsage       FreeUsage[]
 
   @@map("users")
+}
+
+// ── Daily free-exercise quota for non-premium users ───────────────────────────
+// One row per (user, module, calendar day in Europe/Paris). `count` is the
+// number of free exercises consumed that day; capped server-side. Old rows are
+// simply never read again once the date rolls over (a new row is created).
+model FreeUsage {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module String // postflop, fullhand, betsizing
+  date   String // YYYY-MM-DD (Europe/Paris)
+  count  Int    @default(0)
+
+  @@unique([userId, module, date])
+  @@map("free_usage")
 }
 
 model CustomRange {
