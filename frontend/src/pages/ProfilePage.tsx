@@ -66,14 +66,17 @@ function CardStylePicker({
                   : 'bg-gray-800/40 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white'
               }`}
             >
-              {/* Live preview using actual Card component */}
-              <Hand
-                cards={CARD_PREVIEW_CARDS as any}
-                size="xs"
-                animate={false}
-                gap="gap-1"
-                cardStyle={key}
-              />
+              {/* Live preview on a felt-like backdrop so every style — including
+                  the dark one — stays legible against the dark settings panel */}
+              <div className="rounded-lg px-2 py-1.5 bg-gradient-to-br from-emerald-800/50 to-emerald-950/60 border border-black/30 shadow-inner">
+                <Hand
+                  cards={CARD_PREVIEW_CARDS as any}
+                  size="xs"
+                  animate={false}
+                  gap="gap-1"
+                  cardStyle={key}
+                />
+              </div>
               <p className="font-bold text-[11px]">{isEn ? def.name : def.nameFr}</p>
               {isActive && (
                 <span className="inline-flex items-center gap-1 text-[10px] text-green-400 font-semibold">

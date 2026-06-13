@@ -83,6 +83,7 @@ export interface JwtPayload {
   userId: string;
   username: string;
   isPremium?: boolean;
+  isPremiumExpert?: boolean;
 }
 
 export interface ApiResponse<T = unknown> {

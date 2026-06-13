@@ -16,6 +16,8 @@ interface BeginnerGuideProps {
   emoji?: string;
   /** Whether the guide starts expanded. Default false (collapsed — click to open). */
   defaultOpen?: boolean;
+  /** Bypass the beginner-only guard (used when revealed via SpoilableHint in advanced). */
+  forceShow?: boolean;
   className?: string;
 }
 
@@ -32,13 +34,14 @@ export function BeginnerGuide({
   children,
   emoji = '👶',
   defaultOpen = false,
+  forceShow = false,
   className,
 }: BeginnerGuideProps) {
   const mode = useModeStore(s => s.mode);
   const isEn = useLangStore(s => s.lang) === 'en';
   const [open, setOpen] = useState(defaultOpen);
 
-  if (mode !== 'beginner') return null;
+  if (mode !== 'beginner' && !forceShow) return null;
 
   return (
     <div

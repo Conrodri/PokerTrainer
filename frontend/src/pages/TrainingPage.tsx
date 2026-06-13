@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Lock, X, Sliders, Layers, Plus, Check, Zap, Upload, Download,
+  Target, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { useTrainingStore } from '../store/trainingStore';
 import { useAuthStore } from '../store/authStore';
@@ -16,8 +17,15 @@ import { FullHandTrainer } from '../components/training/FullHandTrainer';
 import { BetSizingTrainer } from '../components/training/BetSizingTrainer';
 
 import { RangeEditor } from '../components/poker/RangeEditor';
+import { RangeMatrix } from '../components/poker/RangeMatrix';
 import { useT } from '../i18n';
 import { useLangStore } from '../store/langStore';
+
+// Cell code → colour for the GTO BB-defense reference grid (0-4).
+const BB_GTO_CELL_COLOR = (code: number): string => ({
+  0: '#1a202c', 1: 'rgba(37,99,235,0.70)', 2: 'rgba(37,99,235,0.32)',
+  3: 'rgba(22,130,60,0.85)', 4: 'rgba(202,138,4,0.82)',
+} as Record<number, string>)[code] ?? '#1a202c';
 import { trainingApi, rangesApi, profilesApi, RangeProfile } from '../services/api';
 import {
   validateFileMeta,
@@ -120,7 +128,9 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
   locked?: boolean;
 }) {
   const isEn = useLangStore(s => s.lang) === 'en';
+  const t = useT();
   const [tab, setTab] = useState<'profiles' | 'simple'>('simple');
+  const [showSimpleGto, setShowSimpleGto] = useState(false);
 
   // ══ PROFILES TAB STATE ══════════════════════════════════════════════════════
   const [profiles,   setProfiles]   = useState<RangeProfile[]>([]);
@@ -410,6 +420,13 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
       setLoadingS(true);
       const gtoResults = await Promise.all(positions.map(async pos => {
         try {
+          // BB is a defense spot: its reference range is the 5-category defense
+          // grid (codes 0-4), not an open-raise frequency matrix.
+          if (pos === 'BB') {
+            const data = await trainingApi.getBBDefenseRange();
+            const g = (data as any)?.grid;
+            return Array.isArray(g) ? (g as number[][]) : null;
+          }
           const data = await trainingApi.getRangeMatrix(pos);
           const m = (data as any)?.matrix ?? data;
           return Array.isArray(m) ? (m as number[][]) : null;
@@ -800,6 +817,7 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
               matrix={simpleMatrix}
               onChange={updateSimple}
               position={simplePos}
+              scheme={simplePos === 'BB' ? 'bb' : 'open'}
               onSave={handleSaveSimple}
               onReset={() => { if (simpleGto) updateSimple(simpleGto.map(r => [...r])); }}
               isSaving={savingS}
@@ -814,6 +832,59 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
             <p className="text-green-400 text-sm text-center mt-2 font-semibold">
               {isEn ? 'Saved!' : 'Sauvegardé !'}
             </p>
+          )}
+
+          {/* GTO reference range — collapsible read-only view */}
+          {simpleGto && (
+            <div className="mt-4 border-t border-gray-800 pt-3">
+              <button
+                onClick={() => setShowSimpleGto(v => !v)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-felt-300 hover:text-felt-200 transition-colors"
+              >
+                <Target size={13} className="shrink-0" />
+                {isEn ? 'GTO reference range' : 'Range GTO (référence)'}
+                <span className="text-gray-600">— {simplePos}</span>
+                {showSimpleGto ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+              <AnimatePresence initial={false}>
+                {showSimpleGto && (
+                  <motion.div
+                    key="simple-gto"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden flex flex-col items-center gap-2 pt-3"
+                  >
+                    <p className="text-[11px] text-gray-500 text-center max-w-sm">
+                      {isEn
+                        ? 'The GTO baseline for this position — your edits above are independent.'
+                        : 'La base GTO pour cette position — tes modifications ci-dessus sont indépendantes.'}
+                    </p>
+                    {simplePos === 'BB' ? (
+                      <RangeMatrix
+                        matrix={simpleGto}
+                        size="sm"
+                        cellColor={BB_GTO_CELL_COLOR}
+                        legend={[
+                          { color: 'rgba(202,138,4,0.82)', label: t.training.bb_leg_bluff, tip: { title: t.training.bb_leg_bluff, text: t.training.bb_tip_bluff } },
+                          { color: 'rgba(22,130,60,0.85)', label: t.training.bb_leg_value, tip: { title: t.training.bb_leg_value, text: t.training.bb_tip_value } },
+                          { color: 'rgba(37,99,235,0.70)', label: t.training.bb_leg_call,  tip: { title: t.training.bb_leg_call,  text: t.training.bb_tip_call  } },
+                          { color: 'rgba(37,99,235,0.32)', label: t.training.bb_leg_thin,  tip: { title: t.training.bb_leg_thin,  text: t.training.bb_tip_thin  } },
+                          { color: '#1a202c',              label: t.training.bb_leg_fold,  tip: { title: t.training.bb_leg_fold,  text: t.training.bb_tip_fold  } },
+                        ]}
+                        tooltipValue={(code) => ({
+                          0: t.training.bb_leg_fold, 1: t.training.bb_leg_call,
+                          2: t.training.bb_leg_thin, 3: t.training.bb_leg_value, 4: t.training.bb_leg_bluff,
+                        } as Record<number, string>)[code] ?? ''}
+                      />
+                    ) : (
+                      <RangeMatrix matrix={simpleGto} size="sm" />
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
         </>
       )}

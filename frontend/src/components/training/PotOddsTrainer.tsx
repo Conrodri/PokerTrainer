@@ -56,8 +56,9 @@ export function PotOddsTrainer() {
 
   const ex = potOddsExercise;
   const ev = lastResult?.ev ?? 0;
-  const equityText = ex ? (mode === 'advanced' ? ex.equityExplanationAdvanced : ex.equityExplanation) : '';
-  const thresholdText = ex ? (mode === 'advanced' ? ex.thresholdExplanationAdvanced : ex.thresholdExplanation) : '';
+  // Beginner gets the simple text; advanced AND expert get the detailed variant.
+  const equityText = ex ? (mode === 'beginner' ? ex.equityExplanation : ex.equityExplanationAdvanced) : '';
+  const thresholdText = ex ? (mode === 'beginner' ? ex.thresholdExplanation : ex.thresholdExplanationAdvanced) : '';
 
   if (showIntro) {
     return (

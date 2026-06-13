@@ -556,22 +556,24 @@ export function BetSizingTrainer() {
         whatTitle={isEn ? 'Why does sizing matter?' : 'Pourquoi le sizing est-il crucial ?'}
         whatContent={
           <>
-            <p className="text-gray-400 text-xs leading-snug mb-2.5">
+            <p className="text-gray-400 text-xs leading-snug mb-2">
               <RichLine text={isEn
-                ? 'The correct bet size depends on your range, the board texture, your position, and stack depth. A wrong size leaks EV on every single hand — even when you make the right strategic decision.'
-                : 'La bonne taille de mise dépend de votre range, la texture du board, votre position et la profondeur des stacks. Une mauvaise taille fait fuir de l\'EV sur chaque main — même quand la décision stratégique est correcte.'} />
+                ? 'A wrong bet size leaks EV on every hand — even when the strategic decision is right. It depends on your range, board texture, position and stack depth.'
+                : 'Une mauvaise taille fait fuir de l\'EV sur chaque main — même quand la décision est correcte. Elle dépend de votre range, la texture du board, votre position et les stacks.'} />
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               {[
-                { icon: '📦', label: isEn ? 'Small (25-33%)' : 'Petite (25-33%)',    desc: isEn ? 'Range bets, thin value, static boards' : 'Range bets, valeur fine, boards statiques' },
-                { icon: '⚖️', label: isEn ? 'Medium (50-60%)' : 'Médiane (50-60%)', desc: isEn ? 'Balance, value on dynamic boards' : 'Équilibre, valeur sur boards dynamiques' },
-                { icon: '🔥', label: isEn ? 'Large (75-100%)' : 'Grande (75-100%)',  desc: isEn ? 'Protection, polarized, draws present' : 'Protection, polarisation, tirages présents' },
-                { icon: '🚀', label: isEn ? 'Overbet (130%+)' : 'Surenchère (130%+)', desc: isEn ? 'Nuts on polarized runouts, bluffs' : 'Nuts sur runouts polarisés, bluffs' },
+                { icon: '📦', label: isEn ? 'Small (25-33%)' : 'Petite (25-33%)',    desc: isEn ? 'Range bets, thin value' : 'Range bets, valeur fine' },
+                { icon: '⚖️', label: isEn ? 'Medium (50-60%)' : 'Médiane (50-60%)', desc: isEn ? 'Balance, dynamic boards' : 'Équilibre, boards dynamiques' },
+                { icon: '🔥', label: isEn ? 'Large (75-100%)' : 'Grande (75-100%)',  desc: isEn ? 'Protection, polarized' : 'Protection, polarisation' },
+                { icon: '🚀', label: isEn ? 'Overbet (130%+)' : 'Surenchère (130%+)', desc: isEn ? 'Nuts, bluffs' : 'Nuts, bluffs' },
               ].map(s => (
-                <div key={s.label} className="bg-gray-800/50 rounded-lg px-2 py-1.5 border border-gray-700">
-                  <div className="text-base mb-0.5">{s.icon}</div>
-                  <div className="text-white font-bold text-xs">{s.label}</div>
-                  <div className="text-gray-500 text-[10px] mt-0.5 leading-tight">{s.desc}</div>
+                <div key={s.label} className="bg-gray-800/50 rounded-lg px-2 py-1 border border-gray-700 flex items-center gap-1.5">
+                  <span className="text-sm shrink-0">{s.icon}</span>
+                  <div className="min-w-0">
+                    <div className="text-white font-bold text-[11px] leading-tight">{s.label}</div>
+                    <div className="text-gray-500 text-[10px] leading-tight truncate">{s.desc}</div>
+                  </div>
                 </div>
               ))}
             </div>

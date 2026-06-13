@@ -36,6 +36,14 @@ interface TrainingState {
   currentPosition: Position | null;
   setCurrentPosition: (pos: Position | null) => void;
 
+  /** Set when the user revealed a hint ("spoil") on the current exercise: the
+   *  next recorded answer won't count toward the streak (and the streak was
+   *  already reset to 0 on reveal). One-shot — cleared after the next record. */
+  assistedPending: boolean;
+  /** Reveal-hint penalty: reset the current streak now and mark the pending
+   *  answer as assisted so it can't grow the streak. */
+  breakStreak: () => void;
+
   // Actions
   setModule: (module: TrainingModule) => void;
   startSession: (module: TrainingModule) => Promise<void>;
@@ -66,6 +74,8 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
   setTrainerStarted: (v) => set({ trainerStarted: v }),
   currentPosition: null,
   setCurrentPosition: (pos) => set({ currentPosition: pos }),
+  assistedPending: false,
+  breakStreak: () => set(s => ({ assistedPending: true, sessionStats: { ...s.sessionStats, streak: 0 } })),
   error: null,
   preflopExercise: null,
   potOddsExercise: null,
@@ -118,11 +128,12 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
 
     set({
       lastResult: exerciseResult,
+      assistedPending: false,
       sessionStats: {
         total: sessionStats.total + 1,
         correct: sessionStats.correct + (result.isCorrect ? 1 : 0),
         xp: sessionStats.xp + result.xpEarned,
-        streak: result.isCorrect ? sessionStats.streak + 1 : 0,
+        streak: get().assistedPending ? 0 : (result.isCorrect ? sessionStats.streak + 1 : 0),
       },
     });
 
@@ -165,11 +176,12 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
 
     set({
       lastResult: exerciseResult,
+      assistedPending: false,
       sessionStats: {
         total: sessionStats.total + 1,
         correct: sessionStats.correct + (result.isCorrect ? 1 : 0),
         xp: sessionStats.xp + result.xpEarned,
-        streak: result.isCorrect ? sessionStats.streak + 1 : 0,
+        streak: get().assistedPending ? 0 : (result.isCorrect ? sessionStats.streak + 1 : 0),
       },
     });
 
@@ -207,14 +219,15 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
   },
 
   recordResult: async (isCorrect, xpEarned, module, timeTaken = 0) => {
-    const { sessionStats, sessionId } = get();
+    const { sessionStats, sessionId, assistedPending } = get();
     // Update local session stats immediately
     set({
+      assistedPending: false,
       sessionStats: {
         total: sessionStats.total + 1,
         correct: sessionStats.correct + (isCorrect ? 1 : 0),
         xp: sessionStats.xp + xpEarned,
-        streak: isCorrect ? sessionStats.streak + 1 : 0,
+        streak: assistedPending ? 0 : (isCorrect ? sessionStats.streak + 1 : 0),
       },
     });
     // Persist to backend (fire-and-forget, non-blocking)
@@ -229,16 +242,17 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
 
   // Legacy shim — components that haven't been updated yet still use this
   recordLocalResult: (isCorrect) => {
-    const { sessionStats } = get();
+    const { sessionStats, assistedPending } = get();
     set({
+      assistedPending: false,
       sessionStats: {
         total: sessionStats.total + 1,
         correct: sessionStats.correct + (isCorrect ? 1 : 0),
         xp: sessionStats.xp + (isCorrect ? 15 : 5),
-        streak: isCorrect ? sessionStats.streak + 1 : 0,
+        streak: assistedPending ? 0 : (isCorrect ? sessionStats.streak + 1 : 0),
       },
     });
   },
 
-  resetSession: () => set({ sessionStats: emptyStats(), lastResult: null, sessionId: null, trainerStarted: false }),
+  resetSession: () => set({ sessionStats: emptyStats(), lastResult: null, sessionId: null, trainerStarted: false, assistedPending: false }),
 }));

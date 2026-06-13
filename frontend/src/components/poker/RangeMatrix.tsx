@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { RANKS_ORDER, getNotationFromIndices, actionBg, actionLabel, handToDisplay } from '../../utils/pokerUtils';
+import { HoverTip } from '../ui/HoverTip';
+
+interface LegendEntry {
+  color: string;
+  label: string;
+  /** Optional hover explanation for the term. */
+  tip?: { title: string; text: string };
+}
 
 interface RangeMatrixProps {
   matrix: number[][];
@@ -13,7 +21,7 @@ interface RangeMatrixProps {
   /** Custom cell background colour. Default: GTO frequency colouring via frequencyBg(). */
   cellColor?: (value: number) => string;
   /** Replaces the default legend row when provided */
-  legend?: { color: string; label: string }[];
+  legend?: LegendEntry[];
   /** Formats the tooltip value string. Receives the raw cell value. */
   tooltipValue?: (value: number) => string;
 }
@@ -116,10 +124,10 @@ export function RangeMatrix({
         <div className="flex gap-4 text-xs text-gray-400 justify-center flex-wrap">
           {(legend ?? [
             { color: 'rgba(22,130,60,0.85)', label: 'Raise' },
-            { color: 'rgba(37,99,235,0.80)', label: 'Call' },
+            { color: 'rgba(202,138,4,0.9)',  label: 'Call' },
             { color: '#1a202c',              label: 'Fold' },
           ]).map(item => (
-            <LegendItem key={item.label} color={item.color} label={item.label} />
+            <LegendItem key={item.label} color={item.color} label={item.label} tip={item.tip} />
           ))}
         </div>
       )}
@@ -127,11 +135,11 @@ export function RangeMatrix({
   );
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+function LegendItem({ color, label, tip }: LegendEntry) {
   return (
     <div className="flex items-center gap-1.5">
       <div className="w-4 h-4 rounded border border-black/30" style={{ backgroundColor: color }} />
-      <span>{label}</span>
+      {tip ? <HoverTip title={tip.title} text={tip.text}>{label}</HoverTip> : <span>{label}</span>}
     </div>
   );
 }

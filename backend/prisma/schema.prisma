@@ -12,7 +12,8 @@ model User {
   username  String   @unique
   email     String   @unique
   password  String
-  isPremium    Boolean  @default(false)
+  isPremium       Boolean  @default(false)
+  isPremiumExpert Boolean  @default(false)
   tutorialDone Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -24,8 +25,24 @@ model User {
   rangePresets    RangePreset[]
   rangeProfiles   RangeProfile[]
   freeUsage       FreeUsage[]
+  expertRanges    ExpertRange[]
 
   @@map("users")
+}
+
+// ── Expert multi-action range (premium-expert tier) ───────────────────────────
+// One row per (user, position). `mix` is a JSON-encoded flat 169×4 float array:
+// per hand cell [fold, call, raise3x, allin], each group summing to ~1.0.
+model ExpertRange {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  position  String
+  mix       String   // JSON: flat 169×4 floats (action-minor per cell)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, position])
+  @@map("expert_ranges")
 }
 
 // ── Daily free-exercise quota for non-premium users ───────────────────────────

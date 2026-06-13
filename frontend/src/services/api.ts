@@ -214,6 +214,16 @@ export const postflopApi = {
     api.get('/postflop/full-hand').then(r => r.data.data),
 };
 
+// Expert multi-action ranges (premium-expert tier). mix = flat 169×4 floats.
+export const expertRangesApi = {
+  get: (position: string) =>
+    api.get(`/expert-ranges/${position}`).then(r => r.data.data as number[] | null),
+  save: (position: string, mix: number[]) =>
+    api.put(`/expert-ranges/${position}`, { mix }).then(r => r.data),
+  delete: (position: string) =>
+    api.delete(`/expert-ranges/${position}`).then(r => r.data),
+};
+
 // Daily free-quota for non-premium users on premium modules
 export const quotaApi = {
   /** { isPremium, limit, modules: { postflop:{used,remaining,limit}, ... } | null } */

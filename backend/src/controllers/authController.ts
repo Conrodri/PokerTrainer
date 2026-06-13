@@ -37,11 +37,11 @@ export async function register(req: Request, res: Response): Promise<void> {
 
     await prisma.playerStats.create({ data: { userId: user.id } });
 
-    const token = jwt.sign({ userId: user.id, username: user.username, isPremium: user.isPremium } as JwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+    const token = jwt.sign({ userId: user.id, username: user.username, isPremium: user.isPremium, isPremiumExpert: user.isPremiumExpert } as JwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
 
     res.status(201).json({
       success: true,
-      data: { token, user: { id: user.id, username: user.username, email: user.email, isPremium: user.isPremium } },
+      data: { token, user: { id: user.id, username: user.username, email: user.email, isPremium: user.isPremium, isPremiumExpert: user.isPremiumExpert } },
     } as ApiResponse);
   } catch (error) {
     res.status(500).json({ success: false, error: 'Registration failed' } as ApiResponse);
@@ -69,11 +69,11 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const token = jwt.sign({ userId: user.id, username: user.username, isPremium: user.isPremium } as JwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+    const token = jwt.sign({ userId: user.id, username: user.username, isPremium: user.isPremium, isPremiumExpert: user.isPremiumExpert } as JwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
 
     res.json({
       success: true,
-      data: { token, user: { id: user.id, username: user.username, email: user.email, isPremium: user.isPremium } },
+      data: { token, user: { id: user.id, username: user.username, email: user.email, isPremium: user.isPremium, isPremiumExpert: user.isPremiumExpert } },
     } as ApiResponse);
   } catch (error) {
     res.status(500).json({ success: false, error: 'Login failed' } as ApiResponse);

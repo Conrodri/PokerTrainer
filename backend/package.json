@@ -4,13 +4,15 @@
   "description": "Poker Trainer API",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev:schema": "node scripts/gen-dev-schema.js",
+    "dev": "npm run dev:schema && prisma generate --schema=prisma/dev.prisma && ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
+    "db:push:dev": "npm run dev:schema && prisma db push --schema=prisma/dev.prisma",
     "db:migrate": "prisma migrate deploy",
-    "db:studio": "prisma studio",
+    "db:studio": "prisma studio --schema=prisma/dev.prisma",
     "db:seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {

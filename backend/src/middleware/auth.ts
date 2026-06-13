@@ -6,18 +6,35 @@ import { consume, isFreeModule, FreeModule } from '../services/quota';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change_me';
 
-/** Resolve whether the authenticated request belongs to a premium user. */
+/** Resolve whether the authenticated request belongs to a premium user.
+ *  The premium-expert tier implies premium access (OR-clause). */
 async function isRequestPremium(req: Request): Promise<boolean> {
-  if ((req as any).user?.isPremium === true) return true;
+  if ((req as any).user?.isPremium === true || (req as any).user?.isPremiumExpert === true) return true;
   const userId: string | undefined = (req as any).user?.userId;
   if (!userId) return false;
   try {
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { isPremium: true } });
-    if (user?.isPremium === true) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { isPremium: true, isPremiumExpert: true } });
+    if (user?.isPremium === true || user?.isPremiumExpert === true) {
       (req as any).user.isPremium = true;
+      if (user?.isPremiumExpert === true) (req as any).user.isPremiumExpert = true;
       return true;
     }
   } catch { /* fall through to non-premium */ }
+  return false;
+}
+
+/** Resolve whether the authenticated request belongs to a premium-expert user. */
+async function isRequestPremiumExpert(req: Request): Promise<boolean> {
+  if ((req as any).user?.isPremiumExpert === true) return true;
+  const userId: string | undefined = (req as any).user?.userId;
+  if (!userId) return false;
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { isPremiumExpert: true } });
+    if (user?.isPremiumExpert === true) {
+      (req as any).user.isPremiumExpert = true;
+      return true;
+    }
+  } catch { /* fall through */ }
   return false;
 }
 
@@ -39,27 +56,28 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
 }
 
 export async function requirePremium(req: Request, res: Response, next: NextFunction): Promise<void> {
-  // Fast path: JWT already says premium (common case after fresh login)
-  if ((req as any).user?.isPremium === true) {
-    next();
-    return;
-  }
-  // Slow path: re-check DB in case isPremium was updated after token was issued
-  const userId: string | undefined = (req as any).user?.userId;
-  if (!userId) {
-    res.status(403).json({ success: false, error: 'Premium subscription required' });
-    return;
-  }
+  // Premium OR premium-expert (expert implies premium) — see isRequestPremium.
   try {
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { isPremium: true } });
-    if (user?.isPremium === true) {
-      (req as any).user.isPremium = true; // update payload for downstream
+    if (await isRequestPremium(req)) {
       next();
     } else {
       res.status(403).json({ success: false, error: 'Premium subscription required' });
     }
   } catch {
     res.status(403).json({ success: false, error: 'Premium subscription required' });
+  }
+}
+
+/** Gate a route to premium-EXPERT tier users only. Must run after requireAuth. */
+export async function requirePremiumExpert(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (await isRequestPremiumExpert(req)) {
+      next();
+    } else {
+      res.status(403).json({ success: false, error: 'Premium Expert tier required' });
+    }
+  } catch {
+    res.status(403).json({ success: false, error: 'Premium Expert tier required' });
   }
 }
 

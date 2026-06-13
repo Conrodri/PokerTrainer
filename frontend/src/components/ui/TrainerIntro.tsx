@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
-import { GraduationCap, Play, Zap, Check, Crown, Lock, Gift } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { GraduationCap, Play, Zap, Check, Crown, Lock, Gift, Flame } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './Button';
 import { RichText } from './RichText';
 import { useLangStore } from '../../store/langStore';
-import { useModeStore } from '../../store/modeStore';
+import { useModeStore, TrainingMode } from '../../store/modeStore';
+import { useAuthStore } from '../../store/authStore';
 
 interface TrainerIntroProps {
   emoji: string;
@@ -15,9 +16,10 @@ interface TrainerIntroProps {
   steps: string[];          // already localized bullet items (emoji + text combined)
   beginnerHint: string;     // already localized
   advancedHint: string;     // already localized
+  expertHint?: string;      // already localized — optional 3rd (expert) hint
   startLabel: string;       // already localized
   onStart: () => void;
-  mode: 'beginner' | 'advanced';
+  mode: TrainingMode;
   /** When true, the module is a Premium preview: the intro is fully visible
    *  but the start button is replaced by a Premium upsell CTA. */
   locked?: boolean;
@@ -31,11 +33,13 @@ interface TrainerIntroProps {
 
 export function TrainerIntro({
   emoji, title, description, whatTitle, whatContent,
-  steps, beginnerHint, advancedHint, startLabel, onStart, mode,
+  steps, beginnerHint, advancedHint, expertHint, startLabel, onStart, mode,
   locked = false, lockedVariant = 'premium', freeInfo,
 }: TrainerIntroProps) {
   const isEn = useLangStore(s => s.lang) === 'en';
   const setMode = useModeStore(s => s.setMode);
+  const isExpert = !!useAuthStore(s => s.user?.isPremiumExpert);
+  const navigate = useNavigate();
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -98,7 +102,7 @@ export function TrainerIntro({
           <button
             type="button"
             onClick={() => setMode('beginner')}
-            className={`flex items-center gap-1.5 px-4 py-1 rounded-xl text-sm font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-sm font-bold transition-all ${
               mode === 'beginner' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -109,7 +113,7 @@ export function TrainerIntro({
           <button
             type="button"
             onClick={() => setMode('advanced')}
-            className={`flex items-center gap-1.5 px-4 py-1 rounded-xl text-sm font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-sm font-bold transition-all ${
               mode === 'advanced' ? 'bg-gold-600 text-gray-900 shadow' : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -117,9 +121,21 @@ export function TrainerIntro({
             {isEn ? 'Advanced' : 'Avancé'}
             {mode === 'advanced' && <Check size={13} />}
           </button>
+          <button
+            type="button"
+            onClick={() => (isExpert ? setMode('expert') : navigate('/premium'))}
+            title={isExpert ? undefined : (isEn ? 'Expert — premium tier' : 'Expert — offre premium')}
+            className={`flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-sm font-bold transition-all ${
+              mode === 'expert' ? 'bg-purple-600 text-white shadow' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            {isExpert ? <Flame size={15} /> : <Lock size={13} />}
+            Expert
+            {mode === 'expert' && <Check size={13} />}
+          </button>
         </div>
 
-        {/* Both modes explained — active one highlighted */}
+        {/* Modes explained — active one highlighted */}
         <div className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900/40 px-3 py-1.5 flex flex-col gap-1 text-[11px] leading-snug">
           <div className={`flex items-start gap-1.5 transition-opacity ${mode === 'beginner' ? 'opacity-100' : 'opacity-50'}`}>
             <GraduationCap size={12} className="text-blue-400 mt-0.5 shrink-0" />
@@ -133,6 +149,14 @@ export function TrainerIntro({
               <span className="font-bold text-gold-300">{isEn ? 'Advanced' : 'Avancé'}</span> — {advancedHint}
             </span>
           </div>
+          {expertHint && (
+            <div className={`flex items-start gap-1.5 transition-opacity ${mode === 'expert' ? 'opacity-100' : 'opacity-50'}`}>
+              <Flame size={12} className="text-purple-400 mt-0.5 shrink-0" />
+              <span className="text-gray-400">
+                <span className="font-bold text-purple-300">Expert</span> — {expertHint}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

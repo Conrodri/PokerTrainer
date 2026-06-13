@@ -20,6 +20,9 @@ backend/.env
 *.db-shm
 *.db-wal
 
+# ── Prisma local dev schema (auto-generated SQLite copy — never commit) ─────────
+backend/prisma/dev.prisma
+
 # ── Logs ───────────────────────────────────────────────────────────────────────
 logs/
 *.log

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type TrainingMode = 'beginner' | 'advanced';
+export type TrainingMode = 'beginner' | 'advanced' | 'expert';
 
 interface ModeState {
   mode: TrainingMode;
@@ -17,3 +17,13 @@ export const useModeStore = create<ModeState>()(
     { name: 'poker-mode' }
   )
 );
+
+// ── Mode helpers ──────────────────────────────────────────────────────────────
+// Keep the three-way logic in one place so trainers never branch on each mode.
+
+/** Hints + how-to guidance are shown outright (beginner only). */
+export const showHints = (mode: TrainingMode): boolean => mode === 'beginner';
+
+/** Hints exist but are hidden behind a "reveal" (spoil) button (advanced only).
+ *  Expert shows no hints at all. */
+export const hintsAvailable = (mode: TrainingMode): boolean => mode === 'advanced';

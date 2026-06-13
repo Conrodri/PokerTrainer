@@ -3,6 +3,53 @@ import { motion } from 'framer-motion';
 import { Save, RotateCcw } from 'lucide-react';
 import { RANKS_ORDER, getNotationFromIndices, frequencyBg, handToDisplay } from '../../utils/pokerUtils';
 import { Button } from '../ui/Button';
+import { HoverTip } from '../ui/HoverTip';
+import { useLangStore } from '../../store/langStore';
+
+// ── BB defense scheme: 5 categories keyed by cell code (0-4) ──────────────────
+// Matches the backend bbDefense.ts grid (0=fold,1=call,2=thin,3=value3bet,4=bluff3bet).
+const BB_CATEGORIES = [
+  { code: 0, color: '#1a202c',              labelFr: 'Fold',         labelEn: 'Fold' },
+  { code: 1, color: 'rgba(37,99,235,0.70)', labelFr: 'Call',         labelEn: 'Call' },
+  { code: 2, color: 'rgba(37,99,235,0.32)', labelFr: 'Call fin',     labelEn: 'Thin call' },
+  { code: 3, color: 'rgba(22,130,60,0.85)', labelFr: '3-bet valeur', labelEn: 'Value 3-bet' },
+  { code: 4, color: 'rgba(202,138,4,0.82)', labelFr: '3-bet bluff',  labelEn: 'Bluff 3-bet' },
+] as const;
+
+// Display + click-cycle order (by code): 3-bet bluff → 3-bet valeur → Call → Call fin → Fold.
+const BB_CYCLE = [4, 3, 1, 2, 0];
+
+const BB_TIPS: Record<number, { fr: string; en: string }> = {
+  0: { fr: 'Main trop faible pour défendre hors de position : on se couche.',
+       en: 'Too weak to defend out of position — fold.' },
+  1: { fr: 'Suivre la mise pour défendre ta blinde : main jouable, mais pas assez forte pour relancer.',
+       en: 'Call to defend your blind: playable, but not strong enough to 3-bet.' },
+  2: { fr: 'Call limite (marginal) : défense optionnelle grâce à ta bonne cote en BB ; se coucher reste acceptable.',
+       en: 'Borderline (marginal) call: optional defense thanks to your great BB price; folding is also acceptable.' },
+  3: { fr: 'Relancer (3-bet) une main forte pour gonfler le pot : tu domines la range d\'ouverture adverse.',
+       en: 'Re-raise (3-bet) a strong hand to build the pot: you dominate villain\'s opening range.' },
+  4: { fr: 'Relancer (3-bet) sans main faite, en semi-bluff : souvent avec un bloqueur (un As).',
+       en: 'Re-raise (3-bet) as a semi-bluff, often with a blocker (an ace).' },
+};
+
+/** Normalize any stored value to a valid BB category code (0-4). */
+const toCode = (v: number): number => Math.max(0, Math.min(4, Math.round(v || 0)));
+
+// Hover explanations for the editor's legend terms (custom opening range).
+const LEGEND_TIPS = {
+  raise: {
+    fr: 'Tu ouvres (relances) cette main à 100 % depuis cette position.',
+    en: 'You open-raise this hand 100% of the time from this position.',
+  },
+  call: {
+    fr: 'Fréquence mixte (~50 %) : tu n\'ouvres cette main qu\'une partie du temps. Clique encore pour cycler Fold → Raise → Call.',
+    en: 'Mixed frequency (~50%): you open this hand only part of the time. Click again to cycle Fold → Raise → Call.',
+  },
+  fold: {
+    fr: 'Tu n\'ouvres pas cette main : elle est couchée depuis cette position.',
+    en: 'You don\'t open this hand — fold from this position.',
+  },
+} as const;
 
 interface RangeEditorProps {
   matrix: number[][];
@@ -11,18 +58,28 @@ interface RangeEditorProps {
   onSave?: () => void;
   onReset?: () => void;
   isSaving?: boolean;
+  /** 'open' = Raise/Call/Fold frequencies (default); 'bb' = 5 defense categories (codes 0-4). */
+  scheme?: 'open' | 'bb';
 }
 
-export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSaving }: RangeEditorProps) {
+export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSaving, scheme = 'open' }: RangeEditorProps) {
   const [hovered, setHovered] = useState<string | null>(null);
+  const isEn = useLangStore(s => s.lang) === 'en';
+  const isBB = scheme === 'bb';
 
   const handleCellClick = (row: number, col: number) => {
     const next = matrix.map(r => [...r]);
-    // Cycle: Fold (0) → Raise (1) → Call (0.5) → Fold (0)
     const cur = next[row][col];
-    if      (cur <= 0)   next[row][col] = 1;
-    else if (cur >= 0.8) next[row][col] = 0.5;
-    else                 next[row][col] = 0;
+    if (isBB) {
+      // Cycle in legend order: 3-bet bluff → 3-bet valeur → Call → Call fin → Fold → …
+      const idx = BB_CYCLE.indexOf(toCode(cur));
+      next[row][col] = BB_CYCLE[(idx + 1) % BB_CYCLE.length];
+    } else {
+      // Cycle: Fold (0) → Raise (1) → Call (0.5) → Fold (0)
+      if      (cur <= 0)   next[row][col] = 1;
+      else if (cur >= 0.8) next[row][col] = 0.5;
+      else                 next[row][col] = 0;
+    }
     onChange(next);
   };
 
@@ -53,7 +110,7 @@ export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSav
               const notation = getNotationFromIndices(rowIdx, colIdx);
               const freq = matrix[rowIdx]?.[colIdx] ?? 0;
               const isHovered = notation === hovered;
-              const bg = frequencyBg(freq);
+              const bg = isBB ? BB_CATEGORIES[toCode(freq)].color : frequencyBg(freq);
 
               return (
                 <motion.div
@@ -91,6 +148,10 @@ export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSav
               const r = hovered.length === 2 ? RANKS_ORDER.indexOf(hovered[0]) : (hovered.endsWith('s') ? RANKS_ORDER.indexOf(hovered[0]) : RANKS_ORDER.indexOf(hovered[1]));
               const c = hovered.length === 2 ? RANKS_ORDER.indexOf(hovered[0]) : (hovered.endsWith('s') ? RANKS_ORDER.indexOf(hovered[1]) : RANKS_ORDER.indexOf(hovered[0]));
               const freq = matrix[r]?.[c] ?? 0;
+              if (isBB) {
+                const cat = BB_CATEGORIES[toCode(freq)];
+                return isEn ? cat.labelEn : cat.labelFr;
+              }
               return freq === 0 ? 'Fold' : freq >= 0.8 ? 'Raise' : 'Call';
             })()}
           </span>
@@ -99,9 +160,23 @@ export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSav
 
       {/* Legend */}
       <div className="flex gap-4 text-xs text-gray-400 justify-center flex-wrap">
-        <LegendItem color="rgba(22,130,60,0.85)"  label="Raise" />
-        <LegendItem color="rgba(200,150,20,0.75)" label="Call" />
-        <LegendItem color="#1a202c"               label="Fold" />
+        {isBB ? (
+          // Same order as the click cycle: 3-bet bluff → 3-bet valeur → Call → Call fin → Fold
+          BB_CYCLE.map(code => BB_CATEGORIES[code]).map(cat => (
+            <LegendItem
+              key={cat.code}
+              color={cat.color}
+              label={isEn ? cat.labelEn : cat.labelFr}
+              tip={{ title: isEn ? cat.labelEn : cat.labelFr, text: isEn ? BB_TIPS[cat.code].en : BB_TIPS[cat.code].fr }}
+            />
+          ))
+        ) : (
+          <>
+            <LegendItem color="rgba(22,130,60,0.85)"  label="Raise" tip={{ title: 'Raise', text: isEn ? LEGEND_TIPS.raise.en : LEGEND_TIPS.raise.fr }} />
+            <LegendItem color="rgba(200,150,20,0.75)" label="Call"  tip={{ title: 'Call',  text: isEn ? LEGEND_TIPS.call.en  : LEGEND_TIPS.call.fr  }} />
+            <LegendItem color="#1a202c"               label="Fold"  tip={{ title: 'Fold',  text: isEn ? LEGEND_TIPS.fold.en  : LEGEND_TIPS.fold.fr  }} />
+          </>
+        )}
       </div>
 
       {/* Action buttons */}
@@ -123,11 +198,11 @@ export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSav
   );
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+function LegendItem({ color, label, tip }: { color: string; label: string; tip?: { title: string; text: string } }) {
   return (
     <div className="flex items-center gap-1.5">
       <div className="w-4 h-4 rounded border border-black/30" style={{ backgroundColor: color }} />
-      <span>{label}</span>
+      {tip ? <HoverTip title={tip.title} text={tip.text}>{label}</HoverTip> : <span>{label}</span>}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, ChevronUp, RotateCcw, Info, Zap, Target, Sliders } from 'lucide-react';
+import { ChevronRight, ChevronDown, ChevronUp, RotateCcw, Info, Zap, Target, Sliders, Lightbulb } from 'lucide-react';
 import { rangesApi, profilesApi } from '../../services/api';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Position, ExerciseResult, BBDefenseExercise } from '../../types/poker';
@@ -10,12 +10,13 @@ import { PokerTable } from '../poker/PokerTable';
 import { Hand } from '../poker/Card';
 import { CardStr } from '../../types/poker';
 import { Button } from '../ui/Button';
-import { ProgressBar } from '../ui/ProgressBar';
 import { SessionStatsBar } from '../ui/SessionStatsBar';
 import { Spinner } from '../ui/Spinner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
 import { RichLine } from '../ui/RichText';
 import { BeginnerGuide } from '../ui/BeginnerGuide';
+import { SpoilableHint } from '../ui/SpoilableHint';
+import { handHint } from '../../utils/handHints';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { useModeStore } from '../../store/modeStore';
 import { VerdictBanner } from '../ui/VerdictBanner';
@@ -37,6 +38,29 @@ const BB_ACTION_PILL: Record<BBAction, string> = {
 const BB_ACTION_VARIANT: Record<BBAction, 'danger' | 'secondary' | 'gold'> = {
   fold: 'danger', call: 'secondary', '3bet': 'gold',
 };
+
+// Hand-specific coaching hint panel (revealed via SpoilableHint in advanced).
+function HandHintPanel({ notation, isEn }: { notation: string; isEn: boolean }) {
+  return (
+    <div className="w-full rounded-xl border border-amber-700/40 bg-amber-950/30 px-3 py-2 flex items-start gap-2 text-left">
+      <Lightbulb size={15} className="text-amber-400 mt-0.5 shrink-0" />
+      <div>
+        <span className="font-bold text-amber-300 text-xs">{handToDisplay(notation)}</span>
+        <span className="text-gray-300 text-xs"> — {handHint(notation, isEn)}</span>
+      </div>
+    </div>
+  );
+}
+
+// Cell code → colour for the GTO BB-defense grid.
+// Codes: 0=fold, 1=call, 2=thin call, 3=value 3-bet, 4=bluff 3-bet (see backend bbDefense.ts).
+const BB_CELL_COLOR = (code: number): string => ({
+  0: '#1a202c',
+  1: 'rgba(37,99,235,0.70)',
+  2: 'rgba(37,99,235,0.32)',
+  3: 'rgba(22,130,60,0.85)',
+  4: 'rgba(202,138,4,0.82)',
+} as Record<number, string>)[code] ?? '#1a202c';
 
 // ─── Shared range matrix collapsible section ──────────────────────────────────
 
@@ -103,11 +127,33 @@ function RangeSection({ matrix, highlightNotation, position, isCustom, resolvedL
             transition={{ duration: 0.2 }}
             className="overflow-hidden flex flex-col items-center gap-3 pt-2"
           >
-            <RangeMatrix
-              matrix={matrix}
-              highlightNotation={highlightNotation}
-              size="sm"
-            />
+            {position === 'BB' && !isCustom ? (
+              // GTO BB-defense grid uses action CODES (0-4), not raise frequencies,
+              // so it needs the BB-specific colouring/legend (call ≠ raise).
+              <RangeMatrix
+                matrix={matrix}
+                highlightNotation={highlightNotation}
+                size="sm"
+                cellColor={BB_CELL_COLOR}
+                legend={[
+                  { color: 'rgba(22,130,60,0.85)', label: t.training.bb_leg_value, tip: { title: t.training.bb_leg_value, text: t.training.bb_tip_value } },
+                  { color: 'rgba(202,138,4,0.82)', label: t.training.bb_leg_bluff, tip: { title: t.training.bb_leg_bluff, text: t.training.bb_tip_bluff } },
+                  { color: 'rgba(37,99,235,0.70)', label: t.training.bb_leg_call,  tip: { title: t.training.bb_leg_call,  text: t.training.bb_tip_call  } },
+                  { color: 'rgba(37,99,235,0.32)', label: t.training.bb_leg_thin,  tip: { title: t.training.bb_leg_thin,  text: t.training.bb_tip_thin  } },
+                  { color: '#1a202c',              label: t.training.bb_leg_fold,  tip: { title: t.training.bb_leg_fold,  text: t.training.bb_tip_fold  } },
+                ]}
+                tooltipValue={(code) => ({
+                  0: t.training.bb_leg_fold, 1: t.training.bb_leg_call,
+                  2: t.training.bb_leg_thin, 3: t.training.bb_leg_value, 4: t.training.bb_leg_bluff,
+                } as Record<number, string>)[code] ?? ''}
+              />
+            ) : (
+              <RangeMatrix
+                matrix={matrix}
+                highlightNotation={highlightNotation}
+                size="sm"
+              />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -142,6 +188,9 @@ export function PreflopTrainer() {
   const [isBBSession,  setIsBBSession]  = useState(false);
   const [bbExercise,   setBBExercise]   = useState<BBDefenseExercise | null>(null);
   const [bbSelected,   setBBSelected]   = useState<BBAction | null>(null);
+  // Advanced BB: 2-step 3-bet refinement (value vs bluff)
+  const [bb3betStep,   setBB3betStep]   = useState(false);
+  const [bb3betType,   setBB3betType]   = useState<'value' | 'bluff' | null>(null);
   const [bbIsLoading,  setBBIsLoading]  = useState(false);
 
   const startTime = useRef<number>(Date.now());
@@ -183,6 +232,8 @@ export function PreflopTrainer() {
     setRangeMatrix(null);
     setResolvedLabel(null);
     setBBSelected(null);
+    setBB3betStep(false);
+    setBB3betType(null);
     setShowRange(true);
     setHeroStack(Math.floor(Math.random() * 96) + 5);
   };
@@ -333,6 +384,33 @@ export function PreflopTrainer() {
       isMixed: bbExercise.isMixed,
     });
     await recordResult(isCorrect, xp, 'preflop', timeTaken);
+    setPhase('result');
+  };
+
+  // ─── handleBB3betType (advanced — step 2: value vs bluff) ─────────────────────
+  // The value/bluff classification is a GTO-knowledge question, judged against
+  // the model's `kind`. A 3-bet hand's kind is always value3bet or bluff3bet.
+
+  const handleBB3betType = async (type: 'value' | 'bluff') => {
+    if (!bbExercise) return;
+    const timeTaken = Date.now() - startTime.current;
+    setBB3betType(type);
+    const expectedKind = type === 'value' ? 'value3bet' : 'bluff3bet';
+    const isCorrect = bbExercise.kind === expectedKind;
+    const xp = isCorrect ? 20 : 5; // 2-step decision is worth a bit more
+    try {
+      const data = await trainingApi.getBBDefenseRange();
+      setRangeMatrix(data.grid);
+    } catch { /* ignore */ }
+    setLocalResult({
+      isCorrect,
+      correctAction: bbExercise.correctAction,
+      explanation: bbExercise.explanation,
+      xpEarned: xp,
+      isMixed: bbExercise.isMixed,
+    });
+    await recordResult(isCorrect, xp, 'preflop', timeTaken);
+    setBB3betStep(false);
     setPhase('result');
   };
 
@@ -578,6 +656,10 @@ export function PreflopTrainer() {
                       : `Tu es à la **grosse blinde (BB)** — tu as déjà mis 1 jeton au milieu sans voir tes cartes.\n**${bbExercise.opener}** a relancé à **${bbExercise.openSize}bb** avant toi. C'est ton tour avec **${handToDisplay(bbExercise.notation)}**.\nTu as 3 choix :\n🚫 **Fold** = tu abandonnes, tu perds seulement ta blinde.\n✅ **Call** = tu paies pour continuer et voir le flop.\n💰 **3-Bet** = tu re-relances pour montrer que ta main est forte.\nPose-toi la question : est-ce que ma main est assez forte pour continuer contre ${bbExercise.opener} ?`}
                   />
 
+                  <SpoilableHint resetKey={bbExercise.notation + bbExercise.opener} className="w-full max-w-md">
+                    <HandHintPanel notation={bbExercise.notation} isEn={isEn} />
+                  </SpoilableHint>
+
                   <div className="w-full max-w-xs sm:max-w-xl mx-auto">
                     <PokerTable
                       heroPosition="BB"
@@ -611,11 +693,43 @@ export function PreflopTrainer() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="flex gap-2 sm:gap-3 w-full sm:w-auto"
+                    className="flex flex-col items-center gap-2.5 w-full sm:w-auto"
                   >
-                    <Button size="xl" variant="danger"    onClick={() => handleAnswerBB('fold')}  className="flex-1 sm:flex-none sm:min-w-[110px]">Fold</Button>
-                    <Button size="xl" variant="secondary" onClick={() => handleAnswerBB('call')}  className="flex-1 sm:flex-none sm:min-w-[110px]">Call</Button>
-                    <Button size="xl" variant="gold"      onClick={() => handleAnswerBB('3bet')}  className="flex-1 sm:flex-none sm:min-w-[110px]">3-Bet</Button>
+                    {mode === 'advanced' && bb3betStep ? (
+                      /* Advanced step 2 — classify the 3-bet */
+                      <>
+                        <p className="text-sm text-gray-300 font-semibold text-center">
+                          {isEn ? 'This 3-bet — for value or as a bluff?' : 'Ce 3-bet — pour la valeur ou en bluff ?'}
+                        </p>
+                        <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
+                          <Button size="xl" variant="gold"      onClick={() => handleBB3betType('value')} className="flex-1 sm:flex-none sm:min-w-[130px]">{isEn ? '3-bet value' : '3-bet valeur'}</Button>
+                          <Button size="xl" variant="secondary" onClick={() => handleBB3betType('bluff')} className="flex-1 sm:flex-none sm:min-w-[130px]">{isEn ? '3-bet bluff' : '3-bet bluff'}</Button>
+                        </div>
+                        <button
+                          onClick={() => { setBB3betStep(false); setBBSelected(null); }}
+                          className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                        >
+                          {isEn ? '← Back' : '← Retour'}
+                        </button>
+                      </>
+                    ) : (
+                      /* Step 1 — action. Beginner labels the aggressive option "Raise". */
+                      <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
+                        <Button size="xl" variant="danger"    onClick={() => handleAnswerBB('fold')} className="flex-1 sm:flex-none sm:min-w-[110px]">Fold</Button>
+                        <Button size="xl" variant="secondary" onClick={() => handleAnswerBB('call')} className="flex-1 sm:flex-none sm:min-w-[110px]">Call</Button>
+                        <Button
+                          size="xl" variant="gold"
+                          onClick={() => {
+                            // Advanced (GTO mode) → ask value/bluff. Beginner or "Mes ranges" → score directly.
+                            if (mode === 'advanced' && !preflopEnabled) { setBBSelected('3bet'); setBB3betStep(true); }
+                            else handleAnswerBB('3bet');
+                          }}
+                          className="flex-1 sm:flex-none sm:min-w-[110px]"
+                        >
+                          {mode === 'beginner' ? 'Raise' : '3-Bet'}
+                        </Button>
+                      </div>
+                    )}
                   </motion.div>
                 </>
               )}
@@ -639,6 +753,10 @@ export function PreflopTrainer() {
                       ? `Nobody has played yet — it's your turn to open. You are sitting at **${preflopExercise.position}** and you got **${handToDisplay(preflopExercise.notation)}**.\nYou have 2 choices:\n💰 **Raise** = your hand is good enough, you bet to attack.\n🚫 **Fold** = your hand is too weak, you throw it away and wait for a better one.\n👉 Tip: the **earlier** you speak (UTG, HJ), the **stronger** your hand must be. The **later** you speak (CO, BTN), the **more** hands you can play.`
                       : `Personne n'a encore joué — c'est à toi d'ouvrir. Tu es assis en **${preflopExercise.position}** et tu as reçu **${handToDisplay(preflopExercise.notation)}**.\nTu as 2 choix :\n💰 **Raise** = ta main est assez bonne, tu mises pour attaquer.\n🚫 **Fold** = ta main est trop faible, tu la jettes et tu attends mieux.\n👉 Astuce : plus tu parles **tôt** (UTG, HJ), plus ta main doit être **forte**. Plus tu parles **tard** (CO, BTN), plus tu peux jouer de mains.`}
                   />
+
+                  <SpoilableHint resetKey={preflopExercise.notation + preflopExercise.position} className="w-full max-w-md">
+                    <HandHintPanel notation={preflopExercise.notation} isEn={isEn} />
+                  </SpoilableHint>
 
                   <div className="w-full max-w-xs sm:max-w-xl mx-auto">
                     <PokerTable
@@ -729,7 +847,12 @@ export function PreflopTrainer() {
               {/* Action pills */}
               <div className="flex gap-2 flex-wrap justify-center">
                 <span className={`px-3 py-1.5 rounded-full border text-xs font-bold ${BB_ACTION_PILL[bbExercise.correctAction]}`}>
-                  {isEn ? 'Recommended' : 'Recommandé'} : <strong>{bbExercise.correctAction}</strong>
+                  {isEn ? 'Recommended' : 'Recommandé'} : <strong>{
+                    bbExercise.kind === 'value3bet' ? (isEn ? '3-bet value' : '3-bet valeur')
+                      : bbExercise.kind === 'bluff3bet' ? '3-bet bluff'
+                      : bbExercise.kind === 'thincall'  ? (isEn ? 'thin call' : 'call fin')
+                      : bbExercise.correctAction
+                  }</strong>
                 </span>
                 {bbExercise.isMixed && bbExercise.altAction && bbExercise.altAction !== bbExercise.correctAction && (
                   <span className={`px-3 py-1.5 rounded-full border text-xs font-bold ${BB_ACTION_PILL[bbExercise.altAction]}`}>
@@ -738,7 +861,11 @@ export function PreflopTrainer() {
                 )}
                 {bbSelected && (
                   <span className={`px-3 py-1.5 rounded-full border text-xs font-bold ${localResult.isCorrect ? 'border-green-700 text-green-300 bg-green-900/20' : 'border-red-700 text-red-300 bg-red-900/20'}`}>
-                    {isEn ? 'Your action' : 'Ton action'} : <strong>{bbSelected}</strong>
+                    {isEn ? 'Your action' : 'Ton action'} : <strong>{
+                      bbSelected === '3bet' && bb3betType ? (bb3betType === 'value' ? (isEn ? '3-bet value' : '3-bet valeur') : '3-bet bluff')
+                        : bbSelected === '3bet' && mode === 'beginner' ? 'Raise'
+                        : bbSelected
+                    }</strong>
                   </span>
                 )}
               </div>
@@ -887,30 +1014,6 @@ export function PreflopTrainer() {
                 streak={sessionStats.streak}
                 xp={sessionStats.xp}
               />
-
-              {/* GTO Frequency — only for standard GTO results (not custom range) */}
-              {mode === 'beginner' && !localResult && result.frequency !== undefined && (
-                <div className="bg-gray-800/80 rounded-xl p-4 border border-gray-700 w-full max-w-sm">
-                  <p className="text-sm text-gray-400 mb-2 font-semibold">{t.training.gto_freq}</p>
-                  <ProgressBar
-                    value={(result.frequency ?? 0) * 100}
-                    color={(result.frequency ?? 0) >= 0.5 ? 'green' : 'red'}
-                    showValue
-                    label="Raise"
-                  />
-                  <p className="text-xs text-gray-500 mt-2">
-                    {t.training.gto_explain_a}{' '}
-                    <span className="text-gray-300 font-semibold">{Math.round((result.frequency ?? 0) * 100)}%</span>{' '}
-                    {t.training.gto_explain_b}
-                  </p>
-                  {result.isMixed && (
-                    <p className="text-xs text-yellow-400 mt-2 flex items-start gap-1">
-                      <Info size={12} className="shrink-0 mt-0.5" />
-                      {t.training.mixed_hint}
-                    </p>
-                  )}
-                </div>
-              )}
 
               {/* Explanation (beginner only) */}
               <ExplanationPanel text={result.explanation} plain />

@@ -67,11 +67,11 @@ export const CARD_STYLES: Record<CardStyle, CardStyleDef> = {
   },
   dark: {
     name: 'Dark', nameFr: 'Sombre',
-    cardBg:   'bg-gray-800',
-    faceDown: 'from-gray-800 to-slate-950 border-gray-600/80',
-    border:   'border-gray-600',
-    text: { h: 'text-red-400',  d: 'text-red-400',  c: 'text-gray-200', s: 'text-gray-200' },
-    hex:  { h: '#f87171',       d: '#f87171',        c: '#e5e7eb',       s: '#e5e7eb'       },
+    cardBg:   'bg-gray-700',
+    faceDown: 'from-gray-700 to-slate-900 border-gray-500/80',
+    border:   'border-gray-400/70',
+    text: { h: 'text-red-400',  d: 'text-red-400',  c: 'text-gray-50', s: 'text-gray-50' },
+    hex:  { h: '#f87171',       d: '#f87171',        c: '#f9fafb',      s: '#f9fafb'      },
   },
 };
 

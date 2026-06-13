@@ -6,6 +6,7 @@ import rangesRoutes from './ranges';
 import postflopRoutes from './postflop';
 import profilesRoutes from './profiles';
 import quotaRoutes from './quota';
+import expertRangesRoutes from './expertRanges';
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.use('/ranges', rangesRoutes);
 router.use('/postflop', postflopRoutes);
 router.use('/profiles', profilesRoutes);
 router.use('/quota', quotaRoutes);
+router.use('/expert-ranges', expertRangesRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

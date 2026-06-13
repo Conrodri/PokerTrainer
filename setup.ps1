@@ -24,7 +24,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "`n  Initialisation SQLite..." -ForegroundColor Cyan
-npx prisma db push
+npm run db:push:dev
 if ($LASTEXITCODE -ne 0) {
     Write-Host "  Erreur Prisma db push" -ForegroundColor Red
     exit 1

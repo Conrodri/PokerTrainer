@@ -82,17 +82,19 @@ function validateFiniteNumber(
   return value;
 }
 
-function validateCells(value: unknown, field: string): number[] {
+// `maxVal` is 1 for frequency ranges (open positions / profiles) and 4 for
+// simple ranges, whose BB position stores defense category codes (0-4).
+function validateCells(value: unknown, field: string, maxVal = 1): number[] {
   if (!Array.isArray(value))
     throw new Error(`${field}: expected an array`);
   if (value.length !== CELLS_COUNT)
     throw new Error(`${field}: expected exactly ${CELLS_COUNT} values, got ${value.length}`);
 
-  // Validate every cell in [0, 1] — no NaN, no Infinity
-  return value.map((v, i) => validateFiniteNumber(v, `${field}[${i}]`, 0, 1));
+  // Validate every cell in [0, maxVal] — no NaN, no Infinity
+  return value.map((v, i) => validateFiniteNumber(v, `${field}[${i}]`, 0, maxVal));
 }
 
-function validatePositionData(value: unknown, field: string): Record<string, number[]> {
+function validatePositionData(value: unknown, field: string, maxVal = 1): Record<string, number[]> {
   if (typeof value !== 'object' || value === null || Array.isArray(value))
     throw new Error(`${field}: expected a plain object`);
 
@@ -104,7 +106,7 @@ function validatePositionData(value: unknown, field: string): Record<string, num
   for (const [pos, cells] of Object.entries(obj)) {
     if (!VALID_POSITIONS.has(pos))
       throw new Error(`${field}: unknown position "${pos}" — allowed: ${[...VALID_POSITIONS].join(', ')}`);
-    result[pos] = validateCells(cells, `${field}.${pos}`);
+    result[pos] = validateCells(cells, `${field}.${pos}`, maxVal);
   }
 
   return result;
@@ -216,7 +218,7 @@ export function validateSimpleRangeImport(raw: unknown): ValidatedSimpleRange {
   if (obj.version !== 1)
     throw new Error(`version: only version 1 is supported (got ${String(obj.version)}).`);
 
-  const data = validatePositionData(obj.data, 'data');
+  const data = validatePositionData(obj.data, 'data', 4); // BB uses category codes 0-4
 
   if (Object.keys(data).length === 0)
     throw new Error('data: must contain at least one position.');

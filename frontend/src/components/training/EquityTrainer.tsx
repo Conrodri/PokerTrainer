@@ -59,8 +59,9 @@ export function EquityTrainer() {
     await fetchEquityExercise();
   };
 
+  // Beginner gets the simple explanation; advanced AND expert get the detailed one.
   const currentExplanation = equityExercise
-    ? (mode === 'advanced' ? equityExercise.explanationAdvanced : equityExercise.explanation)
+    ? (mode === 'beginner' ? equityExercise.explanation : equityExercise.explanationAdvanced)
     : '';
 
   if (showIntro) {

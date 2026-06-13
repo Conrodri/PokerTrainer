@@ -16,7 +16,7 @@ Set-Location "$PSScriptRoot\backend"
 if (-not (Test-Path "node_modules")) {
     Write-Host "  Installation backend..." -ForegroundColor Cyan
     npm install
-    npx prisma db push
+    npm run db:push:dev
 }
 
 Set-Location "$PSScriptRoot\frontend"

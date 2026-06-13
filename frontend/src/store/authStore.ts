@@ -6,6 +6,7 @@ interface User {
   username: string;
   email: string;
   isPremium?: boolean;
+  isPremiumExpert?: boolean;
   tutorialDone?: boolean;
 }
 

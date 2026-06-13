@@ -102,19 +102,21 @@ export function frequencyBg(freq: number): string {
 
 /**
  * Simplified 3-action colouring for range matrices: Raise / Call / Fold.
+ * Matches the backend's classification (ranges.ts: 1 = always play, a fraction
+ * = mixed, 0 = fold) so a "raise 75% of the time" hand reads as Call, not Raise.
  *  - freq === 0      → Fold  (dark)
- *  - 0 < freq < 0.5  → Call  (blue)
- *  - freq >= 0.5     → Raise (green)
+ *  - 0 < freq < 1    → Call  (yellow) — mixed: sometimes raise
+ *  - freq >= 1       → Raise (green)  — always raise
  */
 export function actionBg(freq: number): string {
-  if (freq === 0)   return '#1a202c';              // Fold
-  if (freq < 0.5)   return 'rgba(37,99,235,0.80)'; // Call
-  return 'rgba(22,130,60,0.85)';                   // Raise
+  if (freq <= 0) return '#1a202c';             // Fold
+  if (freq >= 1) return 'rgba(22,130,60,0.85)'; // Raise
+  return 'rgba(202,138,4,0.9)';                // Call (mixed)
 }
 
 /** Label for the simplified Raise / Call / Fold scheme. */
-export function actionLabel(freq: number, isEn = false): string {
-  if (freq === 0) return isEn ? 'Fold' : 'Fold';
-  if (freq < 0.5) return isEn ? 'Call' : 'Call';
-  return isEn ? 'Raise' : 'Raise';
+export function actionLabel(freq: number, _isEn = false): string {
+  if (freq <= 0) return 'Fold';
+  if (freq >= 1) return 'Raise';
+  return 'Call';
 }
