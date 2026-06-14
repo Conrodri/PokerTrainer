@@ -177,11 +177,7 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
   // Complex ranges (profiles) are an Expert-mode-only feature.
   const isExpertMode = useModeStore(s => s.mode) === 'expert';
   const { preflopEnabled, togglePreflopEnabled } = useCustomRangeStore();
-  const [tab, setTab] = useState<'profiles' | 'simple' | 'gto'>('simple');
-  const [gtoPos, setGtoPos] = useState<Position>(
-    defaultPosition && positions.includes(defaultPosition) ? defaultPosition : positions[0]
-  );
-
+  const [tab, setTab] = useState<'profiles' | 'simple'>('simple');
   // Read-only GTO reference matrix (BB = 5-category defense grid, others = open-raise).
   const renderGtoRef = (matrix: number[][] | null | undefined, position: string) => {
     if (!matrix) return null;
@@ -679,17 +675,6 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
           {isExpertMode ? <Layers size={13} /> : <Lock size={12} />}
           {isEn ? 'Complex ranges' : 'Ranges complexes'}
         </button>
-        <button
-          onClick={() => setTab('gto')}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-bold border transition-all ${
-            tab === 'gto'
-              ? 'bg-felt-800/60 text-felt-300 border-felt-600'
-              : 'text-gray-400 border-gray-700 hover:text-white hover:bg-gray-800'
-          }`}
-        >
-          <Target size={13} />
-          GTO
-        </button>
       </div>
 
       {/* ══ PROFILES TAB ══ */}
@@ -1022,15 +1007,28 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
               <div className="animate-spin h-8 w-8 border-2 border-felt-500 border-t-transparent rounded-full" />
             </div>
           ) : simpleMatrix ? (
-            <RangeEditor
-              matrix={simpleMatrix}
-              onChange={updateSimple}
-              position={simplePos}
-              scheme={simplePos === 'BB' ? 'bb' : 'open'}
-              onSave={handleSaveSimple}
-              onReset={() => { if (simpleGto) updateSimple(simpleGto.map(r => [...r])); }}
-              isSaving={savingS}
-            />
+            <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-8 xl:gap-12">
+              <RangeEditor
+                matrix={simpleMatrix}
+                onChange={updateSimple}
+                position={simplePos}
+                scheme={simplePos === 'BB' ? 'bb' : 'open'}
+                onSave={handleSaveSimple}
+                onReset={() => { if (simpleGto) updateSimple(simpleGto.map(r => [...r])); }}
+                isSaving={savingS}
+              />
+              {/* GTO reference on the right (same as in Complex ranges) */}
+              <div className="flex flex-col items-start gap-2 xl:shrink-0">
+                <p className="text-xs font-semibold text-felt-300 flex items-center gap-1.5">
+                  <Target size={13} className="shrink-0" />
+                  {isEn ? 'GTO reference' : 'Range GTO (référence)'}
+                  <span className="text-gray-600">— {simplePos}</span>
+                </p>
+                {simpleGto
+                  ? renderGtoRef(simpleGto, simplePos)
+                  : <p className="text-[11px] text-gray-600 py-8">{isEn ? 'Loading…' : 'Chargement…'}</p>}
+              </div>
+            </div>
           ) : (
             <p className="text-sm text-gray-500 text-center py-8">
               {isEn ? 'Could not load range.' : 'Impossible de charger la range.'}
@@ -1042,39 +1040,6 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
               {isEn ? 'Saved!' : 'Sauvegardé !'}
             </p>
           )}
-        </>
-      )}
-
-      {/* ══ GTO TAB — read-only reference range per position ══ */}
-      {tab === 'gto' && (
-        <>
-          <p className="text-xs text-gray-500 mb-3">
-            {isEn
-              ? 'The GTO reference range for each position (read-only). Open positions show raise/call/fold; BB shows the 5 defense categories.'
-              : 'La range GTO de référence pour chaque position (lecture seule). Les positions d\'ouverture affichent raise/call/fold ; la BB affiche les 5 catégories de défense.'}
-          </p>
-
-          {/* Position selector */}
-          <div className="flex gap-1.5 mb-3 flex-wrap">
-            {positions.map(pos => (
-              <button
-                key={pos}
-                onClick={() => setGtoPos(pos)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-all ${
-                  gtoPos === pos
-                    ? 'bg-felt-700 text-white border-felt-500'
-                    : 'text-gray-400 border-gray-700 hover:text-white hover:bg-gray-800'
-                }`}>{pos}</button>
-            ))}
-          </div>
-
-          {gtoCache[gtoPos]
-            ? <div className="flex justify-center">{renderGtoRef(gtoCache[gtoPos], gtoPos)}</div>
-            : (
-              <div className="h-32 flex items-center justify-center">
-                <div className="animate-spin h-8 w-8 border-2 border-felt-500 border-t-transparent rounded-full" />
-              </div>
-            )}
         </>
       )}
 
