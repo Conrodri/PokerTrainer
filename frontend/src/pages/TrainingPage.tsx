@@ -176,6 +176,7 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
   const isExpert = !!useAuthStore(s => s.user?.isPremiumExpert);
   // Complex ranges (profiles) are an Expert-mode-only feature.
   const isExpertMode = useModeStore(s => s.mode) === 'expert';
+  const { preflopEnabled, togglePreflopEnabled } = useCustomRangeStore();
   const [tab, setTab] = useState<'profiles' | 'simple' | 'gto'>('simple');
   const [gtoPos, setGtoPos] = useState<Position>(
     defaultPosition && positions.includes(defaultPosition) ? defaultPosition : positions[0]
@@ -359,7 +360,9 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
     (async () => {
       setLoadingP(true);
       try {
-        const data = await profilesApi.list();
+        let data = await profilesApi.list();
+        // Outside Expert mode, complex profiles can't be used → show none as active.
+        if (!isExpertMode) data = data.map(p => ({ ...p, isActive: false }));
         setProfiles(data);
         const activeProfile = data.find(p => p.isActive) ?? null;
         const sel = activeProfile ?? data[0] ?? null;
@@ -404,7 +407,10 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
     }
   }, [selRange, profilePos, profileGto, selProfile]);
 
-  // Profile handlers
+  // A custom range is "active" either via a profile or the simple ranges.
+  const simpleActive = preflopEnabled && !profiles.some(p => p.isActive);
+
+  // Profile handlers — activating a profile also turns custom ranges ON.
   const handleActivate = async () => {
     if (!selProfile) return;
     setActivating(true);
@@ -412,12 +418,27 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
       if (selProfile.isActive) {
         await profilesApi.deactivate();
         setProfiles(prev => prev.map(p => ({ ...p, isActive: false })));
+        if (preflopEnabled) togglePreflopEnabled();          // back to GTO
       } else {
         await profilesApi.activate(selProfile.id);
         setProfiles(prev => prev.map(p => ({ ...p, isActive: p.id === selProfile.id })));
+        if (!preflopEnabled) togglePreflopEnabled();         // use my ranges
       }
     } catch {}
     setActivating(false);
+  };
+
+  // Simple ranges activation — mirrors profile activation (mutually exclusive).
+  const handleActivateSimple = async () => {
+    if (simpleActive) {
+      if (preflopEnabled) togglePreflopEnabled();            // deactivate → GTO
+      return;
+    }
+    if (profiles.some(p => p.isActive)) {
+      try { await profilesApi.deactivate(); } catch {}
+      setProfiles(prev => prev.map(p => ({ ...p, isActive: false })));
+    }
+    if (!preflopEnabled) togglePreflopEnabled();
   };
 
   const handleCreateProfile = async (name: string, mode: 'standard' | 'expert' = 'standard') => {
@@ -647,15 +668,12 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
           {isEn ? 'Simple ranges' : 'Ranges simples'}
         </button>
         <button
-          onClick={() => isExpertMode && setTab('profiles')}
-          disabled={!isExpertMode}
-          title={isExpertMode ? undefined : (isEn ? 'Expert mode only' : 'Réservé au mode Expert')}
+          onClick={() => setTab('profiles')}
+          title={isExpertMode ? undefined : (isEn ? 'View only — usable in Expert mode' : 'Lecture seule — utilisable en mode Expert')}
           className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-bold border transition-all ${
-            !isExpertMode
-              ? 'text-gray-600 border-gray-800 cursor-not-allowed'
-              : tab === 'profiles'
-                ? 'bg-orange-900/30 text-orange-300 border-orange-700'
-                : 'text-gray-400 border-gray-700 hover:text-white hover:bg-gray-800'
+            tab === 'profiles'
+              ? 'bg-orange-900/30 text-orange-300 border-orange-700'
+              : 'text-gray-400 border-gray-700 hover:text-white hover:bg-gray-800'
           }`}
         >
           {isExpertMode ? <Layers size={13} /> : <Lock size={12} />}
@@ -683,6 +701,16 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
             </div>
           ) : (
             <>
+              {/* View-only notice outside Expert mode */}
+              {!isExpertMode && (
+                <div className="flex items-center gap-2 text-[11px] text-orange-300/90 bg-orange-900/20 border border-orange-800/50 rounded-lg px-3 py-2">
+                  <Lock size={12} className="shrink-0" />
+                  {isEn
+                    ? 'View only — switch to Expert mode to activate or edit complex ranges.'
+                    : 'Visualisation seule — passe en mode Expert pour activer ou éditer les ranges complexes.'}
+                </div>
+              )}
+
               {/* Profile list + add */}
               <div className="flex items-center justify-between">
                 <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">
@@ -693,6 +721,7 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                       : '— un seul actif à la fois, prioritaire sur la range simple'}
                   </span>
                 </p>
+                {isExpertMode && (
                 <div className="flex items-center gap-2 shrink-0">
                   {/* Import profile */}
                   <button
@@ -708,6 +737,7 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                     <Plus size={13} /> {isEn ? 'New' : 'Nouveau'}
                   </button>
                 </div>
+                )}
               </div>
 
               <AnimatePresence initial={false}>
@@ -738,7 +768,7 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                             setSelProfileId(p.id);
                             setSelRangeId(p.stackRanges[0]?.id ?? null);
                           }}
-                          onDoubleClick={() => { setRenamingId(p.id); setRenameVal(p.name); }}
+                          onDoubleClick={() => { if (isExpertMode) { setRenamingId(p.id); setRenameVal(p.name); } }}
                           className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-all flex items-center gap-1.5 ${
                             selProfileId === p.id
                               ? 'bg-felt-700 text-white border-felt-500'
@@ -750,7 +780,7 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                           {p.name}
                         </button>
                       )}
-                      {renamingId !== p.id && (
+                      {renamingId !== p.id && isExpertMode && (
                         <button onClick={() => handleDeleteProfile(p.id)}
                           className="absolute -top-1.5 -right-1.5 hidden group-hover:flex h-4 w-4 items-center justify-center bg-red-900/80 rounded-full text-red-300 hover:bg-red-700">
                           <X size={9} />
@@ -777,8 +807,9 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                       >
                         <Download size={12} /> {isEn ? 'Export' : 'Exporter'}
                       </button>
-                      <button onClick={handleActivate} disabled={activating}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                      <button onClick={handleActivate} disabled={activating || !isExpertMode}
+                        title={isExpertMode ? undefined : (isEn ? 'Expert mode required' : 'Mode Expert requis')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                           selProfile.isActive
                             ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-red-900/30 hover:text-red-300 hover:border-red-700'
                             : 'bg-gray-800 text-gray-300 border-gray-600 hover:bg-felt-900/30 hover:text-felt-300 hover:border-felt-700'
@@ -797,10 +828,12 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                     <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">
                       {isEn ? 'Stack ranges' : 'Paliers de stack'}
                     </p>
-                    <button onClick={() => setShowAddRange(v => !v)}
-                      className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors">
-                      <Plus size={13} /> {isEn ? 'Add range' : 'Ajouter'}
-                    </button>
+                    {isExpertMode && (
+                      <button onClick={() => setShowAddRange(v => !v)}
+                        className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors">
+                        <Plus size={13} /> {isEn ? 'Add range' : 'Ajouter'}
+                      </button>
+                    )}
                   </div>
 
                   <AnimatePresence initial={false}>
@@ -832,10 +865,12 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                               ({sr.stackMin}–{sr.stackMax ?? '∞'}bb)
                             </span>
                           </button>
+                          {isExpertMode && (
                           <button onClick={() => handleDeleteRange(sr.id)}
                             className="absolute -top-1.5 -right-1.5 hidden group-hover:flex h-4 w-4 items-center justify-center bg-red-900/80 rounded-full text-red-300 hover:bg-red-700">
                             <X size={9} />
                           </button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -859,9 +894,9 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                         profileExpertMix ? (
                           <ExpertRangeEditor
                             mix={profileExpertMix}
-                            onChange={setProfileExpertMix}
-                            onSave={handleSaveProfile}
-                            onReset={() => setProfileExpertMix(gtoToExpertMix(profileGto, profilePos === 'BB'))}
+                            onChange={isExpertMode ? setProfileExpertMix : () => {}}
+                            onSave={isExpertMode ? handleSaveProfile : undefined}
+                            onReset={isExpertMode ? () => setProfileExpertMix(gtoToExpertMix(profileGto, profilePos === 'BB')) : undefined}
                             resetLabel="Reset GTO"
                             isSaving={savingP}
                             title={`${isEn ? 'Your range' : 'Ta range'} — ${profilePos}`}
@@ -879,7 +914,8 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                                     : (() => {
                                       // Shade mixed (call) cells by frequency, and list each distinct
                                       // call frequency in the legend (e.g. "Call 75%", "Call 50%").
-                                      const callColor = (f: number) => `rgba(202,138,4,${(0.45 + f * 0.5).toFixed(2)})`;
+                                      // Blue = same as the expert "Call" action, for visual consistency.
+                                      const callColor = (f: number) => `rgba(37,99,235,${(0.45 + f * 0.5).toFixed(2)})`;
                                       const freqs = Array.from(new Set(profileGto.flat().filter(f => f > 0 && f < 1))).sort((a, b) => b - a);
                                       return (
                                         <RangeMatrix
@@ -907,11 +943,11 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                       ) : profileMatrix ? (
                         <RangeEditor
                           matrix={profileMatrix}
-                          onChange={setProfileMatrix}
+                          onChange={isExpertMode ? setProfileMatrix : () => {}}
                           position={profilePos}
                           scheme={profilePos === 'BB' ? 'bb' : 'open'}
-                          onSave={handleSaveProfile}
-                          onReset={() => { if (profileGto) setProfileMatrix(profileGto.map(r => [...r])); }}
+                          onSave={isExpertMode ? handleSaveProfile : undefined}
+                          onReset={isExpertMode ? () => { if (profileGto) setProfileMatrix(profileGto.map(r => [...r])); } : undefined}
                           isSaving={savingP}
                         />
                       ) : (
@@ -937,12 +973,19 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
       {/* ══ SIMPLE RANGE TAB ══ */}
       {tab === 'simple' && (
         <>
-          <div className="flex items-center justify-between mb-3 gap-2">
-            <p className="text-xs text-gray-500">
-              {isEn
-                ? 'Fallback range used when no profile is active.'
-                : 'Range de secours utilisée quand aucun profil n\'est actif.'}
-            </p>
+          <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+            <button onClick={handleActivateSimple}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                simpleActive
+                  ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-red-900/30 hover:text-red-300 hover:border-red-700'
+                  : 'bg-gray-800 text-gray-300 border-gray-600 hover:bg-felt-900/30 hover:text-felt-300 hover:border-felt-700'
+              }`}
+            >
+              {simpleActive
+                ? <><Check size={12} /> {isEn ? 'Active — click to deactivate' : 'Actives — cliquer pour désactiver'}</>
+                : <><Zap size={12} /> {isEn ? 'Use these ranges' : 'Activer ces ranges'}</>
+              }
+            </button>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={exportSimpleRanges}
@@ -1051,6 +1094,9 @@ export function TrainingPage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const { startSession, setModule, resetSession, isExercising, trainerStarted, currentPosition } = useTrainingStore();
+  // Beginner trains on GTO only → no custom-range toolbar.
+  const trainMode = useModeStore(s => s.mode);
+  const isBeginnerMode = trainMode === 'beginner';
   const [activeModule, setActiveModule] = useState<TrainingModule>(
     (searchParams.get('module') as TrainingModule) || 'preflop'
   );
@@ -1065,7 +1111,15 @@ export function TrainingPage() {
 
   const { preflopEnabled, togglePreflopEnabled } = useCustomRangeStore();
   const customEnabled = preflopEnabled;
-  const toggleCustom  = togglePreflopEnabled;
+
+  // Complex profiles are usable only in Expert mode → deactivate any active
+  // profile outside it. In Beginner, custom ranges are off entirely (GTO only).
+  useEffect(() => {
+    if (trainMode !== 'expert') profilesApi.deactivate().catch(() => {});
+    if (trainMode === 'beginner' && preflopEnabled) togglePreflopEnabled();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trainMode]);
+
 
   const isPremium = !!user?.isPremium;
   const isRangeModule = activeModule === 'preflop';
@@ -1135,8 +1189,8 @@ export function TrainingPage() {
       </div>
 
       {/* Range toolbar — preflop only, once the trainer has started (intro
-          dismissed). Available from the position-selection screen onward. */}
-      {isRangeModule && trainerStarted && (
+          dismissed). Hidden in beginner mode (GTO only). */}
+      {isRangeModule && trainerStarted && !isBeginnerMode && (
         <div className="flex items-center gap-2 -mt-2 flex-wrap">
 
           {isExercising && isPremium && (
@@ -1162,32 +1216,26 @@ export function TrainingPage() {
             {isEn ? 'My Ranges' : 'Mes Ranges'}
           </Button>
 
-          {/* ON/OFF toggle — premium only */}
+          {/* Status indicator (not clickable) — green = a profile or the simple range
+              is active, red = none active (GTO). Activation happens in the panel. */}
           {isPremium && (
-            <Button
-              variant="ghost" size="sm" disabled={isExercising}
-              onClick={() => { if (!isExercising) toggleCustom(); }}
-              className={`flex items-center gap-1.5 text-xs border transition-all ${
-                isExercising
-                  ? 'text-gray-600 border-gray-700 cursor-not-allowed opacity-40'
-                  : customEnabled
-                    ? 'text-purple-300 border-purple-600 bg-purple-900/20'
-                    : 'text-purple-400 border-purple-800/60 hover:bg-purple-900/20'
+            <span
+              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border ${
+                customEnabled
+                  ? 'text-green-300 border-green-700 bg-green-900/20'
+                  : 'text-red-300 border-red-700 bg-red-900/20'
               }`}
             >
-              <Sliders size={12} />
-              {customEnabled
-                ? (isEn ? 'My ranges: ON'  : 'Mes ranges : ON')
-                : (isEn ? 'My ranges: OFF' : 'Mes ranges : OFF')
-              }
-            </Button>
+              <span className={`w-2 h-2 rounded-full ${customEnabled ? 'bg-green-400' : 'bg-red-400'}`} />
+              {customEnabled ? (isEn ? 'Active' : 'Activé') : (isEn ? 'Inactive' : 'Désactivé')}
+            </span>
           )}
         </div>
       )}
 
       {/* My Ranges panel — visible to all, locked for non-premium */}
       <AnimatePresence>
-        {isRangeModule && trainerStarted && showMyRanges && (
+        {isRangeModule && trainerStarted && !isBeginnerMode && showMyRanges && (
           <MyRangesPanel
             onClose={() => setShowMyRanges(false)}
             positions={PREFLOP_POSITIONS}

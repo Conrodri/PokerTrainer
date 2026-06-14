@@ -45,6 +45,66 @@ function gtoExpertData(): Record<string, number[]> {
   return data;
 }
 
+// ─── Default starter profile ────────────────────────────────────────────────
+// Every user gets a ready-made expert profile with 3 stack tiers so the module
+// is understandable even without the expert tier (view-only outside Expert mode).
+// Aggression scales with stack depth: short = jam-heavy, deep = tighter + flats.
+
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/** Per-position base "play" frequency (0-1): open-raise freq, or BB defense (played=1). */
+function playGridFor(pos: Position): number[] {
+  if (pos === 'BB') return buildBBDefenseGrid().flat().map(c => (c > 0 ? 1 : 0));
+  return getRangeMatrix(pos).flat();
+}
+
+/** Turn a play-frequency grid into a 169×4 mix [fold,call,raise,allin] for a tier. */
+function tierMix(play: number[], tier: 'short' | 'mid' | 'deep'): number[] {
+  const out: number[] = [];
+  for (const p0 of play) {
+    const p = Math.max(0, Math.min(1, p0));
+    let call = 0, raise = 0, allin = 0;
+    if (tier === 'short') {                 // <20bb — aggressive, jam-heavy, slightly wider
+      const pl = Math.min(1, p * 1.2);
+      allin = pl * 0.55; raise = pl * 0.45;
+    } else if (tier === 'mid') {            // <50bb — raise-dominant, some flats & jams
+      raise = p * 0.80; call = p * 0.12; allin = p * 0.08;
+    } else {                                 // <100bb — safe: more flatting, no jam
+      raise = p * 0.60; call = p * 0.40;
+    }
+    call = r2(call); raise = r2(raise); allin = r2(allin);
+    out.push(r2(Math.max(0, 1 - call - raise - allin)), call, raise, allin);
+  }
+  return out;
+}
+
+function tierData(tier: 'short' | 'mid' | 'deep'): Record<string, number[]> {
+  const data: Record<string, number[]> = {};
+  for (const pos of ALL_POSITIONS) data[pos] = tierMix(playGridFor(pos), tier);
+  return data;
+}
+
+const DEFAULT_TIERS = [
+  { label: '<20',  stackMin: 0,  stackMax: 20,  tier: 'short' as const },
+  { label: '<50',  stackMin: 20, stackMax: 50,  tier: 'mid'   as const },
+  { label: '<100', stackMin: 50, stackMax: 100, tier: 'deep'  as const },
+];
+
+/** Create the default starter profile (+ 3 stack tiers) for a user. */
+async function seedDefaultProfile(userId: string): Promise<void> {
+  await prisma.rangeProfile.create({
+    data: {
+      userId, name: 'Profil type', mode: 'expert', sortOrder: 0,
+      stackRanges: {
+        create: DEFAULT_TIERS.map((t, i) => ({
+          label: t.label, stackMin: t.stackMin, stackMax: t.stackMax,
+          sortOrder: i, data: JSON.stringify(tierData(t.tier)),
+        })),
+      },
+    },
+  });
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function uid(req: Request): string {
@@ -78,11 +138,21 @@ function parseProfile(p: {
 // GET /profiles
 export async function listProfiles(req: Request, res: Response): Promise<void> {
   try {
-    const profiles = await prisma.rangeProfile.findMany({
-      where: { userId: uid(req) },
+    const userId = uid(req);
+    let profiles = await prisma.rangeProfile.findMany({
+      where: { userId },
       include: { stackRanges: true },
       orderBy: { sortOrder: 'asc' },
     });
+    // First-time users get a ready-made starter profile so the module is clear.
+    if (profiles.length === 0) {
+      try {
+        await seedDefaultProfile(userId);
+        profiles = await prisma.rangeProfile.findMany({
+          where: { userId }, include: { stackRanges: true }, orderBy: { sortOrder: 'asc' },
+        });
+      } catch { /* ignore seeding failure, return empty */ }
+    }
     res.json({ success: true, data: profiles.map(parseProfile) });
   } catch {
     res.status(500).json({ success: false, error: 'Failed to list profiles' });

@@ -12,6 +12,10 @@ export const EXPERT_ACTIONS = [
   { key: 3, labelFr: 'All-in',   labelEn: 'All-in',   color: 'rgba(190,45,45,0.9)',  accent: '#ff5252' },
 ] as const;
 
+// Display order (legends, bars, sliders, buttons): All-in → Raise → Call → Fold.
+// Keys are unchanged so the stored 169×4 layout (fold,call,raise,allin) is preserved.
+export const EXPERT_DISPLAY = [...EXPERT_ACTIONS].reverse();
+
 const NCELLS = 169;
 const STEP = 0.05;
 
@@ -137,7 +141,7 @@ export function ExpertRangeEditor({ mix, onChange, onSave, onReset, resetLabel, 
                 >
                   {/* Stacked 4-segment bar (proportional to the mix) */}
                   <div className="absolute inset-0 flex">
-                    {EXPERT_ACTIONS.map(a => {
+                    {EXPERT_DISPLAY.map(a => {
                       const w = (mix[idx * 4 + a.key] ?? 0) * 100;
                       return w > 0 ? <div key={a.key} style={{ width: `${w}%`, backgroundColor: a.color }} /> : null;
                     })}
@@ -154,7 +158,7 @@ export function ExpertRangeEditor({ mix, onChange, onSave, onReset, resetLabel, 
 
       {/* Legend */}
       <div className="flex gap-3 text-[11px] text-gray-400 justify-center flex-wrap">
-        {EXPERT_ACTIONS.map(a => (
+        {EXPERT_DISPLAY.map(a => (
           <div key={a.key} className="flex items-center gap-1.5">
             <div className="w-4 h-4 rounded border border-black/30" style={{ backgroundColor: a.color }} />
             <span>{isEn ? a.labelEn : a.labelFr}</span>
@@ -192,7 +196,7 @@ export function ExpertRangeEditor({ mix, onChange, onSave, onReset, resetLabel, 
               </div>
               <div />
 
-              {EXPERT_ACTIONS.map(a => {
+              {EXPERT_DISPLAY.map(a => {
                 const val = mix[idx * 4 + a.key] ?? 0;
                 return (
                   <Fragment key={a.key}>
@@ -294,7 +298,7 @@ export function ExpertRangeGrid({
                 >
                   {/* Stacked 4-segment bar (proportional to the mix) */}
                   <div className="absolute inset-0 flex">
-                    {EXPERT_ACTIONS.map(a => {
+                    {EXPERT_DISPLAY.map(a => {
                       const w = (mix[idx * 4 + a.key] ?? 0) * 100;
                       return w > 0 ? <div key={a.key} style={{ width: `${w}%`, backgroundColor: a.color }} /> : null;
                     })}
@@ -311,7 +315,7 @@ export function ExpertRangeGrid({
 
       {/* Legend — identical to the editor's */}
       <div className="flex gap-3 text-[11px] text-gray-400 justify-center flex-wrap">
-        {EXPERT_ACTIONS.map(a => (
+        {EXPERT_DISPLAY.map(a => (
           <div key={a.key} className="flex items-center gap-1.5">
             <div className="w-4 h-4 rounded border border-black/30" style={{ backgroundColor: a.color }} />
             <span>{isEn ? a.labelEn : a.labelFr}</span>

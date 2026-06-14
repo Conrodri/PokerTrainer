@@ -6,7 +6,7 @@ import { useTrainingStore } from '../../store/trainingStore';
 import { Position, ExerciseResult, BBDefenseExercise } from '../../types/poker';
 import { trainingApi } from '../../services/api';
 import { RangeMatrix } from '../poker/RangeMatrix';
-import { ExpertRangeGrid, EXPERT_ACTIONS } from '../poker/ExpertRangeEditor';
+import { ExpertRangeGrid, EXPERT_ACTIONS, EXPERT_DISPLAY } from '../poker/ExpertRangeEditor';
 import { PokerTable } from '../poker/PokerTable';
 import { Hand } from '../poker/Card';
 import { CardStr } from '../../types/poker';
@@ -102,7 +102,8 @@ function RangeSection({ matrix, mix, highlightNotation, position, isCustom, reso
                 {resolvedLabel ?? (isEn ? 'My range' : 'Ma range')}
               </span>
               <span className="text-purple-500">— {position}</span>
-              <span className="text-purple-600 font-normal text-xs">· {heroStack} bb</span>
+              {/* Stack only matters for stack-tiered profiles (resolvedLabel set). */}
+              {resolvedLabel && <span className="text-purple-600 font-normal text-xs">· {heroStack} bb</span>}
             </>
           ) : (
             <>
@@ -229,6 +230,8 @@ export function PreflopTrainer() {
   const [expertVerdict,    setExpertVerdict]    = useState<
     { action: number; userFreq: number; targetFreq: number; inRange: boolean; freqMatch: boolean } | null
   >(null);
+  /** BB custom range: the resolved 5-category code (0-4) for the quizzed hand. */
+  const [bbCustomCode,     setBbCustomCode]     = useState<number | null>(null);
   const [showRange,        setShowRange]        = useState(true);
   const [heroStack,        setHeroStack]        = useState<number>(() => Math.floor(Math.random() * 96) + 5);
   const [resolvedLabel,    setResolvedLabel]    = useState<string | null>(null);
@@ -322,6 +325,7 @@ export function PreflopTrainer() {
     setCustomMix(null);
     setExpertTarget(null);
     setExpertActionPick(null);
+    setBbCustomCode(null);
     setRangeMatrix(null);
     setResolvedLabel(null);
     setBBSelected(null);
@@ -368,7 +372,8 @@ export function PreflopTrainer() {
     const timeTaken = Date.now() - startTime.current;
     setOpenAnswer(action);
 
-    if (preflopEnabled) {
+    // Beginner = GTO only. Custom ranges apply from Advanced upward.
+    if (preflopEnabled && mode !== 'beginner') {
       let flat: number[] | null = null;
       let rangeLabel: string | undefined;
 
@@ -437,7 +442,7 @@ export function PreflopTrainer() {
 
     const actLabel = (k: number) => (isEn ? EXPERT_ACTIONS[k].labelEn : EXPERT_ACTIONS[k].labelFr);
     // Full mix breakdown, e.g. "Fold 67% · Raise 33%"
-    const mixStr = EXPERT_ACTIONS
+    const mixStr = EXPERT_DISPLAY
       .map(a => ({ a, p: Math.round((expertTarget[a.key] ?? 0) * 100) }))
       .filter(x => x.p > 0)
       .map(x => `${actLabel(x.a.key)} ${x.p}%`)
@@ -470,7 +475,8 @@ export function PreflopTrainer() {
     let resultExplanation = bbExercise.explanation;
     let resultIsMixed = bbExercise.isMixed;
 
-    if (preflopEnabled) {
+    // Beginner = GTO only. Custom ranges apply from Advanced upward.
+    if (preflopEnabled && mode !== 'beginner') {
       let flat: number[] | null = null;
       let label: string | null = null;
 
@@ -494,10 +500,12 @@ export function PreflopTrainer() {
         setCustomMatrix(grid);
         const [row, col] = getMatrixIndices(bbExercise.notation);
         const cellVal = grid[row]?.[col] ?? 0;
-        isCorrect = cellVal > 0 ? action !== 'fold' : action === 'fold';
-        // Verdict comes from YOUR range, not GTO → map the BB code to an action.
+        // Map your range's 5-category code to the answer group, score by group.
         const code = Math.round(cellVal);
-        resultAction = code === 0 ? 'fold' : code <= 2 ? 'call' : '3bet';
+        setBbCustomCode(code);
+        const expected: BBAction = code === 0 ? 'fold' : code <= 2 ? 'call' : '3bet';
+        isCorrect = action === expected;
+        resultAction = expected;
         resultExplanation = '';   // shown via colored pills + your range grid
         resultIsMixed = false;
       } else {
@@ -603,7 +611,7 @@ export function PreflopTrainer() {
   // stacked bar (same scheme as "Ta range") + the user's answer marked ✓/✗.
   const renderExpertMixBar = () => {
     if (!expertTarget || !expertVerdict || !result) return null;
-    const segs = EXPERT_ACTIONS
+    const segs = EXPERT_DISPLAY
       .map(a => ({ a, f: expertTarget[a.key] ?? 0 }))
       .filter(s => s.f > 0);
     const userAct = EXPERT_ACTIONS[expertVerdict.action];
@@ -662,7 +670,7 @@ export function PreflopTrainer() {
             {isEn ? 'What do you do with this hand?' : 'Que fais-tu avec cette main ?'}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-            {EXPERT_ACTIONS.map(a => (
+            {EXPERT_DISPLAY.map(a => (
               <button
                 key={a.key}
                 onClick={() => setExpertActionPick(a.key)}
@@ -912,7 +920,7 @@ export function PreflopTrainer() {
                       compact={true}
                       seatInfos={{
                         [bbExercise.opener]: { bet: `${bbExercise.openSize}bb` },
-                        ...(preflopEnabled ? { BB: { stack: `${heroStack} bb` } } : {}),
+                        ...(preflopEnabled && mode === 'expert' ? { BB: { stack: `${heroStack} bb` } } : {}),
                       } as any}
                     />
                   </div>
@@ -1010,7 +1018,7 @@ export function PreflopTrainer() {
                       heroCards={preflopExercise.hand as string[]}
                       boardCardSize="md"
                       compact={true}
-                      seatInfos={preflopEnabled
+                      seatInfos={preflopEnabled && mode === 'expert'
                         ? { [preflopExercise.position]: { stack: `${heroStack} bb` } } as any
                         : undefined}
                     />
@@ -1019,7 +1027,7 @@ export function PreflopTrainer() {
                   {/* Info block: hand + description in one visual unit */}
                   <div className="w-full max-w-xs sm:max-w-sm rounded-2xl border border-gray-700/60 bg-gray-900/50 px-5 py-4 flex flex-col items-center gap-2">
                     <Hand cards={preflopExercise.hand as CardStr[]} size="md" gap="gap-3" animate={false} />
-                    {preflopEnabled && (
+                    {preflopEnabled && mode === 'expert' && (
                       <span className="text-gold-400 text-xs font-semibold">{heroStack} bb</span>
                     )}
                     <div className="flex items-center gap-2 flex-wrap justify-center">
@@ -1099,11 +1107,15 @@ export function PreflopTrainer() {
               {!isExpertQuiz && (
                 (preflopEnabled && customMatrix) ? (
                   <div className="flex gap-2 flex-wrap justify-center">
-                    <span className={`px-3 py-1.5 rounded-full border text-xs font-bold ${BB_ACTION_PILL[localResult.correctAction as BBAction] ?? BB_ACTION_PILL.fold}`}>
-                      {isEn ? 'Your range' : 'Ta range'} : <strong>{
-                        localResult.correctAction === '3bet' ? (mode === 'beginner' ? 'Raise' : '3-Bet')
-                          : localResult.correctAction === 'call' ? 'Call' : 'Fold'
-                      }</strong>
+                    {/* Precise 5-category label from your range (3-bet valeur/bluff, Call, Call fin, Fold) */}
+                    <span
+                      className="px-3 py-1.5 rounded-full border border-black/30 text-xs font-bold text-white"
+                      style={{ backgroundColor: BB_CELL_COLOR(bbCustomCode ?? 0) }}
+                    >
+                      {isEn ? 'Your range' : 'Ta range'} : <strong>{({
+                        0: t.training.bb_leg_fold, 1: t.training.bb_leg_call,
+                        2: t.training.bb_leg_thin, 3: t.training.bb_leg_value, 4: t.training.bb_leg_bluff,
+                      } as Record<number, string>)[bbCustomCode ?? 0]}</strong>
                     </span>
                     {bbSelected && (
                       <span className={`px-3 py-1.5 rounded-full border text-xs font-bold ${localResult.isCorrect ? 'border-green-700 text-green-300 bg-green-900/20' : 'border-red-700 text-red-300 bg-red-900/20'}`}>
@@ -1150,7 +1162,7 @@ export function PreflopTrainer() {
                     heroCards={bbExercise.hand as string[]}
                     seatInfos={{
                       [bbExercise.opener]: { bet: `${bbExercise.openSize}bb` },
-                      BB: { stack: `${heroStack} bb` },
+                      ...(resolvedLabel ? { BB: { stack: `${heroStack} bb` } } : {}),
                     } as any}
                   />
                 </div>
@@ -1205,7 +1217,7 @@ export function PreflopTrainer() {
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-900/30 border border-purple-700/50 rounded-lg text-xs text-purple-300 w-full justify-center flex-wrap">
                   <Sliders size={12} />
                   <span>{isEn ? 'Evaluated against your custom range' : 'Évalué selon votre range personnalisée'}</span>
-                  <span className="text-purple-400 font-bold">· {heroStack} bb</span>
+                  {resolvedLabel && <span className="text-purple-400 font-bold">· {heroStack} bb</span>}
                 </div>
               )}
 
@@ -1256,7 +1268,7 @@ export function PreflopTrainer() {
                     heroPosition={preflopExercise.position}
                     compact
                     heroCards={preflopExercise.hand as string[]}
-                    seatInfos={preflopEnabled
+                    seatInfos={preflopEnabled && resolvedLabel
                       ? { [preflopExercise.position]: { stack: `${heroStack} bb` } } as any
                       : undefined}
                   />
@@ -1309,7 +1321,7 @@ export function PreflopTrainer() {
                   <span>
                     {isEn ? 'Evaluated against your custom range' : 'Évalué selon votre range personnalisée'}
                   </span>
-                  <span className="text-purple-400 font-bold">· {heroStack} bb</span>
+                  {resolvedLabel && <span className="text-purple-400 font-bold">· {heroStack} bb</span>}
                 </div>
               )}
 
