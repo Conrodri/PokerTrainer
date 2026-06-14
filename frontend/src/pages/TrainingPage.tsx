@@ -717,9 +717,9 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                       : '— un seul actif à la fois, prioritaire sur la range simple'}
                   </span>
                 </p>
-                {isExpertMode && (
+                {/* Import / New — profile management, available in any mode
+                    (activation & editing remain Expert-only). */}
                 <div className="flex items-center gap-2 shrink-0">
-                  {/* Import profile */}
                   <button
                     onClick={() => importProfileRef.current?.click()}
                     disabled={importing}
@@ -733,7 +733,6 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                     <Plus size={13} /> {isEn ? 'New' : 'Nouveau'}
                   </button>
                 </div>
-                )}
               </div>
 
               <AnimatePresence initial={false}>
@@ -764,7 +763,7 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                             setSelProfileId(p.id);
                             setSelRangeId(p.stackRanges[0]?.id ?? null);
                           }}
-                          onDoubleClick={() => { if (isExpertMode) { setRenamingId(p.id); setRenameVal(p.name); } }}
+                          onDoubleClick={() => { setRenamingId(p.id); setRenameVal(p.name); }}
                           className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-all flex items-center gap-1.5 ${
                             selProfileId === p.id
                               ? 'bg-felt-700 text-white border-felt-500'
@@ -776,7 +775,7 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                           {p.name}
                         </button>
                       )}
-                      {renamingId !== p.id && isExpertMode && (
+                      {renamingId !== p.id && (
                         <button onClick={() => handleDeleteProfile(p.id)}
                           className="absolute -top-1.5 -right-1.5 hidden group-hover:flex h-4 w-4 items-center justify-center bg-red-900/80 rounded-full text-red-300 hover:bg-red-700">
                           <X size={9} />
