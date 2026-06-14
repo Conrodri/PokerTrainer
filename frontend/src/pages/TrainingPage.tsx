@@ -717,8 +717,8 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                       : '— un seul actif à la fois, prioritaire sur la range simple'}
                   </span>
                 </p>
-                {/* Import / New — profile management, available in any mode
-                    (activation & editing remain Expert-only). */}
+                {/* Import is available in any mode (bring a range in to view).
+                    Creating/deleting/renaming/editing stay Expert-only. */}
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => importProfileRef.current?.click()}
@@ -728,10 +728,12 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                   >
                     <Upload size={12} /> {isEn ? 'Import' : 'Importer'}
                   </button>
-                  <button onClick={() => setShowAddProf(v => !v)}
-                    className="flex items-center gap-1 text-xs text-felt-400 hover:text-felt-300 transition-colors">
-                    <Plus size={13} /> {isEn ? 'New' : 'Nouveau'}
-                  </button>
+                  {isExpertMode && (
+                    <button onClick={() => setShowAddProf(v => !v)}
+                      className="flex items-center gap-1 text-xs text-felt-400 hover:text-felt-300 transition-colors">
+                      <Plus size={13} /> {isEn ? 'New' : 'Nouveau'}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -763,7 +765,7 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                             setSelProfileId(p.id);
                             setSelRangeId(p.stackRanges[0]?.id ?? null);
                           }}
-                          onDoubleClick={() => { setRenamingId(p.id); setRenameVal(p.name); }}
+                          onDoubleClick={() => { if (isExpertMode) { setRenamingId(p.id); setRenameVal(p.name); } }}
                           className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-all flex items-center gap-1.5 ${
                             selProfileId === p.id
                               ? 'bg-felt-700 text-white border-felt-500'
@@ -775,7 +777,7 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                           {p.name}
                         </button>
                       )}
-                      {renamingId !== p.id && (
+                      {renamingId !== p.id && isExpertMode && (
                         <button onClick={() => handleDeleteProfile(p.id)}
                           className="absolute -top-1.5 -right-1.5 hidden group-hover:flex h-4 w-4 items-center justify-center bg-red-900/80 rounded-full text-red-300 hover:bg-red-700">
                           <X size={9} />
