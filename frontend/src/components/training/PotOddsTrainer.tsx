@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Info, Calculator, TrendingUp, Target, Scale, GraduationCap } from 'lucide-react';
+import { ChevronRight, Info, Calculator, TrendingUp, Target, Scale, GraduationCap, Lightbulb } from 'lucide-react';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Button } from '../ui/Button';
 import { ProgressBar } from '../ui/ProgressBar';
@@ -11,6 +11,7 @@ import { Spinner } from '../ui/Spinner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
 import { BeginnerGuide } from '../ui/BeginnerGuide';
 import { SpoilableHint } from '../ui/SpoilableHint';
+import { potOddsHint } from '../../utils/coachHints';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { useModeStore } from '../../store/modeStore';
 import { Hand } from '../poker/Card';
@@ -185,6 +186,15 @@ export function PotOddsTrainer() {
                     behind a streak-breaking spoiler; expert hides them. */}
                 <SpoilableHint resetKey={`${ex.potSize}-${ex.betSize}-${ex.heroEquity}`} className="w-full">
                   <div className="flex flex-col gap-3 w-full">
+                    {/* Concrete coaching hint — this spot's numbers */}
+                    <div className="w-full rounded-xl border border-amber-700/40 bg-amber-950/30 px-4 py-3 flex items-start gap-2 text-left">
+                      <Lightbulb size={15} className="text-amber-400 mt-0.5 shrink-0" />
+                      <div className="text-xs text-gray-300 leading-relaxed">
+                        <p className="font-bold text-amber-300 mb-1">{isEn ? 'Hint' : 'Indice'}</p>
+                        <p>{potOddsHint(ex.potSize, ex.betSize, ex.heroEquity, isEn)}</p>
+                      </div>
+                    </div>
+
                     {/* Formula reminder */}
                     <div className="bg-blue-950/30 border border-blue-900/40 rounded-xl p-3 text-sm text-blue-300 cursor-pointer w-full" onClick={() => setShowFormula(v => !v)}>
                       <div className="flex items-center gap-2 font-semibold">

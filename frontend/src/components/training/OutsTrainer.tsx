@@ -9,6 +9,7 @@ import { VerdictBanner } from '../ui/VerdictBanner';
 import { Spinner } from '../ui/Spinner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
 import { BeginnerGuide } from '../ui/BeginnerGuide';
+import { SpoilableHint } from '../ui/SpoilableHint';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { useModeStore } from '../../store/modeStore';
 import { CardStr } from '../../types/poker';
@@ -199,13 +200,22 @@ export function OutsTrainer() {
                     : `Ta main n'est **pas encore terminée** — mais la prochaine carte pourrait la rendre forte (une couleur, une suite, une paire...).\nUn **out**, c'est une carte encore cachée dans le paquet qui améliorerait ta main.\n👉 Ton travail : regarde tes 2 cartes + le board, et **compte combien de cartes** peuvent t'aider. Puis choisis ce nombre ci-dessus.\n💡 Exemple : s'il te manque un cœur pour un tirage couleur et que tu vois déjà 4 cœurs, il reste 9 cœurs = **9 outs**.`}
                 />
 
-                {/* Quick tip — beginner only, below the decision */}
-                {mode === 'beginner' && (
-                  <div className="bg-felt-900/40 border border-felt-800/50 rounded-xl px-4 py-2.5 text-xs text-felt-200 flex items-start gap-2">
-                    <Lightbulb size={14} className="shrink-0 mt-0.5 text-gold-400" />
-                    <span>{t.training.outs_intro}</span>
+                {/* Indice — common-draw cheat sheet. Beginner shows it; advanced
+                    reveals behind a streak-breaking spoiler; expert hides it. */}
+                <SpoilableHint resetKey={`${ex.heroCards.join('')}-${ex.board.join('')}`} className="w-full">
+                  <div className="w-full rounded-xl border border-amber-700/40 bg-amber-950/30 px-4 py-3 flex items-start gap-2 text-left">
+                    <Lightbulb size={15} className="text-amber-400 mt-0.5 shrink-0" />
+                    <div className="text-xs text-gray-300 leading-relaxed">
+                      <p className="font-bold text-amber-300 mb-1">{isEn ? 'Common draws — count by type' : 'Tirages courants — compte par type'}</p>
+                      <p>• {isEn ? 'Flush draw (4 to a suit) = 9 outs' : 'Tirage couleur (4 à la même couleur) = 9 outs'}</p>
+                      <p>• {isEn ? 'Open-ended straight (4 in a row) = 8 outs' : 'Quinte ouverte (4 cartes qui se suivent) = 8 outs'}</p>
+                      <p>• {isEn ? 'Gutshot (a hole in the middle) = 4 outs' : 'Tirage par le ventre (un trou au milieu) = 4 outs'}</p>
+                      <p>• {isEn ? 'Two overcards = 6 outs' : 'Deux surcartes = 6 outs'}</p>
+                      <p>• {isEn ? 'Pocket pair → set = 2 outs' : 'Paire servie → brelan = 2 outs'}</p>
+                      <p className="text-amber-400/80 mt-1">⚠️ {isEn ? 'Never count the same card twice (e.g. flush + straight).' : 'Ne compte jamais deux fois la même carte (ex. couleur + quinte).'}</p>
+                    </div>
                   </div>
-                )}
+                </SpoilableHint>
               </>
             ) : null}
           </motion.div>

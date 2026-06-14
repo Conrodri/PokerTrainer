@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Info, Zap, Target } from 'lucide-react';
+import { ChevronRight, Info, Zap, Target, Lightbulb } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Hand } from '../poker/Card';
@@ -14,6 +14,7 @@ import { Spinner } from '../ui/Spinner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
 import { BeginnerGuide } from '../ui/BeginnerGuide';
 import { SpoilableHint } from '../ui/SpoilableHint';
+import { postflopHint } from '../../utils/coachHints';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { QuotaLockPanel } from '../ui/QuotaLockPanel';
 import { useAuthStore } from '../../store/authStore';
@@ -480,6 +481,14 @@ export function PostflopTrainer() {
                 reveals behind a streak-breaking spoiler; expert hides them. ── */}
             <SpoilableHint resetKey={ex.heroNotation + ex.street} className="w-full">
               <div className="flex flex-col gap-2 w-full">
+                {/* Concrete coaching hint — this spot's numbers */}
+                <div className="w-full rounded-xl border border-amber-700/40 bg-amber-950/30 px-4 py-3 flex items-start gap-2 text-left">
+                  <Lightbulb size={15} className="text-amber-400 mt-0.5 shrink-0" />
+                  <div className="text-xs text-gray-300 leading-relaxed">
+                    <p className="font-bold text-amber-300 mb-1">{isEn ? 'Hint' : 'Indice'}</p>
+                    <p>{postflopHint({ equity: ex.heroEquity, facingBet: ex.villainAction === 'bet', bet: ex.villainBetSize, pot: ex.potSize, isEn })}</p>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-gray-800/60 rounded-xl px-4 py-2.5 border border-gray-700 text-center">
                     <p className="text-gray-500 text-xs mb-0.5">{isEn ? 'Your hand' : 'Votre main'}</p>

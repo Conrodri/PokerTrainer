@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Info } from 'lucide-react';
+import { ChevronRight, Info, Lightbulb } from 'lucide-react';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Hand } from '../poker/Card';
 import { Button } from '../ui/Button';
@@ -11,6 +11,7 @@ import { Spinner } from '../ui/Spinner';
 import { ExplanationPanel } from '../ui/ExplanationPanel';
 import { RichLine } from '../ui/RichText';
 import { BeginnerGuide } from '../ui/BeginnerGuide';
+import { SpoilableHint } from '../ui/SpoilableHint';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { useModeStore } from '../../store/modeStore';
 import { handToDisplay } from '../../utils/pokerUtils';
@@ -214,6 +215,21 @@ export function EquityTrainer() {
                     ? `Two players show their cards. ${equityExercise.board.length > 0 ? 'Some shared cards (the board) are already on the table.' : 'No shared card yet — this is pre-flop.'}\n**Equity** = the chance a hand has to win if we go all the way to the end.\n👉 Your job: just guess **which of the two hands is more likely to win**. Tap on Hand 1 or Hand 2.\n💡 A bigger pair, two high cards, or cards that fit the board usually win more often.`
                     : `Deux joueurs montrent leurs cartes. ${equityExercise.board.length > 0 ? 'Des cartes communes (le board) sont déjà sur la table.' : 'Aucune carte commune encore — on est pré-flop.'}\nL'**équité** = la chance qu'a une main de gagner si on va jusqu'au bout.\n👉 Ton travail : devine simplement **quelle main a le plus de chances de gagner**. Clique sur Main 1 ou Main 2.\n💡 Une plus grosse paire, deux grosses cartes, ou des cartes qui collent au board gagnent plus souvent.`}
                 />
+
+                {/* Indice — beginner shows it; advanced reveals behind a
+                    streak-breaking spoiler; expert hides it. */}
+                <SpoilableHint resetKey={equityExercise.hand1Notation + equityExercise.hand2Notation} className="w-full">
+                  <div className="w-full rounded-xl border border-amber-700/40 bg-amber-950/30 px-4 py-3 flex items-start gap-2 text-left">
+                    <Lightbulb size={15} className="text-amber-400 mt-0.5 shrink-0" />
+                    <div className="text-xs text-gray-300 leading-relaxed">
+                      <p className="font-bold text-amber-300 mb-1">{isEn ? 'How to compare' : 'Comment comparer'}</p>
+                      <p>• {isEn ? 'A made hand (pair, trips…) beats a simple draw.' : 'Une main faite (paire, brelan…) bat un simple tirage.'}</p>
+                      <p>• {isEn ? 'Equal pairs → the bigger pair or better kicker wins.' : 'À paires égales → la plus grosse paire ou le meilleur kicker gagne.'}</p>
+                      <p>• {isEn ? 'More draws (flush, straight, overcards) = more equity.' : 'Plus de tirages (couleur, quinte, surcartes) = plus d\'équité.'}</p>
+                      <p>• {isEn ? 'Suited / connected cards add bonus equity.' : 'Cartes assorties / connectées = équité bonus.'}</p>
+                    </div>
+                  </div>
+                </SpoilableHint>
               </>
             ) : null}
           </motion.div>

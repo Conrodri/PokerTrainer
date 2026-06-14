@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Info, Zap, BookOpen, ExternalLink } from 'lucide-react';
+import { ChevronRight, Info, Zap, BookOpen, ExternalLink, Lightbulb } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Button } from '../ui/Button';
@@ -755,6 +755,16 @@ export function BetSizingTrainer() {
                 reveals behind a streak-breaking spoiler; expert hides them. ── */}
             <SpoilableHint resetKey={ex.id} className="w-full">
               <div className="flex flex-col gap-2 w-full">
+                {/* Concrete coaching hint — sizing logic for this spot */}
+                <div className="w-full rounded-xl border border-amber-700/40 bg-amber-950/30 px-4 py-3 flex items-start gap-2 text-left">
+                  <Lightbulb size={15} className="text-amber-400 mt-0.5 shrink-0" />
+                  <div className="text-xs text-gray-300 leading-relaxed">
+                    <p className="font-bold text-amber-300 mb-1">{isEn ? 'Hint' : 'Indice'}</p>
+                    <p>{isEn
+                      ? `Theme: ${ex.conceptTag.en}. Size to the board: dry/static boards → bet small (¼–⅓ pot, you can bet your whole range); wet boards with draws → bet big (⅔–pot) to charge them; a very strong hand on a dynamic board can overbet for max value. Position matters: you can go thinner in position.`
+                      : `Thème : ${ex.conceptTag.fr}. Adapte au board : board sec/statique → mise petit (¼–⅓ pot, tu peux miser toute ta range) ; board humide avec tirages → mise gros (⅔–pot) pour les faire payer ; une main très forte sur board dynamique peut surmiser (overbet) pour un max de valeur. La position compte : tu peux miser plus fin en position.`}</p>
+                  </div>
+                </div>
                 <div className="flex justify-center">
                   <div className={`px-3 py-1 rounded-full border text-xs font-bold ${CONCEPT_COLOR[isEn ? ex.conceptTag.en : ex.conceptTag.fr] ?? 'bg-gray-800 text-gray-400 border-gray-700'}`}>
                     {isEn ? ex.conceptTag.en : ex.conceptTag.fr}

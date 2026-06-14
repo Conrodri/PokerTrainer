@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronRight, ChevronDown, ChevronUp, Zap, Target,
-  Check, Lock, Trophy, Shuffle, Info,
+  Check, Lock, Trophy, Shuffle, Info, Lightbulb,
 } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useTrainingStore } from '../../store/trainingStore';
@@ -26,6 +26,8 @@ import { CardStr, Position } from '../../types/poker';
 import { postflopApi, trainingApi } from '../../services/api';
 import { RangeMatrix } from '../poker/RangeMatrix';
 import { handToDisplay } from '../../utils/pokerUtils';
+import { handHint } from '../../utils/handHints';
+import { postflopHint } from '../../utils/coachHints';
 import { useLangStore } from '../../store/langStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -582,6 +584,14 @@ export function FullHandTrainer() {
             {'preflop' in decision && (
               <SpoilableHint resetKey={phase} className="w-full">
                 <div className="flex flex-col gap-3 w-full">
+                {/* Concrete coaching hint — this hand */}
+                <div className="w-full rounded-xl border border-amber-700/40 bg-amber-950/30 px-4 py-3 flex items-start gap-2 text-left">
+                  <Lightbulb size={15} className="text-amber-400 mt-0.5 shrink-0" />
+                  <div className="text-xs text-gray-300 leading-relaxed">
+                    <p className="font-bold text-amber-300 mb-1">{isEn ? 'Hint' : 'Indice'}</p>
+                    <p>{handHint(scenario.heroNotation, isEn)}</p>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-3 w-full">
                   <div className="bg-gray-800/60 rounded-xl px-4 py-2.5 border border-gray-700 text-center">
                     <p className="text-gray-500 text-xs mb-0.5">
@@ -643,6 +653,15 @@ export function FullHandTrainer() {
 
             {'street' in decision && (
               <SpoilableHint resetKey={phase} className="w-full">
+              <div className="flex flex-col gap-3 w-full">
+              {/* Concrete coaching hint — this spot's numbers */}
+              <div className="w-full rounded-xl border border-amber-700/40 bg-amber-950/30 px-4 py-3 flex items-start gap-2 text-left">
+                <Lightbulb size={15} className="text-amber-400 mt-0.5 shrink-0" />
+                <div className="text-xs text-gray-300 leading-relaxed">
+                  <p className="font-bold text-amber-300 mb-1">{isEn ? 'Hint' : 'Indice'}</p>
+                  <p>{postflopHint({ equity: decision.street.heroEquity, facingBet: decision.street.villainAction === 'bet', bet: decision.street.villainBetSize, pot: decision.street.potSize, isEn })}</p>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3 w-full">
                 <div className="bg-gray-800/60 rounded-xl px-4 py-2.5 border border-gray-700 text-center">
                   <p className="text-gray-500 text-xs mb-0.5">{isEn ? 'Hand strength' : 'Force de main'}</p>
@@ -660,6 +679,7 @@ export function FullHandTrainer() {
                     {isEn ? decision.street.boardTexture.en : decision.street.boardTexture.fr}
                   </p>
                 </div>
+              </div>
               </div>
               </SpoilableHint>
             )}
