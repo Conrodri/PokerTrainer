@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
 import { useLangStore } from '../../store/langStore';
+import { useShallow } from 'zustand/react/shallow';
 
 export function LanguageToggle() {
-  const { lang, setLang } = useLangStore();
+  const { lang, setLang } = useLangStore(useShallow(s => ({ lang: s.lang, setLang: s.setLang })));
 
   return (
     <motion.button

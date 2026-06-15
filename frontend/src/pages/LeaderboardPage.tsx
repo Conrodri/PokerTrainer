@@ -107,7 +107,7 @@ export function LeaderboardPage() {
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const { user }  = useAuthStore();
+  const user = useAuthStore(s => s.user);
 
   useEffect(() => {
     if (!user) return;

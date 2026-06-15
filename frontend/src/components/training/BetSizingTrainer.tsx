@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Info, Zap, BookOpen, ExternalLink, Lightbulb } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useExerciseLock } from '../../hooks/useExerciseLock';
+import { useShallow } from 'zustand/react/shallow';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Button } from '../ui/Button';
 import { SessionStatsBar } from '../ui/SessionStatsBar';
@@ -474,7 +475,9 @@ export function BetSizingTrainer() {
   const lang     = useLangStore(s => s.lang);
   const isEn     = lang === 'en';
   const isMobile = useIsMobile();
-  const { sessionStats, recordResult, setTrainerStarted } = useTrainingStore();
+  const { sessionStats, recordResult, setTrainerStarted } = useTrainingStore(
+    useShallow(s => ({ sessionStats: s.sessionStats, recordResult: s.recordResult, setTrainerStarted: s.setTrainerStarted }))
+  );
   const mode     = useModeStore(s => s.mode);
 
   // Premium access / daily free-quota for non-premium users

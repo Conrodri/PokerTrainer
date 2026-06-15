@@ -19,8 +19,8 @@ interface TutorialProps {
 export function Tutorial({ onClose }: TutorialProps) {
   const t = useT();
   const [slide, setSlide] = useState(0);
-  const { lang } = useLangStore();
-  const { dismissTutorial } = useAuthStore();
+  const lang = useLangStore(s => s.lang);
+  const dismissTutorial = useAuthStore(s => s.dismissTutorial);
   const isEn = lang === 'en';
 
   const handleClose = () => {

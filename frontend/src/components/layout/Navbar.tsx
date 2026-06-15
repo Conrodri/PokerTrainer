@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 import {
   BarChart2, Trophy, BookOpen, Home, LogOut, Crown,
   ChevronDown, Lock, Menu, X, BookMarked, GraduationCap,
@@ -25,7 +26,7 @@ const MODULES = [
 
 export function Navbar() {
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const { user, logout } = useAuthStore(useShallow(s => ({ user: s.user, logout: s.logout })));
   const t      = useT();
   const isEn   = useLangStore(s => s.lang) === 'en';
 

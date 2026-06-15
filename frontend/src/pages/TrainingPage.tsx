@@ -6,6 +6,7 @@ import {
   Target, Flame,
 } from 'lucide-react';
 import { useTrainingStore } from '../store/trainingStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '../store/authStore';
 import { TrainingModule, Position } from '../types/poker';
 import { Spinner } from '../components/ui/Spinner';
@@ -180,7 +181,9 @@ function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
   const isExpert = !!useAuthStore(s => s.user?.isPremiumExpert);
   // Complex ranges (profiles) are an Expert-mode-only feature.
   const isExpertMode = useModeStore(s => s.mode) === 'expert';
-  const { preflopEnabled, togglePreflopEnabled } = useCustomRangeStore();
+  const { preflopEnabled, togglePreflopEnabled } = useCustomRangeStore(
+    useShallow(s => ({ preflopEnabled: s.preflopEnabled, togglePreflopEnabled: s.togglePreflopEnabled }))
+  );
   const [tab, setTab] = useState<'profiles' | 'simple'>('simple');
   // Read-only GTO reference matrix (BB = 5-category defense grid, others = open-raise).
   const renderGtoRef = (matrix: number[][] | null | undefined, position: string) => {
@@ -1108,10 +1111,12 @@ export function TrainingPage() {
   const t = useT();
   const lang = useLangStore(s => s.lang);
   const isEn = lang === 'en';
-  const { user } = useAuthStore();
+  const user = useAuthStore(s => s.user);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const { startSession, setModule, resetSession, isExercising, trainerStarted, currentPosition } = useTrainingStore();
+  const { startSession, setModule, resetSession, isExercising, trainerStarted, currentPosition } = useTrainingStore(
+    useShallow(s => ({ startSession: s.startSession, setModule: s.setModule, resetSession: s.resetSession, isExercising: s.isExercising, trainerStarted: s.trainerStarted, currentPosition: s.currentPosition }))
+  );
   // Beginner trains on GTO only → no custom-range toolbar.
   const trainMode = useModeStore(s => s.mode);
   const isBeginnerMode = trainMode === 'beginner';
@@ -1127,7 +1132,9 @@ export function TrainingPage() {
     }
   }, [isExercising]);
 
-  const { preflopEnabled, togglePreflopEnabled } = useCustomRangeStore();
+  const { preflopEnabled, togglePreflopEnabled } = useCustomRangeStore(
+    useShallow(s => ({ preflopEnabled: s.preflopEnabled, togglePreflopEnabled: s.togglePreflopEnabled }))
+  );
   const customEnabled = preflopEnabled;
 
   // Complex profiles are usable only in Expert mode → deactivate any active

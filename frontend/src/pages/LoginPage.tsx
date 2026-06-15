@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 import { Button } from '../components/ui/Button';
 import { OnboardingModal } from '../components/onboarding/OnboardingModal';
 import { isOnboardingDone } from '../components/onboarding/onboardingState';
@@ -12,7 +13,9 @@ type Mode = 'login' | 'register';
 export function LoginPage() {
   const t = useT();
   const navigate = useNavigate();
-  const { login, register, isLoading, error } = useAuthStore();
+  const { login, register, isLoading, error } = useAuthStore(
+    useShallow(s => ({ login: s.login, register: s.register, isLoading: s.isLoading, error: s.error }))
+  );
   const [mode, setMode] = useState<Mode>('login');
   const [form, setForm] = useState({ username: '', email: '', password: '' });
   const [showOnboarding, setShowOnboarding] = useState(false);

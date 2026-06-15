@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, ChevronUp, RotateCcw, Info, Zap, Target, Sliders, Lightbulb, Check, X } from 'lucide-react';
 import { rangesApi, profilesApi } from '../../services/api';
 import { useTrainingStore } from '../../store/trainingStore';
+import { useShallow } from 'zustand/react/shallow';
 import { Position, ExerciseResult, BBDefenseExercise } from '../../types/poker';
 import { trainingApi } from '../../services/api';
 import { RangeMatrix } from '../poker/RangeMatrix';
@@ -212,7 +213,11 @@ export function PreflopTrainer() {
     preflopExercise, lastResult, sessionStats, isLoading,
     fetchPreflopExercise, checkPreflopAnswer, recordResult,
     setIsExercising, setCurrentPosition, setTrainerStarted, setSelectingPosition,
-  } = useTrainingStore();
+  } = useTrainingStore(useShallow(s => ({
+    preflopExercise: s.preflopExercise, lastResult: s.lastResult, sessionStats: s.sessionStats, isLoading: s.isLoading,
+    fetchPreflopExercise: s.fetchPreflopExercise, checkPreflopAnswer: s.checkPreflopAnswer, recordResult: s.recordResult,
+    setIsExercising: s.setIsExercising, setCurrentPosition: s.setCurrentPosition, setTrainerStarted: s.setTrainerStarted, setSelectingPosition: s.setSelectingPosition,
+  })));
 
   const [showIntro,        setShowIntro]        = useState(true);
   const [phase,            setPhase]            = useState<Phase>('select_position');
@@ -256,7 +261,7 @@ export function PreflopTrainer() {
   // all-fold tier can never lock the trainer in an infinite skip loop.
   const foldSkipRef = useRef(0);
   const mode = useModeStore(s => s.mode);
-  const { preflopEnabled } = useCustomRangeStore();
+  const preflopEnabled = useCustomRangeStore(s => s.preflopEnabled);
 
   // ─── Sync phase/exercise → store ─────────────────────────────────────────────
   useEffect(() => {

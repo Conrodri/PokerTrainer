@@ -7,6 +7,7 @@ import {
   User, Shield, Settings, ZoomIn,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 import { authApi } from '../services/api';
 import {
   useThemeStore,
@@ -95,14 +96,17 @@ function CardStylePicker({
 
 export function ProfilePage() {
   const navigate    = useNavigate();
-  const { user, logout, deleteAccount } = useAuthStore();
-  const { lang, setLang } = useLangStore();
-  const { mode, setMode } = useModeStore();
-  const { zoom, setZoom } = useZoomStore();
+  const { user, logout, deleteAccount } = useAuthStore(useShallow(s => ({ user: s.user, logout: s.logout, deleteAccount: s.deleteAccount })));
+  const { lang, setLang } = useLangStore(useShallow(s => ({ lang: s.lang, setLang: s.setLang })));
+  const { mode, setMode } = useModeStore(useShallow(s => ({ mode: s.mode, setMode: s.setMode })));
+  const { zoom, setZoom } = useZoomStore(useShallow(s => ({ zoom: s.zoom, setZoom: s.setZoom })));
   const {
     bgTheme, tableColor, trainingCardStyle, displayCardStyle,
     setBgTheme, setTableColor, setTrainingCardStyle, setDisplayCardStyle,
-  } = useThemeStore();
+  } = useThemeStore(useShallow(s => ({
+    bgTheme: s.bgTheme, tableColor: s.tableColor, trainingCardStyle: s.trainingCardStyle, displayCardStyle: s.displayCardStyle,
+    setBgTheme: s.setBgTheme, setTableColor: s.setTableColor, setTrainingCardStyle: s.setTrainingCardStyle, setDisplayCardStyle: s.setDisplayCardStyle,
+  })));
 
   const isEn = lang === 'en';
 

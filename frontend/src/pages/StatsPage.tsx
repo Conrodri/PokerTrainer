@@ -417,7 +417,7 @@ function DayDetailPanel({ dateStr, dayData, moduleMap, isEn, onClose }: {
 export function StatsPage() {
   const t        = useT();
   const isEn     = useLangStore(s => s.lang) === 'en';
-  const { user } = useAuthStore();
+  const user = useAuthStore(s => s.user);
 
   const [stats,        setStats]        = useState<any>(null);
   const [history,      setHistory]      = useState<any>(null);

@@ -19,6 +19,7 @@ import { CardStr } from '../../types/poker';
 import { useT } from '../../i18n';
 import { useLangStore } from '../../store/langStore';
 import { useExerciseLock } from '../../hooks/useExerciseLock';
+import { useShallow } from 'zustand/react/shallow';
 
 type Phase = 'exercise' | 'result';
 
@@ -27,7 +28,9 @@ type Phase = 'exercise' | 'result';
 export function PotOddsTrainer() {
   const t = useT();
   const isEn = useLangStore(s => s.lang) === 'en';
-  const { potOddsExercise, lastResult, sessionStats, isLoading, fetchPotOddsExercise, checkPotOddsAnswer, setTrainerStarted } = useTrainingStore();
+  const { potOddsExercise, lastResult, sessionStats, isLoading, fetchPotOddsExercise, checkPotOddsAnswer, setTrainerStarted } = useTrainingStore(
+    useShallow(s => ({ potOddsExercise: s.potOddsExercise, lastResult: s.lastResult, sessionStats: s.sessionStats, isLoading: s.isLoading, fetchPotOddsExercise: s.fetchPotOddsExercise, checkPotOddsAnswer: s.checkPotOddsAnswer, setTrainerStarted: s.setTrainerStarted }))
+  );
   const [showIntro, setShowIntro] = useState(true);
   const [phase, setPhase] = useState<Phase>('exercise');
   const [showFormula, setShowFormula] = useState(false);

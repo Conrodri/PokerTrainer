@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Info, Zap, Target, Lightbulb } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useExerciseLock } from '../../hooks/useExerciseLock';
+import { useShallow } from 'zustand/react/shallow';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Hand } from '../poker/Card';
 import { Button } from '../ui/Button';
@@ -131,7 +132,9 @@ export function PostflopTrainer() {
   const lang     = useLangStore(s => s.lang);
   const isEn     = lang === 'en';
   const isMobile = useIsMobile();
-  const { sessionStats, recordResult, setTrainerStarted } = useTrainingStore();
+  const { sessionStats, recordResult, setTrainerStarted } = useTrainingStore(
+    useShallow(s => ({ sessionStats: s.sessionStats, recordResult: s.recordResult, setTrainerStarted: s.setTrainerStarted }))
+  );
 
   // Premium access / daily free-quota for non-premium users
   const user      = useAuthStore(s => s.user);

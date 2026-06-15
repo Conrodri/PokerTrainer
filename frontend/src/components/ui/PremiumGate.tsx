@@ -10,7 +10,7 @@ interface PremiumGateProps {
 }
 
 export function PremiumGate({ children, label }: PremiumGateProps) {
-  const { user } = useAuthStore();
+  const user = useAuthStore(s => s.user);
   const isEn = useLangStore(s => s.lang) === 'en';
 
   if (user?.isPremium) return <>{children}</>;

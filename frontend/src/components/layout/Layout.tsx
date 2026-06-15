@@ -1,9 +1,10 @@
 import { ReactNode, useEffect } from 'react';
 import { Navbar } from './Navbar';
 import { useThemeStore, BG_THEMES, TABLE_COLORS } from '../../store/themeStore';
+import { useShallow } from 'zustand/react/shallow';
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { bgTheme, tableColor } = useThemeStore();
+  const { bgTheme, tableColor } = useThemeStore(useShallow(s => ({ bgTheme: s.bgTheme, tableColor: s.tableColor })));
 
   // Sync CSS custom properties whenever theme changes
   useEffect(() => {

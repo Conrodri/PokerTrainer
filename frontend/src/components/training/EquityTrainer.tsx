@@ -18,6 +18,7 @@ import { handToDisplay } from '../../utils/pokerUtils';
 import { useT } from '../../i18n';
 import { useLangStore } from '../../store/langStore';
 import { useExerciseLock } from '../../hooks/useExerciseLock';
+import { useShallow } from 'zustand/react/shallow';
 
 type Phase = 'exercise' | 'result';
 
@@ -26,7 +27,9 @@ type Phase = 'exercise' | 'result';
 export function EquityTrainer() {
   const t = useT();
   const isEn = useLangStore(s => s.lang) === 'en';
-  const { equityExercise, isLoading, sessionStats, fetchEquityExercise, recordResult, setTrainerStarted } = useTrainingStore();
+  const { equityExercise, isLoading, sessionStats, fetchEquityExercise, recordResult, setTrainerStarted } = useTrainingStore(
+    useShallow(s => ({ equityExercise: s.equityExercise, isLoading: s.isLoading, sessionStats: s.sessionStats, fetchEquityExercise: s.fetchEquityExercise, recordResult: s.recordResult, setTrainerStarted: s.setTrainerStarted }))
+  );
 
   const [showIntro, setShowIntro] = useState(true);
   const [phase, setPhase] = useState<Phase>('exercise');

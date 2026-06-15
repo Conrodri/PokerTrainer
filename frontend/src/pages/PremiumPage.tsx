@@ -94,7 +94,7 @@ const PERKS = [
 // ─── PremiumPage ──────────────────────────────────────────────────────────────
 
 export function PremiumPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore(s => s.user);
   const isEn = useLangStore(s => s.lang) === 'en';
 
   const isPremium = user?.isPremium;

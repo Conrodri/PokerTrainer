@@ -17,6 +17,7 @@ import { RichLine } from '../ui/RichText';
 import { useT } from '../../i18n';
 import { useLangStore } from '../../store/langStore';
 import { useExerciseLock } from '../../hooks/useExerciseLock';
+import { useShallow } from 'zustand/react/shallow';
 
 type Phase = 'exercise' | 'result';
 
@@ -25,7 +26,9 @@ type Phase = 'exercise' | 'result';
 export function OutsTrainer() {
   const t = useT();
   const isEn = useLangStore(s => s.lang) === 'en';
-  const { outsExercise, isLoading, sessionStats, fetchOutsExercise, recordResult, setTrainerStarted } = useTrainingStore();
+  const { outsExercise, isLoading, sessionStats, fetchOutsExercise, recordResult, setTrainerStarted } = useTrainingStore(
+    useShallow(s => ({ outsExercise: s.outsExercise, isLoading: s.isLoading, sessionStats: s.sessionStats, fetchOutsExercise: s.fetchOutsExercise, recordResult: s.recordResult, setTrainerStarted: s.setTrainerStarted }))
+  );
 
   const [showIntro, setShowIntro] = useState(true);
   const [phase, setPhase] = useState<Phase>('exercise');

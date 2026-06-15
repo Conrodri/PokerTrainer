@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { GraduationCap, Zap, Flame, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useModeStore, TrainingMode } from '../../store/modeStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useLangStore } from '../../store/langStore';
 import { useAuthStore } from '../../store/authStore';
 import { useTrainingStore } from '../../store/trainingStore';
@@ -12,7 +13,7 @@ import { useTrainingStore } from '../../store/trainingStore';
  * locked click routes to /premium instead of switching mode.
  */
 export function ModeToggle() {
-  const { mode, setMode } = useModeStore();
+  const { mode, setMode } = useModeStore(useShallow(s => ({ mode: s.mode, setMode: s.setMode })));
   const isEn = useLangStore(s => s.lang) === 'en';
   const isExpert = !!useAuthStore(s => s.user?.isPremiumExpert);
   // Lock the toggle while a question is on screen — no mid-exercise mode switching.

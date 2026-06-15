@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useExerciseLock } from '../../hooks/useExerciseLock';
+import { useShallow } from 'zustand/react/shallow';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Hand } from '../poker/Card';
 import { Button } from '../ui/Button';
@@ -206,7 +207,9 @@ export function FullHandTrainer() {
   const lang     = useLangStore(s => s.lang);
   const isEn     = lang === 'en';
   const isMobile = useIsMobile();
-  const { sessionStats, recordResult, setTrainerStarted } = useTrainingStore();
+  const { sessionStats, recordResult, setTrainerStarted } = useTrainingStore(
+    useShallow(s => ({ sessionStats: s.sessionStats, recordResult: s.recordResult, setTrainerStarted: s.setTrainerStarted }))
+  );
 
   // Premium access / daily free-quota for non-premium users
   const user      = useAuthStore(s => s.user);

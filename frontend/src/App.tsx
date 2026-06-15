@@ -24,8 +24,8 @@ const GlossaryPage = lazy(() => import('./pages/GlossaryPage').then(m => ({ defa
 const PremiumPage = lazy(() => import('./pages/PremiumPage').then(m => ({ default: m.PremiumPage })));
 
 export default function App() {
-  const { fetchMe } = useAuthStore();
-  const { startSession } = useTrainingStore();
+  const fetchMe = useAuthStore(s => s.fetchMe);
+  const startSession = useTrainingStore(s => s.startSession);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
