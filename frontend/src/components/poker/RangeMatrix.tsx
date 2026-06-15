@@ -32,10 +32,13 @@ interface RangeMatrixProps {
   crisp?: boolean;
 }
 
+// Cells shrink on mobile so the 13×13 grid fits a phone width, then scale up
+// from the `sm` breakpoint. The grid stays inside an overflow-auto wrapper as a
+// safety net on very narrow screens.
 const cellSizes = {
-  sm: 'w-7 h-7 text-[8px]',
-  md: 'w-8 h-8 text-[9px]',
-  lg: 'w-10 h-10 text-xs',
+  sm: 'w-6 h-6 text-[7px] sm:w-7 sm:h-7 sm:text-[8px]',
+  md: 'w-6 h-6 text-[7px] sm:w-8 sm:h-8 sm:text-[9px]',
+  lg: 'w-6 h-6 text-[8px] sm:w-10 sm:h-10 sm:text-xs',
 };
 
 export function RangeMatrix({

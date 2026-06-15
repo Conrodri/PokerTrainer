@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, Calculator, BarChart2, Layers, ArrowRight, Star } from 'lucide-react';
+import { Calculator, BarChart2, Layers, ArrowRight, Star } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useT } from '../i18n';
 
@@ -107,36 +107,36 @@ export function HomePage() {
   ];
 
   return (
-    <div className="flex flex-col gap-16">
+    <div className="flex flex-col gap-8">
       {/* Hero */}
       <motion.section
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center pt-8"
+        className="text-center pt-2"
       >
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
-          className="text-8xl mb-6"
+          className="text-6xl mb-2"
         >
           🃏
         </motion.div>
-        <h1 className="text-5xl font-bold mb-4 font-serif">
+        <h1 className="text-4xl font-bold mb-2 font-serif">
           <span className="text-gold-400">Poker</span>
           <span className="text-white">Trainer</span>
         </h1>
-        <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-8 leading-relaxed">
+        <p className="text-base text-gray-300 max-w-2xl mx-auto mb-4 leading-relaxed">
           {t.home.subtitle}
         </p>
-        <div className="flex gap-4 justify-center flex-wrap">
+        <div className="flex gap-3 justify-center flex-wrap">
           <Link to="/training?module=preflop">
-            <Button size="xl" variant="gold">
+            <Button size="lg" variant="gold">
               {t.home.start_btn} <ArrowRight size={20} className="inline ml-1" />
             </Button>
           </Link>
           <Link to="/stats">
-            <Button size="xl" variant="ghost">
+            <Button size="lg" variant="ghost">
               {t.home.stats_btn}
             </Button>
           </Link>
@@ -145,8 +145,8 @@ export function HomePage() {
 
       {/* Free modules */}
       <section>
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">{t.home.modules_title}</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+        <h2 className="text-2xl font-bold text-white mb-3 text-center">{t.home.modules_title}</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {FREE_MODULES.map((module, i) => (
             <motion.div
               key={module.id}
@@ -155,7 +155,7 @@ export function HomePage() {
               transition={{ delay: 0.1 + i * 0.08 }}
             >
               <Link to={module.href} className="block group h-full">
-                <div className={`bg-gradient-to-br ${module.color} border rounded-2xl p-6 h-full transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-2xl`}>
+                <div className={`bg-gradient-to-br ${module.color} border rounded-2xl p-4 h-full transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-2xl`}>
                   <FreeModuleCard module={module} startArrow={t.home.start_arrow} />
                 </div>
               </Link>
@@ -166,7 +166,7 @@ export function HomePage() {
 
       {/* Premium modules */}
       <section>
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <div className="flex-1 h-px bg-gold-700/30" />
           <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-900/30 border border-gold-700/50">
             <span className="text-lg leading-none">👑</span>
@@ -177,7 +177,7 @@ export function HomePage() {
           <div className="flex-1 h-px bg-gold-700/30" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {PREMIUM_MODULES.map((module, i) => (
             <motion.div
               key={module.id}
@@ -186,7 +186,7 @@ export function HomePage() {
               transition={{ delay: 0.35 + i * 0.08 }}
             >
               {module.comingSoon ? (
-                <div className="relative bg-gradient-to-br from-gold-900/10 to-gray-900/80 border border-gold-700/30 rounded-2xl p-6 h-full opacity-70 cursor-default">
+                <div className="relative bg-gradient-to-br from-gold-900/10 to-gray-900/80 border border-gold-700/30 rounded-2xl p-4 h-full opacity-70 cursor-default">
                   <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
                     <div className="flex items-center gap-1 bg-gold-900/70 border border-gold-700/60 text-gold-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
                       👑 {t.home.badge_premium}
@@ -199,7 +199,7 @@ export function HomePage() {
                 </div>
               ) : (
                 <Link to={module.href} className="block group h-full">
-                  <div className="relative bg-gradient-to-br from-gold-900/20 to-gray-900/80 border border-gold-700/50 rounded-2xl p-6 h-full transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:border-gold-600">
+                  <div className="relative bg-gradient-to-br from-gold-900/20 to-gray-900/80 border border-gold-700/50 rounded-2xl p-4 h-full transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:border-gold-600">
                     <div className="absolute top-3 right-3 flex items-center gap-1 bg-gold-900/70 border border-gold-700/60 text-gold-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
                       👑 {t.home.badge_premium}
                     </div>
@@ -217,9 +217,9 @@ export function HomePage() {
       </section>
 
       {/* Features */}
-      <section className="bg-gray-900/40 rounded-2xl p-8 border border-gray-800">
-        <h2 className="text-xl font-bold text-white mb-6">{t.home.features_title}</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <section className="bg-gray-900/40 rounded-2xl p-5 border border-gray-800">
+        <h2 className="text-lg font-bold text-white mb-4">{t.home.features_title}</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((f, i) => (
             <motion.div
               key={i}
@@ -234,17 +234,6 @@ export function HomePage() {
           ))}
         </div>
       </section>
-
-      {/* CTA */}
-      <section className="text-center pb-8">
-        <p className="text-gray-400 mb-4">{t.home.no_account}</p>
-        <Link to="/training?module=preflop">
-          <Button size="lg" variant="primary">
-            <BookOpen size={18} className="inline mr-2" />
-            {t.home.launch_preflop}
-          </Button>
-        </Link>
-      </section>
     </div>
   );
 }
@@ -252,8 +241,8 @@ export function HomePage() {
 function FreeModuleCard({ module, startArrow }: { module: any; startArrow: string }) {
   return (
     <>
-      <div className="flex items-start gap-4 mb-3">
-        <span className="text-4xl">{module.icon}</span>
+      <div className="flex items-start gap-3 mb-2">
+        <span className="text-3xl">{module.icon}</span>
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h3 className="text-xl font-bold text-white">{module.title}</h3>
@@ -262,8 +251,8 @@ function FreeModuleCard({ module, startArrow }: { module: any; startArrow: strin
           <p className="text-sm text-gray-400">{module.subtitle}</p>
         </div>
       </div>
-      <p className="text-sm text-gray-300 leading-relaxed">{module.description}</p>
-      <div className="flex items-center gap-1 mt-4 text-gold-400 text-sm font-medium">
+      <p className="text-sm text-gray-300 leading-snug">{module.description}</p>
+      <div className="flex items-center gap-1 mt-3 text-gold-400 text-sm font-medium">
         <span>{startArrow}</span>
       </div>
     </>
@@ -273,8 +262,8 @@ function FreeModuleCard({ module, startArrow }: { module: any; startArrow: strin
 function PremiumModuleCard({ module, startArrow, comingSoon }: { module: any; startArrow: string; comingSoon?: boolean }) {
   return (
     <>
-      <div className="flex items-start gap-4 mb-3 pr-20">
-        <span className="text-4xl">{module.icon}</span>
+      <div className="flex items-start gap-3 mb-2 pr-20">
+        <span className="text-3xl">{module.icon}</span>
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h3 className="text-xl font-bold text-white">{module.title}</h3>

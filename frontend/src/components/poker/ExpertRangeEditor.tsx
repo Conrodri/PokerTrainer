@@ -115,15 +115,15 @@ export function ExpertRangeEditor({ mix, onChange, onSave, onReset, resetLabel, 
       <div className="overflow-auto">
         {/* Column headers */}
         <div className="flex">
-          <div className="w-7 h-7 shrink-0" />
+          <div className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" />
           {RANKS_ORDER.map(r => (
-            <div key={r} className="w-7 h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[8px]">{r}</div>
+            <div key={r} className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[8px]">{r}</div>
           ))}
         </div>
 
         {RANKS_ORDER.map((rowRank, rowIdx) => (
           <div key={rowRank} className="flex">
-            <div className="w-7 h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[8px]">{rowRank}</div>
+            <div className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[8px]">{rowRank}</div>
             {RANKS_ORDER.map((_, colIdx) => {
               const idx = rowIdx * 13 + colIdx;
               const isSel = selected === idx;
@@ -135,7 +135,7 @@ export function ExpertRangeEditor({ mix, onChange, onSave, onReset, resetLabel, 
                   key={idx}
                   onClick={() => setSelected(idx)}
                   title={handToDisplay(notation)}
-                  className={`w-7 h-7 shrink-0 border relative overflow-hidden transition-all ${
+                  className={`w-6 h-6 sm:w-7 sm:h-7 shrink-0 border relative overflow-hidden transition-all ${
                     isSel ? 'ring-2 ring-white z-10 border-white' : invalid ? 'border-red-500/70' : 'border-black/30'
                   }`}
                 >
@@ -275,15 +275,15 @@ export function ExpertRangeGrid({
       <div className="overflow-auto">
         {/* Column headers */}
         <div className="flex">
-          <div className="w-7 h-7 shrink-0" />
+          <div className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" />
           {RANKS_ORDER.map(r => (
-            <div key={r} className="w-7 h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[8px]">{r}</div>
+            <div key={r} className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[8px]">{r}</div>
           ))}
         </div>
 
         {RANKS_ORDER.map((rowRank, rowIdx) => (
           <div key={rowRank} className="flex">
-            <div className="w-7 h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[8px]">{rowRank}</div>
+            <div className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[8px]">{rowRank}</div>
             {RANKS_ORDER.map((_, colIdx) => {
               const idx = rowIdx * 13 + colIdx;
               const notation = getNotationFromIndices(rowIdx, colIdx);
@@ -292,7 +292,7 @@ export function ExpertRangeGrid({
                 <div
                   key={idx}
                   title={handToDisplay(notation)}
-                  className={`w-7 h-7 shrink-0 border relative overflow-hidden ${
+                  className={`w-6 h-6 sm:w-7 sm:h-7 shrink-0 border relative overflow-hidden ${
                     isHi ? 'ring-2 ring-gold-400 ring-inset z-10 border-gold-400' : 'border-black/30'
                   }`}
                 >

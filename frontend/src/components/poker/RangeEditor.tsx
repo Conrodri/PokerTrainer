@@ -89,9 +89,9 @@ export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSav
       <div className="overflow-auto">
         {/* Column headers */}
         <div className="flex">
-          <div className="w-7 h-7 shrink-0" />
+          <div className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" />
           {RANKS_ORDER.map(r => (
-            <div key={r} className="w-7 h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[9px]">
+            <div key={r} className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[9px]">
               {r}
             </div>
           ))}
@@ -101,7 +101,7 @@ export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSav
         {RANKS_ORDER.map((rowRank, rowIdx) => (
           <div key={rowRank} className="flex">
             {/* Row label */}
-            <div className="w-7 h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[9px]">
+            <div className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[9px]">
               {rowRank}
             </div>
 
@@ -115,7 +115,7 @@ export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSav
               return (
                 <div
                   key={`${rowIdx}-${colIdx}`}
-                  className={`w-7 h-7 shrink-0 border border-black/30 cursor-pointer flex items-center justify-center relative ${isHovered ? 'ring-1 ring-white/40' : ''}`}
+                  className={`w-6 h-6 sm:w-7 sm:h-7 shrink-0 border border-black/30 cursor-pointer flex items-center justify-center relative ${isHovered ? 'ring-1 ring-white/40' : ''}`}
                   style={{ backgroundColor: bg, backgroundClip: 'padding-box' }}
                   onMouseEnter={() => setHovered(notation)}
                   onMouseLeave={() => setHovered(null)}
