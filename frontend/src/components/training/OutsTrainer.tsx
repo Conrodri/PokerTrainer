@@ -16,6 +16,7 @@ import { CardStr } from '../../types/poker';
 import { RichLine } from '../ui/RichText';
 import { useT } from '../../i18n';
 import { useLangStore } from '../../store/langStore';
+import { useExerciseLock } from '../../hooks/useExerciseLock';
 
 type Phase = 'exercise' | 'result';
 
@@ -24,7 +25,7 @@ type Phase = 'exercise' | 'result';
 export function OutsTrainer() {
   const t = useT();
   const isEn = useLangStore(s => s.lang) === 'en';
-  const { outsExercise, isLoading, sessionStats, fetchOutsExercise, recordResult, setTrainerStarted, setIsExercising } = useTrainingStore();
+  const { outsExercise, isLoading, sessionStats, fetchOutsExercise, recordResult, setTrainerStarted } = useTrainingStore();
 
   const [showIntro, setShowIntro] = useState(true);
   const [phase, setPhase] = useState<Phase>('exercise');
@@ -36,10 +37,7 @@ export function OutsTrainer() {
   }, [phase]);
 
   // Lock mode switching while a question is on screen.
-  useEffect(() => {
-    setIsExercising(!showIntro && phase === 'exercise' && !!outsExercise && !isLoading);
-  }, [showIntro, phase, outsExercise, isLoading]);
-  useEffect(() => () => { setIsExercising(false); }, []);
+  useExerciseLock(!showIntro && phase === 'exercise' && !!outsExercise && !isLoading);
 
   const handleAnswer = (value: number) => {
     if (!outsExercise) return;

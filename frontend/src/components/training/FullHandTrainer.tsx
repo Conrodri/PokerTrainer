@@ -5,6 +5,7 @@ import {
   Check, Lock, Trophy, Shuffle, Info, Lightbulb,
 } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { useExerciseLock } from '../../hooks/useExerciseLock';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Hand } from '../poker/Card';
 import { Button } from '../ui/Button';
@@ -205,7 +206,7 @@ export function FullHandTrainer() {
   const lang     = useLangStore(s => s.lang);
   const isEn     = lang === 'en';
   const isMobile = useIsMobile();
-  const { sessionStats, recordResult, setTrainerStarted, setIsExercising } = useTrainingStore();
+  const { sessionStats, recordResult, setTrainerStarted } = useTrainingStore();
 
   // Premium access / daily free-quota for non-premium users
   const user      = useAuthStore(s => s.user);
@@ -268,10 +269,7 @@ export function FullHandTrainer() {
   }, [phase]);
 
   // Lock mode switching while a decision is on screen.
-  useEffect(() => {
-    setIsExercising(!showIntro && phase !== 'loading' && !phase.endsWith('_result') && !!scenario);
-  }, [showIntro, phase, scenario]);
-  useEffect(() => () => { setIsExercising(false); }, []);
+  useExerciseLock(!showIntro && phase !== 'loading' && !phase.endsWith('_result') && !!scenario);
 
   // Fetch range matrix when scenario loads (or position changes)
   useEffect(() => {

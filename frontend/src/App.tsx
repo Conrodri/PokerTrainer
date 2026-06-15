@@ -1,22 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Layout } from './components/layout/Layout';
 import { HomePage } from './pages/HomePage';
-import { TrainingPage } from './pages/TrainingPage';
-import { StatsPage } from './pages/StatsPage';
-import { LeaderboardPage } from './pages/LeaderboardPage';
-import { LoginPage } from './pages/LoginPage';
-import { TablePage } from './pages/TablePage';
-import { ProfilePage } from './pages/ProfilePage';
-import { PokerRulesPage } from './components/training/PokerRulesPage';
-import { GlossaryPage } from './pages/GlossaryPage';
-import { PremiumPage } from './pages/PremiumPage';
+import { Spinner } from './components/ui/Spinner';
 import { OnboardingModal } from './components/onboarding/OnboardingModal';
 import { isOnboardingDone } from './components/onboarding/onboardingState';
 import { useAuthStore } from './store/authStore';
 import { useTrainingStore } from './store/trainingStore';
 import { pingBackend } from './services/api';
+
+// Route-level code-splitting: only the landing page ships in the initial chunk;
+// every other page (and the charts / trainers they pull in) loads on navigation.
+const TrainingPage = lazy(() => import('./pages/TrainingPage').then(m => ({ default: m.TrainingPage })));
+const StatsPage = lazy(() => import('./pages/StatsPage').then(m => ({ default: m.StatsPage })));
+const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })));
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const TablePage = lazy(() => import('./pages/TablePage').then(m => ({ default: m.TablePage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const PokerRulesPage = lazy(() => import('./components/training/PokerRulesPage').then(m => ({ default: m.PokerRulesPage })));
+const GlossaryPage = lazy(() => import('./pages/GlossaryPage').then(m => ({ default: m.GlossaryPage })));
+const PremiumPage = lazy(() => import('./pages/PremiumPage').then(m => ({ default: m.PremiumPage })));
 
 export default function App() {
   const { fetchMe } = useAuthStore();
@@ -40,18 +44,20 @@ export default function App() {
   return (
     <BrowserRouter>
       <Layout>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/rules" element={<PokerRulesPage />} />
-          <Route path="/glossary" element={<GlossaryPage />} />
-          <Route path="/training" element={<TrainingPage />} />
-          <Route path="/table" element={<TablePage />} />
-          <Route path="/stats" element={<StatsPage />} />
-          <Route path="/leaderboard" element={<LeaderboardPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/premium" element={<PremiumPage />} />
-        </Routes>
+        <Suspense fallback={<Spinner />}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/rules" element={<PokerRulesPage />} />
+            <Route path="/glossary" element={<GlossaryPage />} />
+            <Route path="/training" element={<TrainingPage />} />
+            <Route path="/table" element={<TablePage />} />
+            <Route path="/stats" element={<StatsPage />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/premium" element={<PremiumPage />} />
+          </Routes>
+        </Suspense>
       </Layout>
 
       <AnimatePresence>

@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-} from 'recharts';
 import { TrendingUp, TrendingDown, Minus, Target, Flame, Zap, X } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { statsApi } from '../services/api';

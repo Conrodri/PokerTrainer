@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -8,13 +8,16 @@ import {
 import { useTrainingStore } from '../store/trainingStore';
 import { useAuthStore } from '../store/authStore';
 import { TrainingModule, Position } from '../types/poker';
-import { PreflopTrainer } from '../components/training/PreflopTrainer';
-import { PotOddsTrainer } from '../components/training/PotOddsTrainer';
-import { EquityTrainer } from '../components/training/EquityTrainer';
-import { OutsTrainer } from '../components/training/OutsTrainer';
-import { PostflopTrainer } from '../components/training/PostflopTrainer';
-import { FullHandTrainer } from '../components/training/FullHandTrainer';
-import { BetSizingTrainer } from '../components/training/BetSizingTrainer';
+import { Spinner } from '../components/ui/Spinner';
+
+// Each trainer is its own chunk: only the selected module's code is fetched.
+const PreflopTrainer = lazy(() => import('../components/training/PreflopTrainer').then(m => ({ default: m.PreflopTrainer })));
+const PotOddsTrainer = lazy(() => import('../components/training/PotOddsTrainer').then(m => ({ default: m.PotOddsTrainer })));
+const EquityTrainer = lazy(() => import('../components/training/EquityTrainer').then(m => ({ default: m.EquityTrainer })));
+const OutsTrainer = lazy(() => import('../components/training/OutsTrainer').then(m => ({ default: m.OutsTrainer })));
+const PostflopTrainer = lazy(() => import('../components/training/PostflopTrainer').then(m => ({ default: m.PostflopTrainer })));
+const FullHandTrainer = lazy(() => import('../components/training/FullHandTrainer').then(m => ({ default: m.FullHandTrainer })));
+const BetSizingTrainer = lazy(() => import('../components/training/BetSizingTrainer').then(m => ({ default: m.BetSizingTrainer })));
 
 import { RangeEditor } from '../components/poker/RangeEditor';
 import { RangeMatrix } from '../components/poker/RangeMatrix';
@@ -1265,17 +1268,19 @@ export function TrainingPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        {activeModule === 'preflop'   && <PreflopTrainer />}
-        {activeModule === 'potodds'   && <PotOddsTrainer />}
-        {activeModule === 'equity'    && <EquityTrainer />}
-        {activeModule === 'outs'      && <OutsTrainer />}
+        <Suspense fallback={<Spinner />}>
+          {activeModule === 'preflop'   && <PreflopTrainer />}
+          {activeModule === 'potodds'   && <PotOddsTrainer />}
+          {activeModule === 'equity'    && <EquityTrainer />}
+          {activeModule === 'outs'      && <OutsTrainer />}
 
-        {/* Premium modules: non-premium users still see the full intro and get
-            a daily free allowance; the trainers handle access internally
-            (premium / logged-in free quota / locked). */}
-        {activeModule === 'postflop'  && <PostflopTrainer />}
-        {activeModule === 'fullhand'  && <FullHandTrainer />}
-        {activeModule === 'betsizing' && <BetSizingTrainer />}
+          {/* Premium modules: non-premium users still see the full intro and get
+              a daily free allowance; the trainers handle access internally
+              (premium / logged-in free quota / locked). */}
+          {activeModule === 'postflop'  && <PostflopTrainer />}
+          {activeModule === 'fullhand'  && <FullHandTrainer />}
+          {activeModule === 'betsizing' && <BetSizingTrainer />}
+        </Suspense>
       </motion.div>
     </div>
   );

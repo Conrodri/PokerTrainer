@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Info, Zap, BookOpen, ExternalLink, Lightbulb } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { useExerciseLock } from '../../hooks/useExerciseLock';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Button } from '../ui/Button';
 import { SessionStatsBar } from '../ui/SessionStatsBar';
@@ -473,7 +474,7 @@ export function BetSizingTrainer() {
   const lang     = useLangStore(s => s.lang);
   const isEn     = lang === 'en';
   const isMobile = useIsMobile();
-  const { sessionStats, recordResult, setTrainerStarted, setIsExercising } = useTrainingStore();
+  const { sessionStats, recordResult, setTrainerStarted } = useTrainingStore();
   const mode     = useModeStore(s => s.mode);
 
   // Premium access / daily free-quota for non-premium users
@@ -498,10 +499,7 @@ export function BetSizingTrainer() {
   }, [loggedIn, isPremium]);
 
   // Lock mode switching while a question is on screen.
-  useEffect(() => {
-    setIsExercising(!showIntro && phase === 'exercise' && !!exercise);
-  }, [showIntro, phase, exercise]);
-  useEffect(() => () => { setIsExercising(false); }, []);
+  useExerciseLock(!showIntro && phase === 'exercise' && !!exercise);
 
   // Bet sizing is generated client-side, so we explicitly spend a credit
   // server-side before revealing each exercise (premium users never consume).

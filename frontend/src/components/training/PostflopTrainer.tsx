@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Info, Zap, Target, Lightbulb } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { useExerciseLock } from '../../hooks/useExerciseLock';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Hand } from '../poker/Card';
 import { Button } from '../ui/Button';
@@ -130,7 +131,7 @@ export function PostflopTrainer() {
   const lang     = useLangStore(s => s.lang);
   const isEn     = lang === 'en';
   const isMobile = useIsMobile();
-  const { sessionStats, recordResult, setTrainerStarted, setIsExercising } = useTrainingStore();
+  const { sessionStats, recordResult, setTrainerStarted } = useTrainingStore();
 
   // Premium access / daily free-quota for non-premium users
   const user      = useAuthStore(s => s.user);
@@ -158,10 +159,7 @@ export function PostflopTrainer() {
   );
 
   // Lock mode switching while a question is on screen.
-  useEffect(() => {
-    setIsExercising(!showIntro && phase === 'exercise' && !!exercise && !isLoading);
-  }, [showIntro, phase, exercise, isLoading]);
-  useEffect(() => () => { setIsExercising(false); }, []);
+  useExerciseLock(!showIntro && phase === 'exercise' && !!exercise && !isLoading);
 
   // Prevent double-fetch on mount via ref guard
   const hasStarted = useRef(false);

@@ -18,6 +18,7 @@ import { Hand } from '../poker/Card';
 import { CardStr } from '../../types/poker';
 import { useT } from '../../i18n';
 import { useLangStore } from '../../store/langStore';
+import { useExerciseLock } from '../../hooks/useExerciseLock';
 
 type Phase = 'exercise' | 'result';
 
@@ -26,7 +27,7 @@ type Phase = 'exercise' | 'result';
 export function PotOddsTrainer() {
   const t = useT();
   const isEn = useLangStore(s => s.lang) === 'en';
-  const { potOddsExercise, lastResult, sessionStats, isLoading, fetchPotOddsExercise, checkPotOddsAnswer, setTrainerStarted, setIsExercising } = useTrainingStore();
+  const { potOddsExercise, lastResult, sessionStats, isLoading, fetchPotOddsExercise, checkPotOddsAnswer, setTrainerStarted } = useTrainingStore();
   const [showIntro, setShowIntro] = useState(true);
   const [phase, setPhase] = useState<Phase>('exercise');
   const [showFormula, setShowFormula] = useState(false);
@@ -38,10 +39,7 @@ export function PotOddsTrainer() {
   useEffect(() => { if (phase === 'result') window.scrollTo({ top: 0, behavior: 'smooth' }); }, [phase]);
 
   // Lock mode switching while a question is on screen.
-  useEffect(() => {
-    setIsExercising(!showIntro && phase === 'exercise' && !!potOddsExercise && !isLoading);
-  }, [showIntro, phase, potOddsExercise, isLoading]);
-  useEffect(() => () => { setIsExercising(false); }, []);
+  useExerciseLock(!showIntro && phase === 'exercise' && !!potOddsExercise && !isLoading);
 
   const handleAnswer = async (action: 'call' | 'fold') => {
     if (!potOddsExercise) return;

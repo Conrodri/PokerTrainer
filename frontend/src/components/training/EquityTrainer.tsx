@@ -17,6 +17,7 @@ import { useModeStore } from '../../store/modeStore';
 import { handToDisplay } from '../../utils/pokerUtils';
 import { useT } from '../../i18n';
 import { useLangStore } from '../../store/langStore';
+import { useExerciseLock } from '../../hooks/useExerciseLock';
 
 type Phase = 'exercise' | 'result';
 
@@ -25,7 +26,7 @@ type Phase = 'exercise' | 'result';
 export function EquityTrainer() {
   const t = useT();
   const isEn = useLangStore(s => s.lang) === 'en';
-  const { equityExercise, isLoading, sessionStats, fetchEquityExercise, recordResult, setTrainerStarted, setIsExercising } = useTrainingStore();
+  const { equityExercise, isLoading, sessionStats, fetchEquityExercise, recordResult, setTrainerStarted } = useTrainingStore();
 
   const [showIntro, setShowIntro] = useState(true);
   const [phase, setPhase] = useState<Phase>('exercise');
@@ -38,10 +39,7 @@ export function EquityTrainer() {
   }, [phase]);
 
   // Lock mode switching while a question is on screen.
-  useEffect(() => {
-    setIsExercising(!showIntro && phase === 'exercise' && !!equityExercise && !isLoading);
-  }, [showIntro, phase, equityExercise, isLoading]);
-  useEffect(() => () => { setIsExercising(false); }, []);
+  useExerciseLock(!showIntro && phase === 'exercise' && !!equityExercise && !isLoading);
 
   const handleAnswer = (hand: 1 | 2) => {
     if (!equityExercise) return;
