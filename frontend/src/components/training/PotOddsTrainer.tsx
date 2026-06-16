@@ -20,6 +20,8 @@ import { useT } from '../../i18n';
 import { useLangStore } from '../../store/langStore';
 import { useExerciseLock } from '../../hooks/useExerciseLock';
 import { useShallow } from 'zustand/react/shallow';
+import { useExamRunner } from '../../hooks/useExamRunner';
+import { ExamLauncher, ExamHud, ExamResult } from './ExamMode';
 
 type Phase = 'exercise' | 'result';
 
@@ -44,10 +46,21 @@ export function PotOddsTrainer() {
   // Lock mode switching while a question is on screen.
   useExerciseLock(!showIntro && phase === 'exercise' && !!potOddsExercise && !isLoading);
 
+  // Exam mode (advanced/expert): loop exercises until 3 errors; score = correct.
+  const { examActive, examFinished, startRun, quitRun, recordAnswer } = useExamRunner('potodds');
+
+  const handleNext = async () => {
+    setPhase('exercise');
+    setShowFormula(false);
+    setShowEv(false);
+    await fetchPotOddsExercise();
+  };
+
   const handleAnswer = async (action: 'call' | 'fold') => {
     if (!potOddsExercise) return;
-    await checkPotOddsAnswer(action, Date.now() - startTime.current);
+    const r = await checkPotOddsAnswer(action, Date.now() - startTime.current);
     setPhase('result');
+    if (examActive) recordAnswer(r.isCorrect, handleNext);
   };
 
   const handleStart = async () => {
@@ -56,11 +69,21 @@ export function PotOddsTrainer() {
     await fetchPotOddsExercise();
   };
 
-  const handleNext = async () => {
-    setPhase('exercise');
+  const handleStartExam = async () => {
+    startRun();
+    setShowIntro(false);
+    setTrainerStarted(true);
     setShowFormula(false);
     setShowEv(false);
+    setPhase('exercise');
     await fetchPotOddsExercise();
+  };
+
+  const handleQuitExam = () => {
+    quitRun();
+    setShowIntro(true);
+    setTrainerStarted(false);
+    setPhase('exercise');
   };
 
   const ex = potOddsExercise;
@@ -115,27 +138,40 @@ export function PotOddsTrainer() {
           startLabel={isEn ? 'Start training' : "Commencer l'entraînement"}
           onStart={handleStart}
           mode={mode}
+          examSlot={mode !== 'beginner' ? <ExamLauncher module="potodds" onStart={handleStartExam} /> : undefined}
         />
+      </div>
+    );
+  }
+
+  if (examFinished) {
+    return (
+      <div className="flex flex-col gap-5 max-w-xl mx-auto pt-4">
+        <ExamResult module="potodds" onRetry={handleStartExam} onQuit={handleQuitExam} />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-5 max-w-xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-1">{t.training.potodds_title}</h2>
-          <p className="text-gray-400 text-sm">{t.training.potodds_subtitle}</p>
+      {/* Header — replaced by the lives HUD during an exam */}
+      {examActive ? (
+        <ExamHud />
+      ) : (
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-1">{t.training.potodds_title}</h2>
+            <p className="text-gray-400 text-sm">{t.training.potodds_subtitle}</p>
+          </div>
+          <button
+            onClick={() => { setShowIntro(true); setTrainerStarted(false); }}
+            className="text-gray-500 hover:text-gray-300 transition-colors p-1 mt-1 shrink-0"
+            title={isEn ? 'Module info' : 'Infos du module'}
+          >
+            <Info size={14} />
+          </button>
         </div>
-        <button
-          onClick={() => { setShowIntro(true); setTrainerStarted(false); }}
-          className="text-gray-500 hover:text-gray-300 transition-colors p-1 mt-1 shrink-0"
-          title={isEn ? 'Module info' : 'Infos du module'}
-        >
-          <Info size={14} />
-        </button>
-      </div>
+      )}
 
       {/* ── Exercise ── */}
       {phase === 'exercise' && (
@@ -255,18 +291,19 @@ export function PotOddsTrainer() {
           {/* Cards recap */}
           <CardDisplay heroCards={ex.heroCards as [CardStr, CardStr]} board={ex.board as CardStr[]} street={ex.street} isEn={isEn} dimmed />
 
-          {/* Next button */}
-          <Button size="lg" variant="gold" onClick={handleNext} fullWidth>
-            {t.training.next_ex} <ChevronRight size={18} className="inline" />
-          </Button>
-
-          {/* Session stats */}
-          <SessionStatsBar
-            total={sessionStats.total}
-            correct={sessionStats.correct}
-            streak={sessionStats.streak}
-            xp={sessionStats.xp}
-          />
+          {/* Next button + session stats — hidden during an exam (auto-advances) */}
+          {!examActive && (
+            <>
+              <Button size="lg" variant="gold" onClick={handleNext} fullWidth>
+                {t.training.next_ex} <ChevronRight size={18} className="inline" />
+              </Button>
+              <SessionStatsBar
+                total={sessionStats.total}
+                correct={sessionStats.correct}
+                xp={sessionStats.xp}
+              />
+            </>
+          )}
 
           {/* Beginner banner */}
           {mode === 'beginner' && (

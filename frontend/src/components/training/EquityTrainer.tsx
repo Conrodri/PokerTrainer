@@ -18,6 +18,8 @@ import { handToDisplay } from '../../utils/pokerUtils';
 import { useT } from '../../i18n';
 import { useLangStore } from '../../store/langStore';
 import { useExerciseLock } from '../../hooks/useExerciseLock';
+import { useExamRunner } from '../../hooks/useExamRunner';
+import { ExamLauncher, ExamHud, ExamResult } from './ExamMode';
 import { useShallow } from 'zustand/react/shallow';
 
 type Phase = 'exercise' | 'result';
@@ -44,6 +46,16 @@ export function EquityTrainer() {
   // Lock mode switching while a question is on screen.
   useExerciseLock(!showIntro && phase === 'exercise' && !!equityExercise && !isLoading);
 
+  // Exam mode (advanced/expert): loop exercises until 3 errors; score = correct.
+  const { examActive, examFinished, startRun, quitRun, recordAnswer } = useExamRunner('equity');
+
+  const handleNext = async () => {
+    setPhase('exercise');
+    setUserAnswer(null);
+    setIsCorrect(false);
+    await fetchEquityExercise();
+  };
+
   const handleAnswer = (hand: 1 | 2) => {
     if (!equityExercise) return;
     const winner = equityExercise.hand1Equity > equityExercise.hand2Equity ? 1 : 2;
@@ -52,6 +64,7 @@ export function EquityTrainer() {
     setIsCorrect(correct);
     setPhase('result');
     recordResult(correct, correct ? 15 : 5, 'equity');
+    if (examActive) recordAnswer(correct, handleNext);
   };
 
   const handleStart = async () => {
@@ -60,11 +73,21 @@ export function EquityTrainer() {
     await fetchEquityExercise();
   };
 
-  const handleNext = async () => {
-    setPhase('exercise');
+  const handleStartExam = async () => {
+    startRun();
+    setShowIntro(false);
+    setTrainerStarted(true);
     setUserAnswer(null);
     setIsCorrect(false);
+    setPhase('exercise');
     await fetchEquityExercise();
+  };
+
+  const handleQuitExam = () => {
+    quitRun();
+    setShowIntro(true);
+    setTrainerStarted(false);
+    setPhase('exercise');
   };
 
   // Beginner gets the simple explanation; advanced AND expert get the detailed one.
@@ -120,7 +143,16 @@ export function EquityTrainer() {
           startLabel={isEn ? 'Start training' : "Commencer l'entraînement"}
           onStart={handleStart}
           mode={mode}
+          examSlot={mode !== 'beginner' ? <ExamLauncher module="equity" onStart={handleStartExam} /> : undefined}
         />
+      </div>
+    );
+  }
+
+  if (examFinished) {
+    return (
+      <div className="flex flex-col gap-6 max-w-xl mx-auto pt-4">
+        <ExamResult module="equity" onRetry={handleStartExam} onQuit={handleQuitExam} />
       </div>
     );
   }
@@ -128,20 +160,24 @@ export function EquityTrainer() {
   return (
     <div className="flex flex-col gap-6 max-w-xl mx-auto">
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-1">{t.training.equity_title}</h2>
-          <p className="text-gray-400 text-sm">{t.training.equity_subtitle}</p>
+      {/* Header — replaced by the lives HUD during an exam */}
+      {examActive ? (
+        <ExamHud />
+      ) : (
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-1">{t.training.equity_title}</h2>
+            <p className="text-gray-400 text-sm">{t.training.equity_subtitle}</p>
+          </div>
+          <button
+            onClick={() => { setShowIntro(true); setTrainerStarted(false); }}
+            className="text-gray-500 hover:text-gray-300 transition-colors p-1 mt-1 shrink-0"
+            title={isEn ? 'Module info' : 'Infos du module'}
+          >
+            <Info size={14} />
+          </button>
         </div>
-        <button
-          onClick={() => { setShowIntro(true); setTrainerStarted(false); }}
-          className="text-gray-500 hover:text-gray-300 transition-colors p-1 mt-1 shrink-0"
-          title={isEn ? 'Module info' : 'Infos du module'}
-        >
-          <Info size={14} />
-        </button>
-      </div>
+      )}
 
       {/* ── Exercise ── */}
       {phase === 'exercise' && (
@@ -297,21 +333,22 @@ export function EquityTrainer() {
             )}
           </div>
 
-          {/* Next button */}
-          <Button size="lg" variant="gold" onClick={handleNext} fullWidth>
-            {t.training.next_ex} <ChevronRight size={18} className="inline" />
-          </Button>
+          {/* Next button + session stats — hidden during an exam (auto-advances) */}
+          {!examActive && (
+            <>
+              <Button size="lg" variant="gold" onClick={handleNext} fullWidth>
+                {t.training.next_ex} <ChevronRight size={18} className="inline" />
+              </Button>
+              <SessionStatsBar
+                total={sessionStats.total}
+                correct={sessionStats.correct}
+                xp={sessionStats.xp}
+              />
+            </>
+          )}
 
-          {/* Session stats */}
-          <SessionStatsBar
-            total={sessionStats.total}
-            correct={sessionStats.correct}
-            streak={sessionStats.streak}
-            xp={sessionStats.xp}
-          />
-
-          {/* Explanation — beginner only */}
-          <ExplanationPanel text={currentExplanation} />
+          {/* Explanation — beginner only, hidden during an exam */}
+          {!examActive && <ExplanationPanel text={currentExplanation} />}
         </motion.div>
       )}
     </div>

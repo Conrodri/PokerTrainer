@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Target, Lightbulb, Info } from 'lucide-react';
 import { useTrainingStore } from '../../store/trainingStore';
@@ -18,7 +18,7 @@ import { useT } from '../../i18n';
 import { useLangStore } from '../../store/langStore';
 import { useExerciseLock } from '../../hooks/useExerciseLock';
 import { useShallow } from 'zustand/react/shallow';
-import { useExamStore } from '../../store/examStore';
+import { useExamRunner } from '../../hooks/useExamRunner';
 import { ExamLauncher, ExamHud, ExamResult } from './ExamMode';
 
 type Phase = 'exercise' | 'result';
@@ -38,16 +38,7 @@ export function OutsTrainer() {
   const mode = useModeStore(s => s.mode);
 
   // Exam mode (advanced/expert): loop exercises until 3 errors; score = correct.
-  const examActive      = useExamStore(s => s.active);
-  const examFinished    = useExamStore(s => s.finished);
-  const startExam       = useExamStore(s => s.start);
-  const answerExam      = useExamStore(s => s.answer);
-  const quitExam        = useExamStore(s => s.quit);
-  const loadExamRecords = useExamStore(s => s.loadRecords);
-  const advanceTimer    = useRef<number | null>(null);
-
-  useEffect(() => { loadExamRecords(); }, [loadExamRecords]);
-  useEffect(() => () => { if (advanceTimer.current) clearTimeout(advanceTimer.current); }, []);
+  const { examActive, examFinished, startRun, quitRun, recordAnswer } = useExamRunner('outs');
 
   useEffect(() => {
     if (phase === 'result') window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -68,11 +59,7 @@ export function OutsTrainer() {
     setSelected(value);
     setPhase('result');
     recordResult(correct, correct ? 15 : 5, 'outs');
-    if (examActive) {
-      const ended = answerExam(correct);
-      // Auto-advance to the next question unless the run just ended (3 errors).
-      if (!ended) advanceTimer.current = window.setTimeout(() => { handleNext(); }, 1400);
-    }
+    if (examActive) recordAnswer(correct, handleNext);
   };
 
   const handleStart = async () => {
@@ -82,8 +69,7 @@ export function OutsTrainer() {
   };
 
   const handleStartExam = async () => {
-    if (advanceTimer.current) clearTimeout(advanceTimer.current);
-    startExam('outs');
+    startRun();
     setShowIntro(false);
     setTrainerStarted(true);
     setSelected(null);
@@ -92,8 +78,7 @@ export function OutsTrainer() {
   };
 
   const handleQuitExam = () => {
-    if (advanceTimer.current) clearTimeout(advanceTimer.current);
-    quitExam();
+    quitRun();
     setShowIntro(true);
     setTrainerStarted(false);
     setSelected(null);
