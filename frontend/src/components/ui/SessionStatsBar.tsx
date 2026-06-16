@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Target, Flame, TrendingUp } from 'lucide-react';
+import { Target, TrendingUp } from 'lucide-react';
 import { StatChip } from './StatChip';
 import { ProgressBar } from './ProgressBar';
 import { useT } from '../../i18n';
@@ -7,24 +7,24 @@ import { useT } from '../../i18n';
 interface Props {
   total:    number;
   correct:  number;
-  streak:   number;
+  /** @deprecated streak is no longer shown — replaced by exam mode. Kept for call-site compatibility. */
+  streak?:  number;
   xp:       number;
   /** i18n labels — optional; defaults to t.training values */
   labels?: {
     accuracy: string;
-    streak:   string;
+    streak?:  string;
     xp:       string;
   };
 }
 
 /** Session progress bar shown at the top of every trainer once ≥1 answer given. */
-export function SessionStatsBar({ total, correct, streak, xp, labels }: Props) {
+export function SessionStatsBar({ total, correct, xp, labels }: Props) {
   const t = useT();
   if (total === 0) return null;
   const accuracy = Math.round((correct / total) * 100);
   const resolvedLabels = labels ?? {
     accuracy: t.training.accuracy_lbl,
-    streak:   t.training.streak_lbl,
     xp:       t.training.xp_lbl,
   };
   return (
@@ -38,12 +38,6 @@ export function SessionStatsBar({ total, correct, streak, xp, labels }: Props) {
         label={resolvedLabels.accuracy}
         value={`${accuracy}%`}
         color={accuracy >= 70 ? 'text-green-400' : 'text-yellow-400'}
-      />
-      <StatChip
-        icon={<Flame size={14} />}
-        label={resolvedLabels.streak}
-        value={String(streak)}
-        color="text-gold-400"
       />
       <StatChip
         icon={<TrendingUp size={14} />}

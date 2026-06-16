@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { GraduationCap, Play, Zap, Check, Crown, Lock, Gift, Flame } from 'lucide-react';
+import { GraduationCap, Play, Zap, Check, Crown, Lock, Gift, Flame, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './Button';
 import { RichText } from './RichText';
@@ -29,26 +30,33 @@ interface TrainerIntroProps {
   /** For non-premium logged-in users with credits left: shows a free-allowance
    *  banner above the (working) start button. */
   freeInfo?: { remaining: number; limit: number };
+  /** Optional secondary CTA (the exam launcher) shown directly under the start
+   *  button so both ways to begin are visible without scrolling. */
+  examSlot?: React.ReactNode;
 }
 
 export function TrainerIntro({
   emoji, title, description, whatTitle, whatContent,
   steps, beginnerHint, advancedHint, expertHint, startLabel, onStart, mode,
-  locked = false, lockedVariant = 'premium', freeInfo,
+  locked = false, lockedVariant = 'premium', freeInfo, examSlot,
 }: TrainerIntroProps) {
   const isEn = useLangStore(s => s.lang) === 'en';
   const setMode = useModeStore(s => s.setMode);
   const isExpert = !!useAuthStore(s => s.user?.isPremiumExpert);
   const navigate = useNavigate();
+  // Beginners see the full guidance; advanced/expert get a compact launcher
+  // (details collapsed) so the start + exam buttons stay above the fold.
+  const [showDetails, setShowDetails] = useState(mode === 'beginner');
+  useEffect(() => { setShowDetails(mode === 'beginner'); }, [mode]);
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-3 max-w-xl mx-auto"
+      className="flex flex-col gap-2 max-w-xl mx-auto"
     >
       {/* Header */}
-      <div className="flex flex-col items-center text-center gap-1.5">
-        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 flex items-center justify-center text-2xl shadow-lg shadow-black/30">
+      <div className="flex flex-col items-center text-center gap-1">
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 flex items-center justify-center text-xl shadow-lg shadow-black/30">
           {emoji}
         </div>
         <h2 className="text-lg sm:text-xl font-black text-white">{title}</h2>
@@ -63,11 +71,22 @@ export function TrainerIntro({
         </div>
       </div>
 
-      {/* Info sections — stacked vertically, compact */}
-      <div className="flex flex-col gap-2">
+      {/* Info sections — collapsible; auto-collapsed outside beginner for a 0-scroll launcher */}
+      <div className="flex flex-col gap-1.5">
+        <button
+          type="button"
+          onClick={() => setShowDetails(v => !v)}
+          className="self-center flex items-center gap-1.5 text-[11px] font-medium text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          {showDetails ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          {showDetails
+            ? (isEn ? 'Hide details' : 'Masquer les détails')
+            : (isEn ? "What it is & how it works" : "C'est quoi & comment ça marche")}
+        </button>
+        {showDetails && (<>
         {/* What is X? */}
-        <section className="bg-gray-900/50 rounded-xl px-3.5 py-2.5 border border-gray-800">
-          <h3 className="text-gray-200 font-bold text-sm mb-2 flex items-center gap-2">
+        <section className="bg-gray-900/50 rounded-xl px-3 py-2 border border-gray-800">
+          <h3 className="text-gray-200 font-bold text-sm mb-1.5 flex items-center gap-2">
             <span className="grid place-items-center w-5 h-5 rounded-md bg-blue-900/40 text-blue-300 text-[11px]">📖</span>
             {whatTitle}
           </h3>
@@ -75,8 +94,8 @@ export function TrainerIntro({
         </section>
 
         {/* How it works */}
-        <section className="bg-gray-900/50 rounded-xl px-3.5 py-2.5 border border-gray-800">
-          <h3 className="text-gray-200 font-bold text-sm mb-2 flex items-center gap-2">
+        <section className="bg-gray-900/50 rounded-xl px-3 py-2 border border-gray-800">
+          <h3 className="text-gray-200 font-bold text-sm mb-1.5 flex items-center gap-2">
             <span className="grid place-items-center w-5 h-5 rounded-md bg-gold-900/40 text-gold-300 text-[11px]">⚡</span>
             {isEn ? 'How the exercises work' : 'Comment ça marche ?'}
           </h3>
@@ -94,6 +113,7 @@ export function TrainerIntro({
             })}
           </ul>
         </section>
+        </>)}
       </div>
 
       {/* Mode selector — segmented control + both modes explained in a compact box */}
@@ -136,7 +156,7 @@ export function TrainerIntro({
         </div>
 
         {/* Modes explained — active one highlighted */}
-        <div className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900/40 px-3 py-1.5 flex flex-col gap-1 text-[11px] leading-snug">
+        <div className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900/40 px-3 py-1 flex flex-col gap-0.5 text-[11px] leading-snug">
           <div className={`flex items-start gap-1.5 transition-opacity ${mode === 'beginner' ? 'opacity-100' : 'opacity-50'}`}>
             <GraduationCap size={12} className="text-blue-400 mt-0.5 shrink-0" />
             <span className="text-gray-400">
@@ -224,6 +244,7 @@ export function TrainerIntro({
             <Play size={16} className="inline mr-2" />
             {startLabel}
           </Button>
+          {examSlot}
           {freeInfo && (
             <Link to="/premium" className="text-[11px] text-gray-500 hover:text-yellow-400 transition-colors flex items-center gap-1">
               <Crown size={10} />

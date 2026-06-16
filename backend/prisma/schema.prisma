@@ -26,8 +26,26 @@ model User {
   rangeProfiles   RangeProfile[]
   freeUsage       FreeUsage[]
   expertRanges    ExpertRange[]
+  examRecords     ExamRecord[]
 
   @@map("users")
+}
+
+// ── Exam mode best score ──────────────────────────────────────────────────────
+// One row per (user, module). `best` = the highest number of correct answers the
+// user has reached in a single exam run (looped exercises ending after 3 errors).
+// Replaces the old consecutive-correct streak as the per-module record.
+model ExamRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module    String
+  best      Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, module])
+  @@index([userId])
+  @@map("exam_records")
 }
 
 // ── Expert multi-action range (premium-expert tier) ───────────────────────────

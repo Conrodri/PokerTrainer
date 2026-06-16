@@ -231,6 +231,15 @@ export const expertRangesApi = {
     api.delete(`/expert-ranges/${position}`).then(r => r.data),
 };
 
+// Exam mode best scores (per module, account-scoped)
+export const examApi = {
+  /** All exam best scores for the logged-in user: { [module]: best }. */
+  records: () => api.get('/exam/records').then(r => r.data.data as Record<string, number>),
+  /** Submit a run's score; returns the (possibly updated) best and whether it beat the record. */
+  saveScore: (module: string, score: number) =>
+    api.post('/exam/record', { module, score }).then(r => r.data.data as { best: number; isNewRecord: boolean }),
+};
+
 // Daily free-quota for non-premium users on premium modules
 export const quotaApi = {
   /** { isPremium, limit, modules: { postflop:{used,remaining,limit}, ... } | null } */

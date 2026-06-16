@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Target, Lightbulb, Info } from 'lucide-react';
 import { useTrainingStore } from '../../store/trainingStore';
@@ -18,6 +18,8 @@ import { useT } from '../../i18n';
 import { useLangStore } from '../../store/langStore';
 import { useExerciseLock } from '../../hooks/useExerciseLock';
 import { useShallow } from 'zustand/react/shallow';
+import { useExamStore } from '../../store/examStore';
+import { ExamLauncher, ExamHud, ExamResult } from './ExamMode';
 
 type Phase = 'exercise' | 'result';
 
@@ -35,6 +37,18 @@ export function OutsTrainer() {
   const [selected, setSelected] = useState<number | null>(null);
   const mode = useModeStore(s => s.mode);
 
+  // Exam mode (advanced/expert): loop exercises until 3 errors; score = correct.
+  const examActive      = useExamStore(s => s.active);
+  const examFinished    = useExamStore(s => s.finished);
+  const startExam       = useExamStore(s => s.start);
+  const answerExam      = useExamStore(s => s.answer);
+  const quitExam        = useExamStore(s => s.quit);
+  const loadExamRecords = useExamStore(s => s.loadRecords);
+  const advanceTimer    = useRef<number | null>(null);
+
+  useEffect(() => { loadExamRecords(); }, [loadExamRecords]);
+  useEffect(() => () => { if (advanceTimer.current) clearTimeout(advanceTimer.current); }, []);
+
   useEffect(() => {
     if (phase === 'result') window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [phase]);
@@ -42,12 +56,23 @@ export function OutsTrainer() {
   // Lock mode switching while a question is on screen.
   useExerciseLock(!showIntro && phase === 'exercise' && !!outsExercise && !isLoading);
 
+  const handleNext = async () => {
+    setPhase('exercise');
+    setSelected(null);
+    await fetchOutsExercise();
+  };
+
   const handleAnswer = (value: number) => {
     if (!outsExercise) return;
     const correct = value === outsExercise.outs;
     setSelected(value);
     setPhase('result');
     recordResult(correct, correct ? 15 : 5, 'outs');
+    if (examActive) {
+      const ended = answerExam(correct);
+      // Auto-advance to the next question unless the run just ended (3 errors).
+      if (!ended) advanceTimer.current = window.setTimeout(() => { handleNext(); }, 1400);
+    }
   };
 
   const handleStart = async () => {
@@ -56,10 +81,23 @@ export function OutsTrainer() {
     await fetchOutsExercise();
   };
 
-  const handleNext = async () => {
-    setPhase('exercise');
+  const handleStartExam = async () => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    startExam('outs');
+    setShowIntro(false);
+    setTrainerStarted(true);
     setSelected(null);
+    setPhase('exercise');
     await fetchOutsExercise();
+  };
+
+  const handleQuitExam = () => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    quitExam();
+    setShowIntro(true);
+    setTrainerStarted(false);
+    setSelected(null);
+    setPhase('exercise');
   };
 
   const isCorrect = !!outsExercise && selected === outsExercise.outs;
@@ -114,7 +152,16 @@ export function OutsTrainer() {
           startLabel={isEn ? 'Start training' : "Commencer l'entraînement"}
           onStart={handleStart}
           mode={mode}
+          examSlot={mode !== 'beginner' ? <ExamLauncher module="outs" onStart={handleStartExam} /> : undefined}
         />
+      </div>
+    );
+  }
+
+  if (examFinished) {
+    return (
+      <div className="flex flex-col gap-6 max-w-xl mx-auto pt-4">
+        <ExamResult module="outs" onRetry={handleStartExam} onQuit={handleQuitExam} />
       </div>
     );
   }
@@ -122,20 +169,24 @@ export function OutsTrainer() {
   return (
     <div className="flex flex-col gap-6 max-w-xl mx-auto">
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-1">{t.training.outs_title}</h2>
-          <p className="text-gray-400 text-sm">{t.training.outs_subtitle}</p>
+      {/* Header — replaced by the lives HUD during an exam */}
+      {examActive ? (
+        <ExamHud />
+      ) : (
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-1">{t.training.outs_title}</h2>
+            <p className="text-gray-400 text-sm">{t.training.outs_subtitle}</p>
+          </div>
+          <button
+            onClick={() => { setShowIntro(true); setTrainerStarted(false); }}
+            className="text-gray-500 hover:text-gray-300 transition-colors p-1 mt-1 shrink-0"
+            title={isEn ? 'Module info' : 'Infos du module'}
+          >
+            <Info size={14} />
+          </button>
         </div>
-        <button
-          onClick={() => { setShowIntro(true); setTrainerStarted(false); }}
-          className="text-gray-500 hover:text-gray-300 transition-colors p-1 mt-1 shrink-0"
-          title={isEn ? 'Module info' : 'Infos du module'}
-        >
-          <Info size={14} />
-        </button>
-      </div>
+      )}
 
       {/* ── Exercise ── */}
       {phase === 'exercise' && (
@@ -256,18 +307,19 @@ export function OutsTrainer() {
             </div>
           </div>
 
-          {/* Next button */}
-          <Button size="lg" variant="gold" onClick={handleNext} fullWidth>
-            {t.training.next_ex} <ChevronRight size={18} className="inline" />
-          </Button>
-
-          {/* Session stats */}
-          <SessionStatsBar
-            total={sessionStats.total}
-            correct={sessionStats.correct}
-            streak={sessionStats.streak}
-            xp={sessionStats.xp}
-          />
+          {/* Next button + session stats — hidden during an exam (auto-advances) */}
+          {!examActive && (
+            <>
+              <Button size="lg" variant="gold" onClick={handleNext} fullWidth>
+                {t.training.next_ex} <ChevronRight size={18} className="inline" />
+              </Button>
+              <SessionStatsBar
+                total={sessionStats.total}
+                correct={sessionStats.correct}
+                xp={sessionStats.xp}
+              />
+            </>
+          )}
 
           {/* Draws identified — beginner only */}
           {mode === 'beginner' && (
@@ -286,8 +338,8 @@ export function OutsTrainer() {
             </div>
           )}
 
-          {/* Full explanation — beginner only */}
-          <ExplanationPanel text={ex.explanation} />
+          {/* Full explanation — hidden during an exam (auto-advances, not clickable) */}
+          {!examActive && <ExplanationPanel text={ex.explanation} />}
         </motion.div>
       )}
     </div>
