@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Info, Zap, BookOpen, ExternalLink, Lightbulb } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useExerciseLock } from '../../hooks/useExerciseLock';
+import { useExamRunner } from '../../hooks/useExamRunner';
+import { ExamLauncher, ExamHud, ExamResult } from './ExamMode';
 import { useShallow } from 'zustand/react/shallow';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Button } from '../ui/Button';
@@ -504,6 +506,9 @@ export function BetSizingTrainer() {
   // Lock mode switching while a question is on screen.
   useExerciseLock(!showIntro && phase === 'exercise' && !!exercise);
 
+  // Exam mode — premium only here (each exercise consumes a credit for free users).
+  const { examActive, examFinished, startRun, quitRun, recordAnswer } = useExamRunner('betsizing');
+
   // Bet sizing is generated client-side, so we explicitly spend a credit
   // server-side before revealing each exercise (premium users never consume).
   const nextExercise = async (q = queue) => {
@@ -545,9 +550,24 @@ export function BetSizingTrainer() {
     setXpEarned(xp);
     await recordResult(ok, xp, 'betsizing');
     setPhase('result');
+    if (examActive) recordAnswer(ok, handleNext);
   };
 
   const handleNext = () => nextExercise();
+
+  const handleStartExam = () => {
+    startRun();
+    setQuotaBlocked(false);
+    setShowIntro(false);
+    setTrainerStarted(true);
+    nextExercise(shuffle(EXERCISES));
+  };
+
+  const handleQuitExam = () => {
+    quitRun();
+    setShowIntro(true);
+    setTrainerStarted(false);
+  };
 
   const ex        = exercise;
   const isCorrect = !!ex && selected === ex.correctKey;
@@ -611,10 +631,19 @@ export function BetSizingTrainer() {
         freeInfo={!isPremium && loggedIn && freeRemaining > 0
           ? { remaining: freeRemaining, limit: quota.limit }
           : undefined}
+        examSlot={mode !== 'beginner' && isPremium ? <ExamLauncher module="betsizing" onStart={handleStartExam} /> : undefined}
       />
       <SourcesFooter isEn={isEn} />
     </div>
   );
+
+  if (examFinished) {
+    return (
+      <div className="flex flex-col gap-5 max-w-2xl mx-auto pt-4">
+        <ExamResult module="betsizing" onRetry={handleStartExam} onQuit={handleQuitExam} />
+      </div>
+    );
+  }
 
   if (quotaBlocked) {
     return (
@@ -627,7 +656,8 @@ export function BetSizingTrainer() {
   return (
     <div className="flex flex-col gap-5 max-w-2xl mx-auto">
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      {/* ── Header — lives HUD during an exam ── */}
+      {examActive ? <ExamHud /> : (
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-white mb-1">
@@ -645,6 +675,7 @@ export function BetSizingTrainer() {
           <Info size={14} />
         </button>
       </div>
+      )}
 
       {/* ════════════ EXERCISE ════════════ */}
       {phase === 'exercise' && ex && (
@@ -873,21 +904,22 @@ export function BetSizingTrainer() {
             </div>
           </div>
 
-          {/* Next button */}
-          <div className="w-full max-w-xs">
-            <Button size="lg" variant="gold" onClick={handleNext} fullWidth>
-              {isEn ? 'Next exercise' : 'Exercice suivant'}{' '}
-              <ChevronRight size={18} className="inline" />
-            </Button>
-          </div>
-
-          {/* Session stats */}
-          <SessionStatsBar
-            total={sessionStats.total}
-            correct={sessionStats.correct}
-            streak={sessionStats.streak}
-            xp={sessionStats.xp}
-          />
+          {/* Next + stats — hidden during an exam (auto-advances) */}
+          {!examActive && (
+            <>
+              <div className="w-full max-w-xs">
+                <Button size="lg" variant="gold" onClick={handleNext} fullWidth>
+                  {isEn ? 'Next exercise' : 'Exercice suivant'}{' '}
+                  <ChevronRight size={18} className="inline" />
+                </Button>
+              </div>
+              <SessionStatsBar
+                total={sessionStats.total}
+                correct={sessionStats.correct}
+                xp={sessionStats.xp}
+              />
+            </>
+          )}
 
           {/* Bet sizing calculation panel — beginner only */}
           {mode === 'beginner' && (() => {
@@ -948,7 +980,7 @@ export function BetSizingTrainer() {
           })()}
 
           {/* GTO explanation */}
-          <ExplanationPanel text={isEn ? ex.explanation.en : ex.explanation.fr} className="p-5" />
+          {!examActive && <ExplanationPanel text={isEn ? ex.explanation.en : ex.explanation.fr} className="p-5" />}
         </motion.div>
       )}
 

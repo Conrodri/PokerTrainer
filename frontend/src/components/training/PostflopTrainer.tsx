@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Info, Zap, Target, Lightbulb } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useExerciseLock } from '../../hooks/useExerciseLock';
+import { useExamRunner } from '../../hooks/useExamRunner';
+import { ExamLauncher, ExamHud, ExamResult } from './ExamMode';
 import { useShallow } from 'zustand/react/shallow';
 import { useTrainingStore } from '../../store/trainingStore';
 import { Hand } from '../poker/Card';
@@ -164,6 +166,9 @@ export function PostflopTrainer() {
   // Lock mode switching while a question is on screen.
   useExerciseLock(!showIntro && phase === 'exercise' && !!exercise && !isLoading);
 
+  // Exam mode — premium only here (each exercise consumes a credit for free users).
+  const { examActive, examFinished, startRun, quitRun, recordAnswer } = useExamRunner('postflop');
+
   // Prevent double-fetch on mount via ref guard
   const hasStarted = useRef(false);
 
@@ -212,11 +217,28 @@ export function PostflopTrainer() {
     setXpEarned(xp);
     await recordResult(ok, xp, `postflop_${exercise.street}`);
     setPhase('result');
+    if (examActive) recordAnswer(ok, handleNext);
   };
 
   const handleNext = async () => {
     setSelected(null);
     await fetchExercise();
+  };
+
+  const handleStartExam = () => {
+    startRun();
+    setQuotaBlocked(false);
+    setShowIntro(false);
+    setTrainerStarted(true);
+    hasStarted.current = true;
+    setSelected(null);
+    fetchExercise();
+  };
+
+  const handleQuitExam = () => {
+    quitRun();
+    setShowIntro(true);
+    setTrainerStarted(false);
   };
 
   const isCorrect   = !!exercise && selected !== null && selected === exercise.correctAction;
@@ -281,7 +303,16 @@ export function PostflopTrainer() {
           freeInfo={!isPremium && loggedIn && freeRemaining > 0
             ? { remaining: freeRemaining, limit: quota.limit }
             : undefined}
+          examSlot={mode !== 'beginner' && isPremium ? <ExamLauncher module="postflop" onStart={handleStartExam} /> : undefined}
         />
+      </div>
+    );
+  }
+
+  if (examFinished) {
+    return (
+      <div className="flex flex-col gap-5 max-w-2xl mx-auto pt-4">
+        <ExamResult module="postflop" onRetry={handleStartExam} onQuit={handleQuitExam} />
       </div>
     );
   }
@@ -297,7 +328,8 @@ export function PostflopTrainer() {
   return (
     <div className="flex flex-col gap-5 max-w-2xl mx-auto">
 
-      {/* ── Header + mode toggle ── */}
+      {/* ── Header — lives HUD during an exam ── */}
+      {examActive ? <ExamHud /> : (
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-white mb-1">
@@ -318,8 +350,10 @@ export function PostflopTrainer() {
           </button>
         </div>
       </div>
+      )}
 
-      {/* ── Street selector ── */}
+      {/* ── Street selector — hidden during an exam ── */}
+      {!examActive && (
       <div className="flex gap-1.5 p-1 bg-gray-900/60 rounded-xl border border-gray-800">
         {STREET_FILTERS.map(sf => (
           <button
@@ -339,6 +373,7 @@ export function PostflopTrainer() {
           </button>
         ))}
       </div>
+      )}
 
       {/* ════════════ LOADING ════════════ */}
       {isLoading && <Spinner />}
@@ -605,23 +640,22 @@ export function PostflopTrainer() {
             </div>
           </div>
 
-          {/* Next button */}
-          <div className="w-full max-w-xs">
-            <Button size="lg" variant="gold" onClick={handleNext} fullWidth>
-              {isEn ? 'Next exercise' : 'Exercice suivant'} <ChevronRight size={18} className="inline" />
-            </Button>
-          </div>
-
-          {/* Recap stats */}
-          <SessionStatsBar
-            total={sessionStats.total}
-            correct={sessionStats.correct}
-            streak={sessionStats.streak}
-            xp={sessionStats.xp}
-          />
-
-          {/* ── Rich explanation — beginner only ── */}
-          <ExplanationPanel text={isEn ? ex.explanation.en : ex.explanation.fr} className="p-5" />
+          {/* Next + stats + explanation — hidden during an exam (auto-advances) */}
+          {!examActive && (
+            <>
+              <div className="w-full max-w-xs">
+                <Button size="lg" variant="gold" onClick={handleNext} fullWidth>
+                  {isEn ? 'Next exercise' : 'Exercice suivant'} <ChevronRight size={18} className="inline" />
+                </Button>
+              </div>
+              <SessionStatsBar
+                total={sessionStats.total}
+                correct={sessionStats.correct}
+                xp={sessionStats.xp}
+              />
+              <ExplanationPanel text={isEn ? ex.explanation.en : ex.explanation.fr} className="p-5" />
+            </>
+          )}
         </motion.div>
       )}
 
