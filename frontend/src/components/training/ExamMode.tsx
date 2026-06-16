@@ -73,9 +73,11 @@ export function ExamHud() {
 // ── End card ────────────────────────────────────────────────────────────────────
 export function ExamResult({ module, onRetry, onQuit }: { module: string; onRetry: () => void; onQuit: () => void }) {
   const isEn = useLangStore(s => s.lang) === 'en';
-  const { correct, isNewRecord, record } = useExamStore(useShallow(s => ({
-    correct: s.correct, isNewRecord: s.isNewRecord, record: s.records[module] ?? 0,
+  const { correct, isNewRecord, record, history } = useExamStore(useShallow(s => ({
+    correct: s.correct, isNewRecord: s.isNewRecord, record: s.records[module] ?? 0, history: s.history,
   })));
+  const fmtDate = (iso: string) =>
+    new Date(iso).toLocaleDateString(isEn ? 'en-US' : 'fr-FR', { day: '2-digit', month: '2-digit' });
 
   return (
     <motion.div
@@ -96,6 +98,23 @@ export function ExamResult({ module, onRetry, onQuit }: { module: string; onRetr
       ) : (
         <div className="flex items-center gap-1.5 text-xs text-gray-400">
           <Trophy size={13} /> {isEn ? 'Record' : 'Record'} : {record}
+        </div>
+      )}
+      {history.length > 0 && (
+        <div className="w-full mt-1">
+          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5 text-center">
+            {isEn ? 'Recent exams' : 'Examens récents'}
+          </p>
+          <ul className="flex flex-col gap-1 max-h-32 overflow-y-auto">
+            {history.map((h, i) => (
+              <li key={i} className="flex items-center justify-between text-xs bg-gray-800/50 rounded-lg px-3 py-1.5">
+                <span className="text-gray-400">{fmtDate(h.createdAt)}</span>
+                <span className="font-bold text-gold-300">
+                  {h.score} <span className="font-normal text-gray-500">{isEn ? 'correct' : 'réussis'}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       <div className="flex flex-col sm:flex-row gap-2 w-full mt-1">

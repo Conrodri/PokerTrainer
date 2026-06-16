@@ -116,8 +116,8 @@ export function TrainerIntro({
         </>)}
       </div>
 
-      {/* Mode selector — segmented control + both modes explained in a compact box */}
-      <div className="flex flex-col items-center gap-1.5">
+      {/* Mode selector — pushed to the footer (below the start/exam buttons) via order-last */}
+      <div className="flex flex-col items-center gap-1.5 order-last">
         <div className="inline-flex p-1 rounded-2xl bg-gray-900/70 border border-gray-700 gap-1">
           <button
             type="button"

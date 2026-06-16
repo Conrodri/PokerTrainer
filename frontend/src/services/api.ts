@@ -235,9 +235,12 @@ export const expertRangesApi = {
 export const examApi = {
   /** All exam best scores for the logged-in user: { [module]: best }. */
   records: () => api.get('/exam/records').then(r => r.data.data as Record<string, number>),
-  /** Submit a run's score; returns the (possibly updated) best and whether it beat the record. */
+  /** Submit a run's score; returns the (possibly updated) best, whether it beat
+   *  the record, and the module's recent run history. */
   saveScore: (module: string, score: number) =>
-    api.post('/exam/record', { module, score }).then(r => r.data.data as { best: number; isNewRecord: boolean }),
+    api.post('/exam/record', { module, score }).then(r => r.data.data as {
+      best: number; isNewRecord: boolean; history: { score: number; createdAt: string }[];
+    }),
 };
 
 // Daily free-quota for non-premium users on premium modules

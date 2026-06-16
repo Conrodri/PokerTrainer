@@ -12,6 +12,7 @@ interface ExamState {
   finished: boolean;      // run ended → show result card
   isNewRecord: boolean;   // the finished run beat the stored record
   records: Record<string, number>;  // best correct-count per module (from backend)
+  history: { score: number; createdAt: string }[];  // recent runs for the last-played module
 
   loadRecords: () => Promise<void>;
   start: (module: string) => void;
@@ -29,6 +30,7 @@ export const useExamStore = create<ExamState>((set, get) => ({
   finished: false,
   isNewRecord: false,
   records: {},
+  history: [],
 
   loadRecords: async () => {
     try {
@@ -40,7 +42,7 @@ export const useExamStore = create<ExamState>((set, get) => ({
   },
 
   start: (module) => set({
-    active: true, module, correct: 0, errors: 0, finished: false, isNewRecord: false,
+    active: true, module, correct: 0, errors: 0, finished: false, isNewRecord: false, history: [],
   }),
 
   answer: (isCorrect) => {
@@ -63,14 +65,15 @@ export const useExamStore = create<ExamState>((set, get) => ({
     // Persist the score (correct count) — best-effort, logged-in only.
     if (module) {
       examApi.saveScore(module, correct)
-        .then(({ best, isNewRecord }) => set(s => ({
+        .then(({ best, isNewRecord, history }) => set(s => ({
           isNewRecord,
           records: { ...s.records, [module]: best },
+          history,
         })))
         .catch(() => {/* anonymous / offline — no saved record */});
     }
     return true;
   },
 
-  quit: () => set({ active: false, module: null, correct: 0, errors: 0, finished: false, isNewRecord: false }),
+  quit: () => set({ active: false, module: null, correct: 0, errors: 0, finished: false, isNewRecord: false, history: [] }),
 }));

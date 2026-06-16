@@ -27,6 +27,7 @@ model User {
   freeUsage       FreeUsage[]
   expertRanges    ExpertRange[]
   examRecords     ExamRecord[]
+  examRuns        ExamRun[]
 
   @@map("users")
 }
@@ -46,6 +47,19 @@ model ExamRecord {
   @@unique([userId, module])
   @@index([userId])
   @@map("exam_records")
+}
+
+// One row per finished exam run — the user's exam history.
+model ExamRun {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module    String
+  score     Int
+  createdAt DateTime @default(now())
+
+  @@index([userId, module])
+  @@map("exam_runs")
 }
 
 // ── Expert multi-action range (premium-expert tier) ───────────────────────────

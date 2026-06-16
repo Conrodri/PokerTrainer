@@ -36,6 +36,8 @@ export async function saveExamScore(req: Request, res: Response): Promise<void> 
       res.status(400).json({ success: false, error: 'score must be a non-negative integer' });
       return;
     }
+    // Always log the run (history), then update the best if beaten.
+    await prisma.examRun.create({ data: { userId, module, score } });
     const existing = await prisma.examRecord.findUnique({
       where: { userId_module: { userId, module } },
     });
@@ -49,7 +51,13 @@ export async function saveExamScore(req: Request, res: Response): Promise<void> 
         update: { best: score },
       });
     }
-    res.json({ success: true, data: { best, isNewRecord } });
+    const runs = await prisma.examRun.findMany({
+      where: { userId, module },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+    });
+    const history = runs.map(r => ({ score: r.score, createdAt: r.createdAt }));
+    res.json({ success: true, data: { best, isNewRecord, history } });
   } catch {
     res.status(500).json({ success: false, error: 'Failed to save exam score' });
   }
