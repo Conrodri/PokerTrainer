@@ -4,6 +4,8 @@ import { ChevronRight, ChevronDown, ChevronUp, RotateCcw, Info, Zap, Target, Sli
 import { rangesApi, profilesApi } from '../../services/api';
 import { useTrainingStore } from '../../store/trainingStore';
 import { useShallow } from 'zustand/react/shallow';
+import { useExamRunner } from '../../hooks/useExamRunner';
+import { ExamLauncher, ExamHud, ExamResult } from './ExamMode';
 import { Position, ExerciseResult, BBDefenseExercise } from '../../types/poker';
 import { trainingApi } from '../../services/api';
 import { RangeMatrix } from '../poker/RangeMatrix';
@@ -343,6 +345,9 @@ export function PreflopTrainer() {
   // Reset on unmount (module change)
   useEffect(() => () => { setIsExercising(false); setCurrentPosition(null); setSelectingPosition(false); }, []);
 
+  // Exam mode (advanced/expert): random-position loop until 3 errors; score = correct.
+  const { examActive, examFinished, startRun, quitRun, recordAnswer } = useExamRunner('preflop');
+
   // ─── Helpers ──────────────────────────────────────────────────────────────────
 
   const resetExerciseState = () => {
@@ -394,12 +399,32 @@ export function PreflopTrainer() {
     await pickAndStart(pos ?? selectedPosition);
   };
 
+  const handleStartExam = async () => {
+    startRun();
+    resetExerciseState();
+    setShowIntro(false);
+    setTrainerStarted(true);
+    setRandomMode(true);   // rotate every position (BB included) across the run
+    setPhase('exercise');
+    await pickAndStart(ALL_POSITIONS[Math.floor(Math.random() * ALL_POSITIONS.length)]);
+  };
+
+  const handleQuitExam = () => {
+    quitRun();
+    setRandomMode(false);
+    setIsBBSession(false);
+    setShowIntro(true);
+    setTrainerStarted(false);
+    setPhase('select_position');
+  };
+
   // ─── handleAnswer (preflop open) ──────────────────────────────────────────────
 
   const handleAnswer = async (action: 'raise' | 'fold') => {
     if (!preflopExercise) return;
     const timeTaken = Date.now() - startTime.current;
     setOpenAnswer(action);
+    let openCorrect: boolean | null = null;
 
     // Beginner = GTO only. Custom ranges apply from Advanced upward.
     if (preflopEnabled && mode !== 'beginner') {
@@ -428,6 +453,7 @@ export function PreflopTrainer() {
         const cellVal = grid[row]?.[col] ?? 0;
         const correctAction: 'raise' | 'fold' = cellVal > 0 ? 'raise' : 'fold';
         const isCorrect = action === correctAction;
+        openCorrect = isCorrect;
         const xp = isCorrect ? 15 : 5;
         setLocalResult({
           isCorrect,
@@ -438,20 +464,23 @@ export function PreflopTrainer() {
         });
         await recordResult(isCorrect, xp, 'preflop', timeTaken);
       } else {
-        await checkPreflopAnswer(action, timeTaken);
+        const r = await checkPreflopAnswer(action, timeTaken);
+        openCorrect = r.isCorrect;
         try {
           const data = await trainingApi.getRangeMatrix(preflopExercise.position);
           setRangeMatrix(data.matrix);
         } catch { /* ignore */ }
       }
     } else {
-      await checkPreflopAnswer(action, timeTaken);
+      const r = await checkPreflopAnswer(action, timeTaken);
+      openCorrect = r.isCorrect;
       try {
         const data = await trainingApi.getRangeMatrix(preflopExercise.position);
         setRangeMatrix(data.matrix);
       } catch { /* ignore */ }
     }
     setPhase('result');
+    if (examActive && openCorrect !== null) recordAnswer(openCorrect, handleNext);
   };
 
   // ─── handleExpertAnswer (expert 2-step quiz: action + frequency) ──────────────
@@ -489,6 +518,7 @@ export function PreflopTrainer() {
     if (isBBSession) setBBSelected(action === 0 ? 'fold' : action === 1 ? 'call' : '3bet');
     await recordResult(isCorrect, xp, 'preflop', timeTaken);
     setPhase('result');
+    if (examActive) recordAnswer(isCorrect, handleNext);
   };
 
   // ─── handleAnswerBB ───────────────────────────────────────────────────────────
@@ -565,6 +595,7 @@ export function PreflopTrainer() {
     });
     await recordResult(isCorrect, xp, 'preflop', timeTaken);
     setPhase('result');
+    if (examActive) recordAnswer(isCorrect, handleNext);
   };
 
   // ─── handleBB3betType (advanced — step 2: value vs bluff) ─────────────────────
@@ -592,6 +623,7 @@ export function PreflopTrainer() {
     await recordResult(isCorrect, xp, 'preflop', timeTaken);
     setBB3betStep(false);
     setPhase('result');
+    if (examActive) recordAnswer(isCorrect, handleNext);
   };
 
   // ─── handleNext ───────────────────────────────────────────────────────────────
@@ -795,7 +827,16 @@ export function PreflopTrainer() {
           startLabel={isEn ? 'Choose a position' : 'Choisir une position'}
           onStart={() => { setShowIntro(false); setTrainerStarted(true); }}
           mode={mode}
+          examSlot={mode !== 'beginner' ? <ExamLauncher module="preflop" onStart={handleStartExam} /> : undefined}
         />
+      </div>
+    );
+  }
+
+  if (examFinished) {
+    return (
+      <div className="flex flex-col gap-6 max-w-2xl mx-auto pt-4">
+        <ExamResult module="preflop" onRetry={handleStartExam} onQuit={handleQuitExam} />
       </div>
     );
   }
@@ -803,7 +844,8 @@ export function PreflopTrainer() {
   return (
     <div className="flex flex-col gap-3 sm:gap-6 max-w-2xl mx-auto">
 
-      {/* ── Persistent header with info button ── */}
+      {/* ── Persistent header (lives HUD during an exam) ── */}
+      {examActive ? <ExamHud /> : (
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-0.5 sm:mb-1">{t.training.preflop_title}</h2>
@@ -817,6 +859,7 @@ export function PreflopTrainer() {
           <Info size={14} />
         </button>
       </div>
+      )}
 
       {/* ── PHASE: Position selection ── */}
       {phase === 'select_position' && (
@@ -1215,7 +1258,8 @@ export function PreflopTrainer() {
                 </div>
               </div>
 
-              {/* Navigation */}
+              {/* Navigation + stats — hidden during an exam (auto-advances) */}
+              {!examActive && (<>
               <div className="flex flex-col gap-3 w-full max-w-xs">
                 <Button size="lg" variant="gold" onClick={handleNext} fullWidth>
                   {t.training.next_hand} <ChevronRight size={18} className="inline" />
@@ -1224,14 +1268,12 @@ export function PreflopTrainer() {
                   <RotateCcw size={14} className="inline mr-1" /> {t.training.change_pos}
                 </Button>
               </div>
-
-              {/* Recap stats */}
               <SessionStatsBar
                 total={sessionStats.total}
                 correct={sessionStats.correct}
-                streak={sessionStats.streak}
                 xp={sessionStats.xp}
               />
+              </>)}
 
               {/* Expert quiz: visual mix bar of your range + your answer */}
               {isExpertQuiz && renderExpertMixBar()}
@@ -1319,7 +1361,8 @@ export function PreflopTrainer() {
                 </div>
               </div>
 
-              {/* Navigation */}
+              {/* Navigation + stats — hidden during an exam (auto-advances) */}
+              {!examActive && (<>
               <div className="flex flex-col gap-3 w-full max-w-xs">
                 <Button size="lg" variant="gold" onClick={handleNext} fullWidth>
                   {t.training.next_hand} <ChevronRight size={18} className="inline" />
@@ -1328,14 +1371,12 @@ export function PreflopTrainer() {
                   <RotateCcw size={14} className="inline mr-1" /> {t.training.change_pos}
                 </Button>
               </div>
-
-              {/* Recap stats */}
               <SessionStatsBar
                 total={sessionStats.total}
                 correct={sessionStats.correct}
-                streak={sessionStats.streak}
                 xp={sessionStats.xp}
               />
+              </>)}
 
               {/* Expert quiz: visual mix bar of your range + your answer */}
               {isExpertQuiz && renderExpertMixBar()}
