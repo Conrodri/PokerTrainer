@@ -21,6 +21,7 @@ const TablePage = lazy(() => import('./pages/TablePage').then(m => ({ default: m
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const PokerRulesPage = lazy(() => import('./components/training/PokerRulesPage').then(m => ({ default: m.PokerRulesPage })));
 const GlossaryPage = lazy(() => import('./pages/GlossaryPage').then(m => ({ default: m.GlossaryPage })));
+const LearningPathPage = lazy(() => import('./pages/LearningPathPage').then(m => ({ default: m.LearningPathPage })));
 const PremiumPage = lazy(() => import('./pages/PremiumPage').then(m => ({ default: m.PremiumPage })));
 
 export default function App() {
@@ -51,6 +52,7 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/rules" element={<PokerRulesPage />} />
               <Route path="/glossary" element={<GlossaryPage />} />
+              <Route path="/learning-path" element={<LearningPathPage />} />
               <Route path="/training" element={<TrainingPage />} />
               <Route path="/table" element={<TablePage />} />
               <Route path="/stats" element={<StatsPage />} />

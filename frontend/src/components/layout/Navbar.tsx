@@ -5,7 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useShallow } from 'zustand/react/shallow';
 import {
   BarChart2, Trophy, BookOpen, Home, LogOut, Crown,
-  ChevronDown, Lock, Menu, X, BookMarked, GraduationCap,
+  ChevronDown, Lock, Menu, X, BookMarked, GraduationCap, Compass,
 } from 'lucide-react';
 import { LanguageToggle } from '../ui/LanguageToggle';
 import { ModeToggle } from '../ui/ModeToggle';
@@ -58,7 +58,7 @@ export function Navbar() {
   }, [location.pathname, location.search]);
 
   const isTrainingActive = location.pathname.startsWith('/training');
-  const isRulesActive    = location.pathname.startsWith('/rules') || location.pathname.startsWith('/glossary');
+  const isRulesActive    = location.pathname.startsWith('/rules') || location.pathname.startsWith('/glossary') || location.pathname.startsWith('/learning-path');
   const avatarLetter     = user?.username?.[0]?.toUpperCase() ?? '?';
 
   // Shared link style helper
@@ -115,6 +115,16 @@ export function Navbar() {
                     >
                       <span className="text-base leading-none">📚</span>
                       <span>{isEn ? 'Rules' : 'Règles'}</span>
+                    </Link>
+                    <Link
+                      to="/learning-path"
+                      onClick={() => setRulesOpen(false)}
+                      className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+                        location.pathname.startsWith('/learning-path') ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                      }`}
+                    >
+                      <Compass size={15} className="shrink-0" />
+                      <span>{isEn ? 'How to learn' : 'Comment apprendre'}</span>
                     </Link>
                     <Link
                       to="/glossary"
@@ -254,6 +264,7 @@ export function Navbar() {
                       <span>📚</span> {isEn ? 'Rules' : 'Règles'}
                     </p>
                     <MobileNavLink to="/rules" icon={<span>📚</span>} label={isEn ? 'Rules' : 'Règles'} active={location.pathname.startsWith('/rules')} />
+                    <MobileNavLink to="/learning-path" icon={<Compass size={15} />} label={isEn ? 'How to learn' : 'Comment apprendre'} active={location.pathname.startsWith('/learning-path')} />
                     <MobileNavLink to="/glossary" icon={<BookMarked size={15} />} label={isEn ? 'Glossary' : 'Lexique'} active={location.pathname.startsWith('/glossary')} />
                     <button
                       onClick={() => { setTutorialOpen(true); setMobileOpen(false); }}

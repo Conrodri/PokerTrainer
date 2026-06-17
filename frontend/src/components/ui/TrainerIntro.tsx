@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { GraduationCap, Play, Zap, Check, Crown, Lock, Gift, Flame, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -44,10 +44,9 @@ export function TrainerIntro({
   const setMode = useModeStore(s => s.setMode);
   const isExpert = !!useAuthStore(s => s.user?.isPremiumExpert);
   const navigate = useNavigate();
-  // Beginners see the full guidance; advanced/expert get a compact launcher
-  // (details collapsed) so the start + exam buttons stay above the fold.
-  const [showDetails, setShowDetails] = useState(mode === 'beginner');
-  useEffect(() => { setShowDetails(mode === 'beginner'); }, [mode]);
+  // The "what it is & how it works" panel starts open in every mode; the user
+  // can still collapse it manually (mode changes no longer force it shut).
+  const [showDetails, setShowDetails] = useState(true);
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}

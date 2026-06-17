@@ -198,19 +198,25 @@ export function PokerRulesPage() {
           52 {isEn ? 'cards' : 'cartes'} = 4 {isEn ? 'suits' : 'couleurs'} × 13 {isEn ? 'ranks' : 'valeurs'}
         </p>
 
-        {/* 4 suits */}
-        <div className="flex gap-4 mb-4 flex-wrap">
-          <div className="flex items-center gap-2 text-2xl">
-            <span className="text-gray-100">♠</span>
-            <span className="text-gray-100">♣</span>
-            <span className="text-xs text-gray-400">{isEn ? '(black)' : '(noir)'}</span>
-          </div>
-          <div className="flex items-center gap-2 text-2xl">
-            <span className="text-red-400">♥</span>
-            <span className="text-red-400">♦</span>
-            <span className="text-xs text-gray-400">{isEn ? '(red)' : '(rouge)'}</span>
-          </div>
+        {/* 4 suits — one distinct colour each (4-colour deck), easier to read */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+          {[
+            { sym: '♠', color: 'text-gray-100',  fr: 'Pique',  en: 'Spades'   },
+            { sym: '♥', color: 'text-red-500',   fr: 'Cœur',   en: 'Hearts'   },
+            { sym: '♦', color: 'text-blue-400',  fr: 'Carreau', en: 'Diamonds' },
+            { sym: '♣', color: 'text-green-400', fr: 'Trèfle',  en: 'Clubs'    },
+          ].map(s => (
+            <div key={s.sym} className="flex items-center gap-2 bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-700">
+              <span className={`text-2xl leading-none ${s.color}`}>{s.sym}</span>
+              <span className="text-xs text-gray-300 font-semibold">{isEn ? s.en : s.fr}</span>
+            </div>
+          ))}
         </div>
+        <p className="text-[11px] text-gray-500 mb-4">
+          {isEn
+            ? '4-colour deck: each suit has its own colour so draws are easier to spot.'
+            : 'Jeu 4 couleurs : chaque couleur a sa teinte pour repérer les tirages plus facilement.'}
+        </p>
 
         {/* Rank order */}
         <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">
@@ -252,7 +258,7 @@ export function PokerRulesPage() {
                 <span className="font-semibold text-white text-xs">{isEn ? h.en : h.fr}</span>
                 <span className="text-gray-500 text-xs ml-1.5">— {isEn ? h.descEn : h.descFr}</span>
               </div>
-              <Hand cards={h.cards as any} size="xs" animate={false} context="display" />
+              <Hand cards={h.cards as any} size="xs" animate={false} context="display" cardStyle="fourcolor" />
             </div>
           ))}
         </div>
@@ -288,12 +294,12 @@ export function PokerRulesPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <div>
               <p className="text-xs text-gray-500 mb-1">{isEn ? 'Your hand' : 'Ta main'}</p>
-              <Hand cards={['Ah', 'Kd']} size="xs" animate={false} context="display" />
+              <Hand cards={['Ah', 'Kd']} size="xs" animate={false} context="display" cardStyle="fourcolor" />
             </div>
             <span className="text-gray-500 text-lg font-bold">+</span>
             <div>
               <p className="text-xs text-gray-500 mb-1">{isEn ? 'Community cards' : 'Cartes communes'}</p>
-              <Hand cards={['Qs', 'Jc', 'Tc', '2h', '5d']} size="xs" animate={false} context="display" />
+              <Hand cards={['Qs', 'Jc', 'Tc', '2h', '5d']} size="xs" animate={false} context="display" cardStyle="fourcolor" />
             </div>
             <span className="text-gray-500 text-lg">=</span>
             <span className="text-green-400 font-bold text-sm">
