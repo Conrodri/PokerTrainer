@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, ChevronUp, RotateCcw, Info, Zap, Target, Sliders, Lightbulb, Check, X } from 'lucide-react';
-import { rangesApi, profilesApi } from '../../services/api';
+import { rangesApi, profilesApi, type RangeProfile } from '../../services/api';
 import { useTrainingStore } from '../../store/trainingStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useExamRunner } from '../../hooks/useExamRunner';
@@ -267,6 +267,12 @@ export function PreflopTrainer() {
   const foldSkipRef = useRef(0);
   const mode = useModeStore(s => s.mode);
   const preflopEnabled = useCustomRangeStore(s => s.preflopEnabled);
+  const setPreflopEnabled = useCustomRangeStore(s => s.setPreflopEnabled);
+
+  // Expert exam: the user must pick which complex (expert) profile to be quizzed
+  // on before the run can start — a GTO-only expert exam has no point.
+  const [examPickerOpen,    setExamPickerOpen]    = useState(false);
+  const [examProfiles,      setExamProfiles]      = useState<RangeProfile[] | null>(null);
 
   // ─── Sync phase/exercise → store ─────────────────────────────────────────────
   useEffect(() => {
@@ -441,9 +447,32 @@ export function PreflopTrainer() {
     quitRun();
     setRandomMode(false);
     setIsBBSession(false);
+    setExamPickerOpen(false);
     setShowIntro(true);
     setTrainerStarted(false);
     setPhase('select_position');
+  };
+
+  // Exam launch entry point (from the intro). In expert mode the user must first
+  // pick a complex range profile; other modes start straight away.
+  const requestExam = async () => {
+    if (mode !== 'expert') { handleStartExam(); return; }
+    setExamProfiles(null);          // null = loading
+    setExamPickerOpen(true);
+    try {
+      const all = await profilesApi.list();
+      setExamProfiles(all.filter(p => p.mode === 'expert'));
+    } catch {
+      setExamProfiles([]);
+    }
+  };
+
+  // Start an expert exam quizzed on the chosen complex profile.
+  const startExamWithProfile = async (profileId: string) => {
+    try { await profilesApi.activate(profileId); } catch { /* ignore */ }
+    setPreflopEnabled(true);        // the run must score against the chosen range
+    setExamPickerOpen(false);
+    handleStartExam();
   };
 
   // ─── handleAnswer (preflop open) ──────────────────────────────────────────────
@@ -858,8 +887,17 @@ export function PreflopTrainer() {
           startLabel={isEn ? 'Choose a position' : 'Choisir une position'}
           onStart={() => { setShowIntro(false); setTrainerStarted(true); }}
           mode={mode}
-          examSlot={mode !== 'beginner' ? <ExamLauncher module="preflop" onStart={handleStartExam} /> : undefined}
+          examSlot={mode !== 'beginner' ? <ExamLauncher module="preflop" onStart={requestExam} /> : undefined}
         />
+        {examPickerOpen && (
+          <ExpertExamProfilePicker
+            profiles={examProfiles}
+            isEn={isEn}
+            onPick={startExamWithProfile}
+            onClose={() => setExamPickerOpen(false)}
+            onCreate={() => { setExamPickerOpen(false); window.dispatchEvent(new CustomEvent('training:open-ranges')); }}
+          />
+        )}
       </div>
     );
   }
@@ -876,7 +914,7 @@ export function PreflopTrainer() {
     <div className="flex flex-col gap-3 sm:gap-6 max-w-2xl mx-auto">
 
       {/* ── Persistent header (lives HUD during an exam) ── */}
-      {examActive ? <ExamHud /> : (
+      {examActive ? <ExamHud onQuit={handleQuitExam} /> : (
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-0.5 sm:mb-1">{t.training.preflop_title}</h2>
@@ -1497,6 +1535,97 @@ function ExampleHand({ cards, label }: { cards: CardStr[]; label: string }) {
       <Hand cards={cards} size="xs" gap="gap-0.5" animate={false} />
       <span className="text-[10px] font-mono font-bold text-gray-300">{label}</span>
     </div>
+  );
+}
+
+// ─── Expert exam: complex-range profile picker ────────────────────────────────
+// Expert exams quiz the user on one of THEIR complex ranges — they must choose
+// which profile before the run can start (a GTO-only expert exam is pointless).
+function ExpertExamProfilePicker({ profiles, isEn, onPick, onClose, onCreate }: {
+  profiles: RangeProfile[] | null;
+  isEn: boolean;
+  onPick: (id: string) => void;
+  onClose: () => void;
+  onCreate: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-md rounded-2xl border border-gray-700 bg-gray-900 p-5 flex flex-col gap-4 max-h-[85vh]"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Sliders size={18} className="text-purple-400 shrink-0" />
+            <div>
+              <h3 className="text-base font-bold text-white">
+                {isEn ? 'Choose your complex range' : 'Choisis ta range complexe'}
+              </h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {isEn
+                  ? 'The expert exam quizzes you on this range.'
+                  : 'Le sprint expert t’interroge sur cette range.'}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-1 shrink-0">
+            <X size={18} />
+          </button>
+        </div>
+
+        {profiles === null ? (
+          <div className="flex items-center justify-center py-10">
+            <div className="animate-spin h-6 w-6 border-2 border-purple-500 border-t-transparent rounded-full" />
+          </div>
+        ) : profiles.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <p className="text-sm text-gray-300">
+              {isEn
+                ? 'You have no complex range yet. Create one in My Ranges (Complex ranges) to start an expert exam.'
+                : 'Tu n’as pas encore de range complexe. Crée-en une dans Mes Ranges (Ranges complexes) pour lancer un sprint expert.'}
+            </p>
+            <Button variant="gold" size="md" onClick={onCreate} className="flex items-center gap-2">
+              <Sliders size={15} />
+              {isEn ? 'Open My Ranges' : 'Ouvrir Mes Ranges'}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 overflow-y-auto">
+            {profiles.map(p => (
+              <button
+                key={p.id}
+                onClick={() => onPick(p.id)}
+                className="group flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/50 px-4 py-3 hover:border-purple-600/70 hover:bg-gray-800 transition-colors text-left"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white text-sm truncate">{p.name}</span>
+                    {p.isActive && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-900/40 text-green-300 border border-green-700/50 shrink-0">
+                        {isEn ? 'Active' : 'Active'}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    {p.stackRanges.length} {isEn
+                      ? `stack range${p.stackRanges.length > 1 ? 's' : ''}`
+                      : `plage${p.stackRanges.length > 1 ? 's' : ''} de stack`}
+                  </p>
+                </div>
+                <span className="flex items-center gap-1 text-xs font-bold text-purple-300 group-hover:text-purple-200 shrink-0">
+                  <Target size={14} /> {isEn ? 'Start' : 'Lancer'}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
   );
 }
 

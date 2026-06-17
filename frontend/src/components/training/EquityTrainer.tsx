@@ -163,7 +163,7 @@ export function EquityTrainer() {
 
       {/* Header — replaced by the lives HUD during an exam */}
       {examActive ? (
-        <ExamHud />
+        <ExamHud onQuit={handleQuitExam} />
       ) : (
         <div className="flex items-start justify-between gap-4">
           <div>

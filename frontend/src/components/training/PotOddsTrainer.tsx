@@ -157,7 +157,7 @@ export function PotOddsTrainer() {
     <div className="flex flex-col gap-5 max-w-xl mx-auto">
       {/* Header — replaced by the lives HUD during an exam */}
       {examActive ? (
-        <ExamHud />
+        <ExamHud onQuit={handleQuitExam} />
       ) : (
         <div className="flex items-start justify-between gap-4">
           <div>

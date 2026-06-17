@@ -351,7 +351,7 @@ export function StatsPage() {
           <StatBox label={t.stats.accuracy}
             value={`${playerStats?.totalCorrect || 0}/${playerStats?.totalExercises || 0}`}
             sub={`${overallAcc}%`} color={overallAcc >= 70 ? 'text-green-400' : 'text-yellow-400'} />
-          <StatBox label={isEn ? 'Best exam' : 'Meilleur examen'} value={bestExam} suffix="🎯" color="text-gold-400" />
+          <StatBox label={isEn ? 'Best sprint' : 'Meilleur sprint'} value={bestExam} suffix="🎯" color="text-gold-400" />
         </div>
       </motion.div>
 
@@ -653,7 +653,7 @@ export function StatsPage() {
                 {m.best > 0 && (
                   <div className="mt-0.5 ml-1">
                     <span className="text-[10px] text-gray-500">
-                      🎯 {isEn ? 'Best exam' : 'Meilleur examen'} :&nbsp;
+                      🎯 {isEn ? 'Best sprint' : 'Meilleur sprint'} :&nbsp;
                       <span className="text-gold-400 font-bold">{m.best}</span>
                       &nbsp;{isEn ? 'correct' : 'réussis'}
                     </span>

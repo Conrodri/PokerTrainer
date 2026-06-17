@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { Heart, Trophy, RotateCcw, X, Target } from 'lucide-react';
@@ -14,6 +15,19 @@ import { Button } from '../ui/Button';
  * All mobile-first / responsive.
  */
 
+// Per-module "Sprint" name shown on the launcher / result (replaces "exam").
+const SPRINT_NAMES: Record<string, { fr: string; en: string }> = {
+  preflop:   { fr: 'Sprint de Préflop',      en: 'Preflop Sprint' },
+  outs:      { fr: "Sprint d'Outs",          en: 'Outs Sprint' },
+  equity:    { fr: "Sprint d'Équité",        en: 'Equity Sprint' },
+  potodds:   { fr: 'Sprint de Pot Odds',     en: 'Pot Odds Sprint' },
+  postflop:  { fr: 'Sprint de Post-flop',    en: 'Post-flop Sprint' },
+  fullhand:  { fr: 'Sprint de Main complète', en: 'Full Hand Sprint' },
+  betsizing: { fr: 'Sprint de Bet Sizing',   en: 'Bet Sizing Sprint' },
+};
+export const sprintName = (module: string, isEn: boolean) =>
+  isEn ? (SPRINT_NAMES[module]?.en ?? 'Sprint') : (SPRINT_NAMES[module]?.fr ?? 'Sprint');
+
 // ── Launcher (intro CTA) — compact so it sits next to the practice button ───────
 export function ExamLauncher({ module, onStart }: { module: string; onStart: () => void }) {
   const isEn = useLangStore(s => s.lang) === 'en';
@@ -26,7 +40,7 @@ export function ExamLauncher({ module, onStart }: { module: string; onStart: () 
         className="flex items-center justify-center gap-2 border border-gold-700/50 text-gold-200"
       >
         <Target size={16} className="text-gold-400" />
-        {isEn ? 'Start an exam' : "Lancer l'examen"}
+        {sprintName(module, isEn)}
         {record > 0 && (
           <span className="text-xs font-normal text-gold-400/90">· {isEn ? 'best' : 'record'} {record}</span>
         )}
@@ -41,30 +55,63 @@ export function ExamLauncher({ module, onStart }: { module: string; onStart: () 
 }
 
 // ── Lives + live score (during a run) ───────────────────────────────────────────
-export function ExamHud() {
+// `onQuit` (optional) wires a Stop button that abandons the run — the chain is
+// lost and no score is saved.
+export function ExamHud({ onQuit }: { onQuit?: () => void }) {
   const isEn = useLangStore(s => s.lang) === 'en';
   const { correct, errors } = useExamStore(useShallow(s => ({ correct: s.correct, errors: s.errors })));
   const lives = Math.max(0, EXAM_MAX_ERRORS - errors);
+  const [confirmQuit, setConfirmQuit] = useState(false);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center justify-between gap-3 bg-gray-900/70 rounded-xl px-4 py-2.5 border border-gold-700/40"
+      className="flex items-center justify-between gap-2 bg-gray-900/70 rounded-xl px-3 sm:px-4 py-2.5 border border-gold-700/40"
     >
       <div className="flex items-center gap-1.5">
         <Target size={15} className="text-gold-400 shrink-0" />
         <span className="text-sm font-bold text-white">{correct}</span>
         <span className="text-xs text-gray-400">{isEn ? 'correct' : 'réussis'}</span>
       </div>
-      <div className="flex items-center gap-1" aria-label={`${lives} lives left`}>
-        {Array.from({ length: EXAM_MAX_ERRORS }).map((_, i) => (
-          <Heart
-            key={i}
-            size={16}
-            className={i < lives ? 'text-red-500 fill-red-500' : 'text-gray-700'}
-          />
-        ))}
+      <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1" aria-label={`${lives} lives left`}>
+          {Array.from({ length: EXAM_MAX_ERRORS }).map((_, i) => (
+            <Heart
+              key={i}
+              size={16}
+              className={i < lives ? 'text-red-500 fill-red-500' : 'text-gray-700'}
+            />
+          ))}
+        </div>
+        {onQuit && (
+          confirmQuit ? (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={onQuit}
+                className="text-[11px] font-bold px-2 py-1 rounded-lg bg-red-700 hover:bg-red-600 text-white transition-colors"
+              >
+                {isEn ? 'Stop?' : 'Arrêter ?'}
+              </button>
+              <button
+                onClick={() => setConfirmQuit(false)}
+                className="text-gray-500 hover:text-gray-300 transition-colors p-1"
+                aria-label={isEn ? 'Cancel' : 'Annuler'}
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmQuit(true)}
+              className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-red-300 border border-gray-700 hover:border-red-700/60 rounded-lg px-2 py-1 transition-colors"
+              title={isEn ? 'Stop the sprint (breaks the chain)' : 'Arrêter le sprint (brise la série)'}
+            >
+              <X size={13} />
+              <span className="hidden sm:inline">{isEn ? 'Stop' : 'Arrêter'}</span>
+            </button>
+          )
+        )}
       </div>
     </motion.div>
   );
@@ -86,7 +133,9 @@ export function ExamResult({ module, onRetry, onQuit }: { module: string; onRetr
       className="w-full max-w-md mx-auto rounded-2xl border border-gray-700 bg-gray-900/80 p-5 sm:p-6 flex flex-col items-center gap-3 text-center"
     >
       <div className="text-3xl">{isNewRecord ? '🏆' : '🎯'}</div>
-      <h3 className="text-lg font-bold text-white">{isEn ? 'Exam over' : 'Examen terminé'}</h3>
+      <h3 className="text-lg font-bold text-white">
+        {sprintName(module, isEn)} {isEn ? '— over' : '— terminé'}
+      </h3>
       <div className="flex flex-col items-center">
         <span className="text-4xl font-black text-gold-400 leading-none">{correct}</span>
         <span className="text-xs text-gray-400 mt-1">{isEn ? 'correct answers' : 'bonnes réponses'}</span>
@@ -103,7 +152,7 @@ export function ExamResult({ module, onRetry, onQuit }: { module: string; onRetr
       {history.length > 0 && (
         <div className="w-full mt-1">
           <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5 text-center">
-            {isEn ? 'Recent exams' : 'Examens récents'}
+            {isEn ? 'Recent sprints' : 'Sprints récents'}
           </p>
           <ul className="flex flex-col gap-1 max-h-32 overflow-y-auto">
             {history.map((h, i) => (

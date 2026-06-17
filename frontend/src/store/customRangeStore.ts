@@ -5,6 +5,7 @@ interface CustomRangeState {
   /** Whether to use the user's saved custom range / active profile in the Preflop trainer (includes BB defense). */
   preflopEnabled: boolean;
   togglePreflopEnabled: () => void;
+  setPreflopEnabled: (v: boolean) => void;
 }
 
 export const useCustomRangeStore = create<CustomRangeState>()(
@@ -12,6 +13,7 @@ export const useCustomRangeStore = create<CustomRangeState>()(
     (set) => ({
       preflopEnabled: false,
       togglePreflopEnabled: () => set(s => ({ preflopEnabled: !s.preflopEnabled })),
+      setPreflopEnabled: (preflopEnabled) => set({ preflopEnabled }),
     }),
     { name: 'poker-custom-ranges' },
   ),

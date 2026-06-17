@@ -484,7 +484,7 @@ export function FullHandTrainer() {
     <div className="flex flex-col gap-5 max-w-2xl mx-auto">
 
       {/* ── Header — lives HUD during an exam ── */}
-      {examActive ? <ExamHud /> : (
+      {examActive ? <ExamHud onQuit={handleQuitExam} /> : (
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-white mb-1">
