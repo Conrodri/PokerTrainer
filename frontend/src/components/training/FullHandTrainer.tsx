@@ -252,6 +252,7 @@ export function FullHandTrainer() {
   };
 
   const handleStart = () => {
+    quitRun();              // clear any leftover exam state — normal mode never shows the lives HUD / auto-advance
     setShowIntro(false);
     setTrainerStarted(true);
     loadScenario();

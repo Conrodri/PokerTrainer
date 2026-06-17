@@ -63,6 +63,7 @@ export function OutsTrainer() {
   };
 
   const handleStart = async () => {
+    quitRun();              // clear any leftover exam state — normal mode never shows the lives HUD / auto-advance
     setShowIntro(false);
     setTrainerStarted(true);
     await fetchOutsExercise();

@@ -203,6 +203,7 @@ export function PostflopTrainer() {
   };
 
   const handleStart = () => {
+    quitRun();              // clear any leftover exam state — normal mode never shows the lives HUD / auto-advance
     setShowIntro(false);
     setTrainerStarted(true);
     hasStarted.current = true;

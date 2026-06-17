@@ -232,7 +232,10 @@ export function PreflopTrainer() {
    *  rendered in the recap with the editor's stacked-bar scheme for consistency. */
   const [customMix,        setCustomMix]        = useState<number[] | null>(null);
   const [localResult,      setLocalResult]      = useState<ExerciseResult | null>(null);
-  const [openAnswer,       setOpenAnswer]       = useState<'raise' | 'fold' | null>(null);
+  const [openAnswer,       setOpenAnswer]       = useState<'raise' | 'call' | 'fold' | null>(null);
+  /** Exact action of the active custom simple range for the current open hand
+   *  (raise/call/fold). null = no custom range → GTO 2-button (Fold/Raise) path. */
+  const [openCustomAction, setOpenCustomAction] = useState<'raise' | 'call' | 'fold' | null>(null);
   /** Expert quiz verdict for the glanceable colored pills. */
   const [expertVerdict,    setExpertVerdict]    = useState<
     { action: number; userFreq: number; targetFreq: number; inRange: boolean; freqMatch: boolean } | null
@@ -342,6 +345,30 @@ export function PreflopTrainer() {
     return () => { cancelled = true; };
   }, [phase, isBBSession, mode, preflopEnabled, preflopExercise, bbExercise, heroStack]);
 
+  // Advanced + custom simple range active: resolve the active OPEN range for the
+  // current hand so the decision UI can offer the EXACT action (Fold/Call/Raise) —
+  // "the range is king". null → no custom range, fall back to GTO Fold/Raise.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (phase !== 'exercise' || isBBSession || mode !== 'advanced' || !preflopEnabled || !preflopExercise) {
+        setOpenCustomAction(null);
+        return;
+      }
+      try {
+        const resolved = await profilesApi.resolve(preflopExercise.position, heroStack, true);
+        const play = resolved?.cells ? toPlayFrequencies(resolved.cells) : null;
+        if (cancelled) return;
+        if (!play) { setOpenCustomAction(null); return; }
+        const [row, col] = getMatrixIndices(preflopExercise.notation);
+        const v = play[row * 13 + col] ?? 0;
+        // Same thresholds as the simple RangeEditor: ≥0.8 Raise, 0<v<0.8 Call, ≤0 Fold.
+        setOpenCustomAction(v >= 0.8 ? 'raise' : v <= 0 ? 'fold' : 'call');
+      } catch { if (!cancelled) setOpenCustomAction(null); }
+    })();
+    return () => { cancelled = true; };
+  }, [phase, isBBSession, mode, preflopEnabled, preflopExercise, heroStack]);
+
   // Reset on unmount (module change)
   useEffect(() => () => { setIsExercising(false); setCurrentPosition(null); setSelectingPosition(false); }, []);
 
@@ -394,6 +421,7 @@ export function PreflopTrainer() {
   // ─── handleStart ──────────────────────────────────────────────────────────────
 
   const handleStart = async (pos?: Position) => {
+    quitRun();              // clear any leftover exam state — normal mode never shows the lives HUD / auto-advance
     resetExerciseState();
     setPhase('exercise');
     await pickAndStart(pos ?? selectedPosition);
@@ -420,7 +448,7 @@ export function PreflopTrainer() {
 
   // ─── handleAnswer (preflop open) ──────────────────────────────────────────────
 
-  const handleAnswer = async (action: 'raise' | 'fold') => {
+  const handleAnswer = async (action: 'raise' | 'call' | 'fold') => {
     if (!preflopExercise) return;
     const timeTaken = Date.now() - startTime.current;
     setOpenAnswer(action);
@@ -451,7 +479,10 @@ export function PreflopTrainer() {
         setCustomMatrix(grid);
         const [row, col] = getMatrixIndices(preflopExercise.notation);
         const cellVal = grid[row]?.[col] ?? 0;
-        const correctAction: 'raise' | 'fold' = cellVal > 0 ? 'raise' : 'fold';
+        // The range is king: ≥0.8 = Raise, 0<v<0.8 = Call (limp), ≤0 = Fold.
+        // The exact action is the ONLY correct answer — no mixed acceptance.
+        const correctAction: 'raise' | 'call' | 'fold' =
+          cellVal >= 0.8 ? 'raise' : cellVal <= 0 ? 'fold' : 'call';
         const isCorrect = action === correctAction;
         openCorrect = isCorrect;
         const xp = isCorrect ? 15 : 5;
@@ -1113,7 +1144,26 @@ export function PreflopTrainer() {
                     </div>
                   </div>
 
-                  {isExpertQuiz ? renderExpertQuiz() : (
+                  {isExpertQuiz ? renderExpertQuiz() : openCustomAction !== null ? (
+                  // Custom simple range active → offer the exact 3 actions; colors
+                  // match the verdict pills (Raise green · Call gold · Fold red).
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="flex gap-2 sm:gap-4 w-full sm:w-auto"
+                  >
+                    <Button size="xl" variant="danger" onClick={() => handleAnswer('fold')} className="flex-1 sm:flex-none sm:min-w-[110px]">
+                      Fold
+                    </Button>
+                    <Button size="xl" variant="gold" onClick={() => handleAnswer('call')} className="flex-1 sm:flex-none sm:min-w-[110px]">
+                      Call
+                    </Button>
+                    <Button size="xl" variant="primary" onClick={() => handleAnswer('raise')} className="flex-1 sm:flex-none sm:min-w-[110px]">
+                      Raise
+                    </Button>
+                  </motion.div>
+                  ) : (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -1319,18 +1369,40 @@ export function PreflopTrainer() {
               <VerdictBanner isCorrect={result.isCorrect} partial={result.partial} />
 
               {/* Colored verdict pills (non-expert). Expert mix bar is below the stats. */}
-              {!isExpertQuiz && (
-                <div className="flex gap-2 flex-wrap justify-center">
-                  <span className={`px-3 py-1.5 rounded-full border text-sm font-bold ${OPEN_ACTION_PILL[result.correctAction] ?? OPEN_ACTION_PILL.fold}`}>
-                    {isEn ? 'Correct' : 'Bon coup'} : <strong>{openActionLabel(result.correctAction)}</strong>
-                  </span>
-                  {openAnswer && !result.isCorrect && (
-                    <span className="px-3 py-1.5 rounded-full border text-sm font-bold border-red-700 text-red-300 bg-red-900/20">
-                      {isEn ? 'Your choice' : 'Ton choix'} : <strong>{openActionLabel(openAnswer)}</strong>
-                    </span>
-                  )}
-                </div>
-              )}
+              {!isExpertQuiz && (() => {
+                // Mixed-frequency hand (e.g. QJo @ HJ): GTO splits between raise & fold,
+                // so BOTH answers score as correct. Make that explicit instead of just
+                // showing "Bon coup : Raise" (which looks wrong after a correct Fold).
+                const raisePct = Math.round((result.frequency ?? 0) * 100);
+                const foldPct = 100 - raisePct;
+                return (
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className="flex gap-2 flex-wrap justify-center">
+                      {result.isMixed ? (
+                        <span className="px-3 py-1.5 rounded-full border text-sm font-bold border-amber-600 text-amber-200 bg-amber-900/25">
+                          {isEn ? 'Mixed hand' : 'Main mixte'} : <strong>Raise {raisePct}%</strong> · <strong>Fold {foldPct}%</strong>
+                        </span>
+                      ) : (
+                        <span className={`px-3 py-1.5 rounded-full border text-sm font-bold ${OPEN_ACTION_PILL[result.correctAction] ?? OPEN_ACTION_PILL.fold}`}>
+                          {isEn ? 'Correct' : 'Bon coup'} : <strong>{openActionLabel(result.correctAction)}</strong>
+                        </span>
+                      )}
+                      {openAnswer && !result.isCorrect && (
+                        <span className="px-3 py-1.5 rounded-full border text-sm font-bold border-red-700 text-red-300 bg-red-900/20">
+                          {isEn ? 'Your choice' : 'Ton choix'} : <strong>{openActionLabel(openAnswer)}</strong>
+                        </span>
+                      )}
+                    </div>
+                    {result.isMixed && (
+                      <p className="text-[11px] text-amber-300/80 text-center max-w-xs leading-snug">
+                        {isEn
+                          ? 'This hand is played at a split frequency — both Raise and Fold are acceptable here.'
+                          : 'Cette main se joue à fréquence mixte — Raise et Fold sont tous deux acceptables ici.'}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Compact table recap */}
               <div className="flex flex-col sm:flex-row items-center gap-6 w-full">
