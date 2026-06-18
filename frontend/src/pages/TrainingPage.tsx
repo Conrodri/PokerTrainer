@@ -116,8 +116,9 @@ export function TrainingPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Module tabs — horizontally scrollable on mobile, hidden once trainer is active */}
-      <div className={`flex gap-1.5 border-b border-gray-800 pb-2 overflow-x-auto transition-all duration-300 scrollbar-none ${trainerStarted ? 'hidden' : ''}`}>
+      {/* Module tabs — always wrap: one row when there's room, extra rows when the
+          window is narrow (no unreliable horizontal scroll at any width). */}
+      <div className={`flex flex-wrap justify-center gap-1.5 border-b border-gray-800 pb-2 transition-all duration-300 ${trainerStarted ? 'hidden' : ''}`}>
         {TABS.map(tab => (
           <button
             key={tab.id}

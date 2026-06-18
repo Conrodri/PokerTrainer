@@ -186,22 +186,24 @@ export function HomePage() {
               transition={{ delay: 0.35 + i * 0.08 }}
             >
               {module.comingSoon ? (
-                <div className="relative bg-gradient-to-br from-gold-900/10 to-gray-900/80 border border-gold-700/30 rounded-2xl p-4 h-full opacity-70 cursor-default">
-                  <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
-                    <div className="flex items-center gap-1 bg-gold-900/70 border border-gold-700/60 text-gold-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                <div className="bg-gradient-to-br from-gold-900/10 to-gray-900/80 border border-gold-700/30 rounded-2xl p-4 h-full opacity-70 cursor-default flex flex-col">
+                  <div className="flex items-center justify-end gap-1 mb-2 flex-wrap">
+                    <span className="flex items-center gap-1 bg-gold-900/70 border border-gold-700/60 text-gold-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
                       👑 {t.home.badge_premium}
-                    </div>
-                    <div className="text-[10px] text-gray-400 font-medium px-2 py-0.5 bg-gray-800/90 border border-gray-700 rounded-full">
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-medium px-2 py-0.5 bg-gray-800/90 border border-gray-700 rounded-full">
                       {t.home.coming_soon}
-                    </div>
+                    </span>
                   </div>
                   <PremiumModuleCard module={module} startArrow={t.home.start_arrow} comingSoon />
                 </div>
               ) : (
                 <Link to={module.href} className="block group h-full">
-                  <div className="relative bg-gradient-to-br from-gold-900/20 to-gray-900/80 border border-gold-700/50 rounded-2xl p-4 h-full transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:border-gold-600">
-                    <div className="absolute top-3 right-3 flex items-center gap-1 bg-gold-900/70 border border-gold-700/60 text-gold-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
-                      👑 {t.home.badge_premium}
+                  <div className="bg-gradient-to-br from-gold-900/20 to-gray-900/80 border border-gold-700/50 rounded-2xl p-4 h-full transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:border-gold-600 flex flex-col">
+                    <div className="flex items-center justify-end mb-2">
+                      <span className="flex items-center gap-1 bg-gold-900/70 border border-gold-700/60 text-gold-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                        👑 {t.home.badge_premium}
+                      </span>
                     </div>
                     <PremiumModuleCard module={module} startArrow={t.home.start_arrow} />
                   </div>
@@ -262,7 +264,7 @@ function FreeModuleCard({ module, startArrow }: { module: any; startArrow: strin
 function PremiumModuleCard({ module, startArrow, comingSoon }: { module: any; startArrow: string; comingSoon?: boolean }) {
   return (
     <>
-      <div className="flex items-start gap-3 mb-2 pr-20">
+      <div className="flex items-start gap-3 mb-2">
         <span className="text-3xl">{module.icon}</span>
         <div>
           <div className="flex items-center gap-2 mb-1">

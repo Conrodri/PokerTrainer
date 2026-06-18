@@ -211,6 +211,11 @@ export function OutsTrainer() {
 
                 {/* Question */}
                 <p className="text-center text-white font-semibold text-lg">{t.training.outs_question}</p>
+                <p className="text-center text-xs text-gray-400 -mt-3 max-w-md mx-auto leading-snug">
+                  {isEn
+                    ? 'Count the cards that give you a likely winning hand — your draw completing AND improving to top pair count; weak/low pairs that wouldn’t win do not.'
+                    : 'Compte les cartes qui te donnent une main probablement gagnante — ton tirage qui rentre ET passer top paire comptent ; les petites paires qui ne gagneraient pas, non.'}
+                </p>
 
                 {/* Options */}
                 <div className="grid grid-cols-2 gap-3">
@@ -234,8 +239,8 @@ export function OutsTrainer() {
                 <BeginnerGuide
                   title={isEn ? 'What you must do' : 'Ce qu\'on te demande'}
                   text={isEn
-                    ? `Your hand is **not finished yet** — but the next card could make it strong (a flush, a straight, a pair...).\nAn **out** is a card still hidden in the deck that would improve your hand.\n👉 Your job: look at your 2 cards + the board, and **count how many cards** can help you. Then pick that number above.\n💡 Example: if you need one more heart for a flush draw and you can see 4 hearts already, there are 9 hearts left = **9 outs**.`
-                    : `Ta main n'est **pas encore terminée** — mais la prochaine carte pourrait la rendre forte (une couleur, une suite, une paire...).\nUn **out**, c'est une carte encore cachée dans le paquet qui améliorerait ta main.\n👉 Ton travail : regarde tes 2 cartes + le board, et **compte combien de cartes** peuvent t'aider. Puis choisis ce nombre ci-dessus.\n💡 Exemple : s'il te manque un cœur pour un tirage couleur et que tu vois déjà 4 cœurs, il reste 9 cœurs = **9 outs**.`}
+                    ? `Your hand is **not finished yet** — but the next card could make it a **likely winner** (a flush, a straight, or top pair).\nAn **out** is a hidden card that gets you to that winning hand. Count your draw's cards **and** cards that pair you up to top pair — but **not** low pairs that still wouldn't win.\n👉 Look at your 2 cards + the board and count those cards, then pick the number above.\n💡 Example: with **A9s** on **K-Q-J** rainbow, any **10** makes the nut straight (4) and any **ace** gives top pair (3) = **7 outs**. A 9 would only be a weak third pair, so it doesn't count.`
+                    : `Ta main n'est **pas encore terminée** — mais la prochaine carte peut la rendre **probablement gagnante** (couleur, suite, ou top paire).\nUn **out**, c'est une carte cachée qui t'amène à cette main gagnante. Compte les cartes de ton tirage **et** celles qui te donnent top paire — mais **pas** les petites paires qui ne gagneraient pas.\n👉 Regarde tes 2 cartes + le board, compte ces cartes, puis choisis le nombre ci-dessus.\n💡 Exemple : avec **A9s** sur **K-Q-J** rainbow, n'importe quel **10** fait la quinte max (4) et n'importe quel **as** donne top paire (3) = **7 outs**. Un 9 ne ferait qu'une petite troisième paire, donc il ne compte pas.`}
                 />
 
                 {/* Indice — common-draw cheat sheet. Beginner shows it; advanced

@@ -1,94 +1,48 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
-  Crown, Check, X, Zap, Target, BookOpen,
-  BarChart2, Lock, Star, ChevronRight,
+  Crown, Check, Minus, Zap, Target, BookOpen,
+  BarChart2, Star, ChevronRight, Sliders, Flame,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useLangStore } from '../store/langStore';
 
-// ─── Feature list ─────────────────────────────────────────────────────────────
+// ─── Tiered comparison ────────────────────────────────────────────────────────
+// Each row lists availability per tier: [free, premium, expert].
+type Row = { icon: string; fr: string; en: string; tiers: [boolean, boolean, boolean] };
 
-const FEATURES = [
-  {
-    icon: '🎯',
-    labelFr: 'Pré-flop',
-    labelEn: 'Pre-flop',
-    descFr: 'Toutes les positions, toutes les situations',
-    descEn: 'All positions, all situations',
-    free: true,
-  },
-  {
-    icon: '🎲',
-    labelFr: 'Outs',
-    labelEn: 'Outs',
-    descFr: 'Calculer vos outs et votre équité',
-    descEn: 'Calculate your outs and equity',
-    free: true,
-  },
-  {
-    icon: '⚖️',
-    labelFr: 'Équité',
-    labelEn: 'Equity',
-    descFr: "Comprendre l'équité main vs main",
-    descEn: 'Understand hand vs hand equity',
-    free: true,
-  },
-  {
-    icon: '📊',
-    labelFr: 'Pot Odds',
-    labelEn: 'Pot Odds',
-    descFr: 'Maîtriser les décisions mathématiques',
-    descEn: 'Master mathematical decisions',
-    free: true,
-  },
-  {
-    icon: '🃏',
-    labelFr: 'Post-flop',
-    labelEn: 'Post-flop',
-    descFr: 'Décisions sur flop, turn et river',
-    descEn: 'Decisions on flop, turn and river',
-    free: false,
-  },
-  {
-    icon: '🎰',
-    labelFr: 'Main complète',
-    labelEn: 'Full Hand',
-    descFr: 'Simuler une main entière du début à la fin',
-    descEn: 'Simulate a full hand from start to finish',
-    free: false,
-  },
-  {
-    icon: '📐',
-    labelFr: 'Bet Sizing',
-    labelEn: 'Bet Sizing',
-    descFr: 'Optimiser la taille de vos mises',
-    descEn: 'Optimise your bet sizes',
-    free: false,
-  },
-] as const;
+const MODULE_ROWS: Row[] = [
+  { icon: '🎯', fr: 'Pré-flop',      en: 'Pre-flop',  tiers: [true,  true, true] },
+  { icon: '🎲', fr: 'Outs',          en: 'Outs',      tiers: [true,  true, true] },
+  { icon: '⚖️', fr: 'Équité',        en: 'Equity',    tiers: [true,  true, true] },
+  { icon: '📊', fr: 'Pot Odds',      en: 'Pot Odds',  tiers: [true,  true, true] },
+  { icon: '🃏', fr: 'Post-flop',     en: 'Post-flop', tiers: [false, true, true] },
+  { icon: '🎰', fr: 'Main complète', en: 'Full Hand', tiers: [false, true, true] },
+  { icon: '📐', fr: 'Bet Sizing',    en: 'Bet Sizing',tiers: [false, true, true] },
+];
+
+const FEATURE_ROWS: Row[] = [
+  { icon: '🎓', fr: 'Modes Débutant & Avancé',          en: 'Beginner & Advanced modes',     tiers: [true,  true, true] },
+  { icon: '📈', fr: 'Statistiques détaillées par module', en: 'Detailed stats per module',     tiers: [false, true, true] },
+  { icon: '👑', fr: 'Badge Premium au classement',        en: 'Premium badge on leaderboard',  tiers: [false, true, true] },
+  { icon: '🗂️', fr: 'Ranges personnalisées (simples)',    en: 'Custom ranges (simple)',        tiers: [false, true, true] },
+  { icon: '🔥', fr: 'Mode Expert (sans aucune aide)',     en: 'Expert mode (zero help)',       tiers: [false, false, true] },
+  { icon: '🎚️', fr: 'Ranges complexes (mix Fold/Call/Raise/All-in)', en: 'Complex ranges (Fold/Call/Raise/All-in mix)', tiers: [false, false, true] },
+  { icon: '🏁', fr: 'Sprints experts sur tes propres ranges', en: 'Expert sprints on your own ranges', tiers: [false, false, true] },
+];
 
 const PERKS = [
-  {
-    icon: <Zap size={18} className="text-gold-400" />,
-    fr: 'Accès à tous les modules d\'entraînement',
-    en: 'Access to all training modules',
-  },
-  {
-    icon: <Star size={18} className="text-gold-400" />,
-    fr: 'Badge Premium sur le classement',
-    en: 'Premium badge on the leaderboard',
-  },
-  {
-    icon: <BarChart2 size={18} className="text-gold-400" />,
-    fr: 'Statistiques détaillées par module',
-    en: 'Detailed stats per module',
-  },
-  {
-    icon: <BookOpen size={18} className="text-gold-400" />,
-    fr: 'Nouvelles fonctionnalités en priorité',
-    en: 'New features first',
-  },
+  { icon: <Zap size={18} className="text-gold-400" />,       fr: 'Tous les modules d\'entraînement', en: 'All training modules' },
+  { icon: <BarChart2 size={18} className="text-gold-400" />, fr: 'Statistiques détaillées par module', en: 'Detailed stats per module' },
+  { icon: <Star size={18} className="text-gold-400" />,      fr: 'Badge Premium sur le classement', en: 'Premium badge on the leaderboard' },
+  { icon: <Sliders size={18} className="text-gold-400" />,   fr: 'Éditeur de ranges personnalisées', en: 'Custom range editor' },
+] as const;
+
+const EXPERT_PERKS = [
+  { icon: <Flame size={18} className="text-purple-400" />,   fr: 'Tout Premium, plus :', en: 'Everything in Premium, plus:' },
+  { icon: <Crown size={18} className="text-purple-400" />,   fr: 'Mode Expert — aucune aide affichée', en: 'Expert mode — no on-screen help' },
+  { icon: <Sliders size={18} className="text-purple-400" />, fr: 'Ranges complexes : mix de fréquences par main', en: 'Complex ranges: per-hand frequency mix' },
+  { icon: <Target size={18} className="text-purple-400" />,  fr: 'Sprints qui t\'interrogent sur TES ranges', en: 'Sprints that quiz you on YOUR ranges' },
 ] as const;
 
 // ─── PremiumPage ──────────────────────────────────────────────────────────────
@@ -97,10 +51,20 @@ export function PremiumPage() {
   const user = useAuthStore(s => s.user);
   const isEn = useLangStore(s => s.lang) === 'en';
 
-  const isPremium = user?.isPremium;
+  const isPremium = !!user?.isPremium;
+  const isExpert  = !!user?.isPremiumExpert;
+
+  // Manual activation for now (swapped for the checkout call once billing is wired).
+  const subscribeHref = (tier: 'Premium' | 'Expert') =>
+    `mailto:contact@pokertrainer.app?subject=${encodeURIComponent(`Abonnement ${tier}`)}`;
+
+  const cell = (on: boolean) =>
+    on
+      ? <Check size={16} className="text-gold-400 mx-auto" />
+      : <Minus size={15} className="text-gray-700 mx-auto" />;
 
   return (
-    <div className="flex flex-col gap-8 max-w-2xl mx-auto pb-8">
+    <div className="flex flex-col gap-8 max-w-3xl mx-auto pb-8">
 
       {/* ── Hero ── */}
       <motion.div
@@ -108,74 +72,32 @@ export function PremiumPage() {
         animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-yellow-900/60 via-gold-900/40 to-gray-900 border border-gold-700/40 px-6 py-10 text-center"
       >
-        {/* Glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-gold-500/10 blur-3xl rounded-full" />
         </div>
 
         <Crown size={48} className="text-gold-400 mx-auto mb-4" fill="currentColor" />
         <h1 className="text-3xl font-black text-white mb-2">
-          {isEn ? 'Go Premium' : 'Passer Premium'}
+          {isEn ? 'Choose your plan' : 'Choisis ton offre'}
         </h1>
         <p className="text-gray-300 text-base max-w-md mx-auto">
           {isEn
-            ? 'Unlock all training modules and take your poker game to the next level.'
-            : 'Débloquez tous les modules d\'entraînement et passez au niveau supérieur.'}
+            ? 'Unlock every module — or go Expert to train on your own custom ranges.'
+            : 'Débloque tous les modules — ou passe Expert pour t\'entraîner sur tes propres ranges.'}
         </p>
 
-        {isPremium && (
+        {(isPremium || isExpert) && (
           <div className="mt-5 inline-flex items-center gap-2 bg-gold-600/20 border border-gold-600/40 text-gold-300 text-sm font-semibold px-4 py-2 rounded-full">
             <Crown size={14} fill="currentColor" />
-            {isEn ? 'You already have Premium — enjoy!' : 'Vous êtes déjà Premium — profitez-en !'}
+            {isExpert
+              ? (isEn ? 'You have Expert — enjoy!' : 'Tu as l\'offre Expert — profites-en !')
+              : (isEn ? 'You have Premium — enjoy!' : 'Tu as Premium — profites-en !')}
           </div>
         )}
       </motion.div>
 
-      {/* ── Feature comparison ── */}
-      <div className="bg-gray-900/60 border border-gray-800 rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-[1fr_auto_auto] text-xs font-bold uppercase tracking-wider text-gray-500 px-4 py-3 border-b border-gray-800">
-          <span>{isEn ? 'Module' : 'Module'}</span>
-          <span className="text-center px-3">{isEn ? 'Free' : 'Gratuit'}</span>
-          <span className="text-center px-3 text-gold-500">Premium</span>
-        </div>
-
-        {FEATURES.map((feat, i) => {
-          const label = isEn ? feat.labelEn : feat.labelFr;
-          const desc  = isEn ? feat.descEn  : feat.descFr;
-          return (
-            <motion.div
-              key={feat.icon}
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className={`grid grid-cols-[1fr_auto_auto] items-center px-4 py-3 ${
-                i < FEATURES.length - 1 ? 'border-b border-gray-800/60' : ''
-              } ${!feat.free ? 'bg-gold-900/10' : ''}`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="text-xl leading-none shrink-0">{feat.icon}</span>
-                <div className="min-w-0">
-                  <p className={`text-sm font-semibold ${feat.free ? 'text-white' : 'text-gold-300'}`}>
-                    {label}
-                  </p>
-                  <p className="text-[11px] text-gray-500 truncate">{desc}</p>
-                </div>
-              </div>
-              <div className="flex justify-center px-3">
-                {feat.free
-                  ? <Check size={16} className="text-green-400" />
-                  : <X size={16} className="text-gray-600" />}
-              </div>
-              <div className="flex justify-center px-3">
-                <Check size={16} className="text-gold-400" />
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* ── Pricing card ── */}
-      <div className="grid sm:grid-cols-2 gap-4">
+      {/* ── Pricing cards ── */}
+      <div className="grid sm:grid-cols-3 gap-4">
 
         {/* Free */}
         <div className="rounded-2xl border border-gray-700 bg-gray-900/40 p-5 flex flex-col gap-4">
@@ -183,20 +105,21 @@ export function PremiumPage() {
             <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
               {isEn ? 'Free' : 'Gratuit'}
             </p>
-            <p className="text-3xl font-black text-white">0€</p>
-            <p className="text-xs text-gray-500 mt-0.5">{isEn ? 'Forever' : 'Pour toujours'}</p>
+            <div className="flex items-end gap-1">
+              <p className="text-3xl font-black text-white">0€</p>
+              <p className="text-xs text-gray-500 mb-1">/ {isEn ? 'forever' : 'toujours'}</p>
+            </div>
           </div>
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-2 text-sm">
             {['Pré-flop', 'Outs', 'Équité', 'Pot Odds'].map(f => (
-              <li key={f} className="flex items-center gap-2 text-sm text-gray-300">
+              <li key={f} className="flex items-center gap-2 text-gray-300">
                 <Check size={13} className="text-green-400 shrink-0" />{f}
               </li>
             ))}
-            {['Post-flop', 'Main complète', 'Bet Sizing'].map(f => (
-              <li key={f} className="flex items-center gap-2 text-sm text-gray-500">
-                <Lock size={13} className="text-gray-700 shrink-0" />{f}
-              </li>
-            ))}
+            <li className="flex items-center gap-2 text-gray-500">
+              <Minus size={13} className="text-gray-700 shrink-0" />
+              {isEn ? 'Premium modules limited' : 'Modules premium limités'}
+            </li>
           </ul>
           {!user && (
             <Link
@@ -214,42 +137,109 @@ export function PremiumPage() {
           className="rounded-2xl border border-gold-600/60 bg-gradient-to-br from-gold-900/30 to-gray-900/80 p-5 flex flex-col gap-4 relative overflow-hidden"
         >
           <div className="absolute top-3 right-3 bg-gold-600 text-gray-900 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-            {isEn ? 'Best value' : 'Meilleure offre'}
+            {isEn ? 'Popular' : 'Populaire'}
           </div>
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-gold-500 mb-1 flex items-center gap-1">
               <Crown size={11} fill="currentColor" /> Premium
             </p>
             <div className="flex items-end gap-2">
-              <p className="text-3xl font-black text-white">4,99€</p>
+              <p className="text-3xl font-black text-white">9,99€</p>
               <p className="text-xs text-gray-400 mb-1">/ {isEn ? 'month' : 'mois'}</p>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {isEn ? 'or 39,99€ / year (save 33%)' : 'ou 39,99€ / an (économisez 33%)'}
-            </p>
+            <p className="text-xs text-gray-500 mt-0.5">{isEn ? 'No commitment' : 'Sans engagement'}</p>
           </div>
           <ul className="flex flex-col gap-2">
             {PERKS.map((p, i) => (
               <li key={i} className="flex items-center gap-2 text-sm text-gray-200">
-                {p.icon}
-                <span>{isEn ? p.en : p.fr}</span>
+                {p.icon}<span>{isEn ? p.en : p.fr}</span>
               </li>
             ))}
           </ul>
           {isPremium ? (
             <div className="mt-auto text-center py-2 rounded-xl bg-gold-600/20 border border-gold-600/40 text-gold-300 text-sm font-semibold">
-              {isEn ? '✓ Active' : '✓ Actif'}
+              {isExpert ? (isEn ? '✓ Included' : '✓ Inclus') : (isEn ? '✓ Active' : '✓ Actif')}
             </div>
           ) : (
             <a
-              href="mailto:contact@pokertrainer.app?subject=Abonnement Premium"
+              href={subscribeHref('Premium')}
               className="mt-auto text-center py-2.5 rounded-xl bg-gold-600 hover:bg-gold-500 text-gray-900 text-sm font-black transition-colors flex items-center justify-center gap-1.5"
             >
-              {isEn ? 'Get Premium' : 'Obtenir Premium'}
+              {isEn ? 'Choose Premium' : 'Choisir Premium'}
               <ChevronRight size={15} />
             </a>
           )}
         </motion.div>
+
+        {/* Expert */}
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          className="rounded-2xl border border-purple-600/60 bg-gradient-to-br from-purple-900/30 to-gray-900/80 p-5 flex flex-col gap-4 relative overflow-hidden"
+        >
+          <div className="absolute top-3 right-3 bg-purple-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+            {isEn ? 'Pro' : 'Pro'}
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-1 flex items-center gap-1">
+              <Flame size={11} fill="currentColor" /> Expert
+            </p>
+            <div className="flex items-end gap-2">
+              <p className="text-3xl font-black text-white">24,99€</p>
+              <p className="text-xs text-gray-400 mb-1">/ {isEn ? 'month' : 'mois'}</p>
+            </div>
+            <p className="text-xs text-gray-500 mt-0.5">{isEn ? 'No commitment' : 'Sans engagement'}</p>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {EXPERT_PERKS.map((p, i) => (
+              <li key={i} className="flex items-center gap-2 text-sm text-gray-200">
+                {p.icon}<span className={i === 0 ? 'font-semibold text-purple-200' : ''}>{isEn ? p.en : p.fr}</span>
+              </li>
+            ))}
+          </ul>
+          {isExpert ? (
+            <div className="mt-auto text-center py-2 rounded-xl bg-purple-600/20 border border-purple-600/40 text-purple-200 text-sm font-semibold">
+              {isEn ? '✓ Active' : '✓ Actif'}
+            </div>
+          ) : (
+            <a
+              href={subscribeHref('Expert')}
+              className="mt-auto text-center py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-black transition-colors flex items-center justify-center gap-1.5"
+            >
+              {isExpert ? '' : isPremium ? (isEn ? 'Upgrade to Expert' : 'Passer à Expert') : (isEn ? 'Choose Expert' : 'Choisir Expert')}
+              <ChevronRight size={15} />
+            </a>
+          )}
+        </motion.div>
+      </div>
+
+      {/* ── Full comparison ── */}
+      <div className="bg-gray-900/60 border border-gray-800 rounded-2xl overflow-hidden">
+        <div className="grid grid-cols-[1fr_3rem_3.5rem_3.5rem] sm:grid-cols-[1fr_4rem_5rem_5rem] text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-500 px-3 sm:px-4 py-3 border-b border-gray-800">
+          <span>{isEn ? 'Module / feature' : 'Module / fonction'}</span>
+          <span className="text-center">{isEn ? 'Free' : 'Gratuit'}</span>
+          <span className="text-center text-gold-500">Premium</span>
+          <span className="text-center text-purple-400">Expert</span>
+        </div>
+
+        {[...MODULE_ROWS, ...FEATURE_ROWS].map((row, i, arr) => (
+          <motion.div
+            key={row.fr}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: Math.min(i, 8) * 0.03 }}
+            className={`grid grid-cols-[1fr_3rem_3.5rem_3.5rem] sm:grid-cols-[1fr_4rem_5rem_5rem] items-center px-3 sm:px-4 py-2.5 ${
+              i < arr.length - 1 ? 'border-b border-gray-800/60' : ''
+            } ${i === MODULE_ROWS.length ? 'border-t-2 border-gray-800' : ''}`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="text-base leading-none shrink-0">{row.icon}</span>
+              <span className="text-xs sm:text-sm text-gray-200 leading-snug">{isEn ? row.en : row.fr}</span>
+            </div>
+            <div>{cell(row.tiers[0])}</div>
+            <div className={!row.tiers[0] && row.tiers[1] ? 'bg-gold-900/10 rounded' : ''}>{cell(row.tiers[1])}</div>
+            <div className={!row.tiers[1] && row.tiers[2] ? 'bg-purple-900/10 rounded' : ''}>{cell(row.tiers[2])}</div>
+          </motion.div>
+        ))}
       </div>
 
       {/* ── FAQ ── */}
@@ -261,22 +251,22 @@ export function PremiumPage() {
         <div className="flex flex-col gap-4">
           {[
             {
-              q: isEn ? 'How do I activate Premium?' : 'Comment activer le Premium ?',
+              q: isEn ? 'What\'s the difference between Premium and Expert?' : 'Quelle différence entre Premium et Expert ?',
               a: isEn
-                ? 'Send us an email via the button above. We\'ll manually activate your account within 24h.'
-                : 'Envoyez-nous un email via le bouton ci-dessus. Nous activerons manuellement votre compte sous 24h.',
+                ? 'Premium unlocks every training module. Expert adds the Expert mode and complex multi-action ranges (Fold/Call/Raise/All-in), with sprints that quiz you on your own ranges.'
+                : 'Premium débloque tous les modules. Expert ajoute le mode Expert et les ranges complexes multi-actions (Fold/Call/Raise/All-in), avec des sprints qui t\'interrogent sur tes propres ranges.',
+            },
+            {
+              q: isEn ? 'How do I activate it?' : 'Comment l\'activer ?',
+              a: isEn
+                ? 'For now, contact us via the button and we activate your account manually within 24h. Online checkout is coming soon.'
+                : 'Pour l\'instant, contacte-nous via le bouton et nous activons ton compte manuellement sous 24h. Le paiement en ligne arrive bientôt.',
             },
             {
               q: isEn ? 'Can I cancel anytime?' : 'Puis-je annuler à tout moment ?',
               a: isEn
-                ? 'Yes, no commitment. Contact us and we\'ll cancel your subscription immediately.'
-                : 'Oui, sans engagement. Contactez-nous et nous annulerons votre abonnement immédiatement.',
-            },
-            {
-              q: isEn ? 'What payment methods are accepted?' : 'Quels moyens de paiement sont acceptés ?',
-              a: isEn
-                ? 'PayPal, bank transfer or any other method by arrangement.'
-                : 'PayPal, virement bancaire ou tout autre moyen par arrangement.',
+                ? 'Yes — monthly, no commitment. You keep access until the end of the paid period.'
+                : 'Oui — mensuel, sans engagement. Tu gardes l\'accès jusqu\'à la fin de la période payée.',
             },
           ].map((item, i) => (
             <div key={i} className={i > 0 ? 'border-t border-gray-800 pt-4' : ''}>

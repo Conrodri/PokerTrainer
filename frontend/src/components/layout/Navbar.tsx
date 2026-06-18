@@ -72,13 +72,14 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
 
           {/* ── Logo ── */}
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl shrink-0 mr-2">
+          <Link to="/" className="flex items-center gap-2 font-bold text-xl shrink-0">
             <span className="text-2xl">🃏</span>
             <span className="text-gold-400 font-serif hidden xl:block">PokerTrainer</span>
           </Link>
 
-          {/* ── Desktop nav (hidden below md) ── */}
-          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center min-w-0">
+          {/* ── Desktop nav (hidden below md) — centered in the gap between the logo
+                 and the right controls; the equal margins grow/shrink with the window. ── */}
+          <nav className="hidden min-[560px]:flex items-center gap-1 flex-1 justify-center min-w-0">
 
             {/* Home */}
             <Link to="/" className={linkCls(location.pathname === '/')} title={t.nav.home}>
@@ -187,12 +188,12 @@ export function Navbar() {
           </nav>
 
           {/* ── Right side ── */}
-          <div className="flex items-center gap-1 shrink-0 ml-2 lg:ml-3">
+          <div className="flex items-center gap-1 shrink-0">
             {/* Premium CTA — only for logged-in non-premium users */}
             {user && !user.isPremium && (
               <Link
                 to="/premium"
-                className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg bg-gold-600/20 hover:bg-gold-600/30 border border-gold-600/40 text-gold-400 hover:text-gold-300 text-xs font-bold transition-colors"
+                className="hidden min-[560px]:flex items-center gap-1 px-2 py-1 rounded-lg bg-gold-600/20 hover:bg-gold-600/30 border border-gold-600/40 text-gold-400 hover:text-gold-300 text-xs font-bold transition-colors"
                 title={isEn ? 'Go Premium' : 'Passer Premium'}
               >
                 <Crown size={12} fill="currentColor" />
@@ -229,13 +230,13 @@ export function Navbar() {
                 </button>
               </>
             ) : (
-              <Link to="/login" className="hidden md:flex text-sm text-gray-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors ml-1">
+              <Link to="/login" className="hidden min-[560px]:flex text-sm text-gray-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors ml-1">
                 {t.nav.login}
               </Link>
             )}
 
             {/* ── Hamburger (shown below md) ── */}
-            <div className="md:hidden relative ml-1" ref={mobileRef}>
+            <div className="min-[560px]:hidden relative ml-1" ref={mobileRef}>
               <button
                 onClick={() => setMobileOpen(v => !v)}
                 className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
