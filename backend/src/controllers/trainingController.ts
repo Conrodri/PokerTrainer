@@ -34,16 +34,16 @@ export async function checkPreflopAnswer(req: Request, res: Response): Promise<v
       return;
     }
 
-    const { action: correctAction, frequency, isMixed } = getCorrectAction(position as Position, notation);
-    const isCorrect = userAction === correctAction || (isMixed && (userAction === 'raise' || userAction === 'fold'));
-    const xpEarned = calculateExerciseXP(isCorrect, timeTaken || 10000, isMixed);
+    const { action: correctAction, frequency } = getCorrectAction(position as Position, notation);
+    const isCorrect = userAction === correctAction;
+    const xpEarned = calculateExerciseXP(isCorrect, timeTaken || 10000, false);
 
     const userId = (req as any).user?.userId;
     if (userId && sessionId) {
       await recordExercise(sessionId, 'preflop', JSON.stringify({ notation, position }), userAction, correctAction, isCorrect, timeTaken || 0, xpEarned, userId, position);
     }
 
-    res.json({ success: true, data: { isCorrect, correctAction, frequency, isMixed, xpEarned } } as ApiResponse);
+    res.json({ success: true, data: { isCorrect, correctAction, frequency, isMixed: false, xpEarned } } as ApiResponse);
   } catch {
     res.status(500).json({ success: false, error: 'Failed to check answer' } as ApiResponse);
   }

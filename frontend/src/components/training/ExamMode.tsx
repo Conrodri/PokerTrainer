@@ -117,9 +117,10 @@ export function ExamHud({ onQuit: _onQuit }: { onQuit?: () => void }) {
 // ── End card ────────────────────────────────────────────────────────────────────
 export function ExamResult({ module, onRetry, onQuit }: { module: string; onRetry: () => void; onQuit: () => void }) {
   const isEn = useLangStore(s => s.lang) === 'en';
-  const { correct, errors, isNewRecord, isForfeited, record, history } = useExamStore(useShallow(s => ({
+  const { correct, errors, isNewRecord, isForfeited, mistakes, record, history } = useExamStore(useShallow(s => ({
     correct: s.correct, errors: s.errors, isNewRecord: s.isNewRecord,
-    isForfeited: s.isForfeited, record: s.records[module] ?? 0, history: s.history,
+    isForfeited: s.isForfeited, mistakes: s.mistakes,
+    record: s.records[module] ?? 0, history: s.history,
   })));
   const fmtDate = (iso: string) =>
     new Date(iso).toLocaleDateString(isEn ? 'en-US' : 'fr-FR', { day: '2-digit', month: '2-digit' });
@@ -204,6 +205,22 @@ export function ExamResult({ module, onRetry, onQuit }: { module: string; onRetr
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Mistakes breakdown — shown when labels are available (e.g. preflop: notation + position) */}
+      {mistakes.length > 0 && (
+        <div className="w-full">
+          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5 text-center">
+            {isEn ? 'Missed hands' : 'Mains ratées'}
+          </p>
+          <div className="flex flex-wrap gap-1.5 justify-center">
+            {mistakes.map((m, i) => (
+              <span key={i} className="px-2 py-0.5 rounded-md bg-red-900/40 border border-red-800/50 text-red-300 text-xs font-semibold">
+                {m.label}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

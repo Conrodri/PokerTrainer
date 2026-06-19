@@ -25,8 +25,8 @@ export function useExamRunner(module: string) {
   const clearTimer = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null; } };
 
   /** Record one exam answer; auto-advance via `next` unless the run just ended. Returns true if ended. */
-  const recordAnswer = (isCorrect: boolean, next: () => void, delay = 1400): boolean => {
-    const ended = answer(isCorrect);
+  const recordAnswer = (isCorrect: boolean, next: () => void, delay = 1400, label?: string): boolean => {
+    const ended = answer(isCorrect, label);
     if (!ended) timer.current = window.setTimeout(next, delay);
     return ended;
   };
