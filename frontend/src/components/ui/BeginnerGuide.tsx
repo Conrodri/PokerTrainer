@@ -12,8 +12,6 @@ interface BeginnerGuideProps {
   text: string;
   /** Optional rich content (e.g. example hands with card icons) rendered below the text. */
   children?: React.ReactNode;
-  /** Leading emoji shown in the header. Default 👶 */
-  emoji?: string;
   /** Whether the guide starts expanded. Default false (collapsed — click to open). */
   defaultOpen?: boolean;
   /** Bypass the beginner-only guard (used when revealed via SpoilableHint in advanced). */
@@ -32,7 +30,6 @@ export function BeginnerGuide({
   title,
   text,
   children,
-  emoji = '👶',
   defaultOpen = false,
   forceShow = false,
   className,
@@ -52,11 +49,8 @@ export function BeginnerGuide({
         className="w-full flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-blue-900/20 transition-colors"
       >
         <span className="flex items-center gap-2 text-sm font-bold text-blue-200">
-          <span className="text-lg leading-none">{emoji}</span>
-          <span className="flex items-center gap-1.5">
-            <GraduationCap size={14} className="text-blue-400 shrink-0" />
-            {title}
-          </span>
+          <GraduationCap size={16} className="text-blue-400 shrink-0" />
+          {title}
         </span>
         <span className="flex items-center gap-1.5 shrink-0">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-500/70 hidden sm:block">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, BookOpen, Sprout, GraduationCap, Flame, X, PlayCircle } from 'lucide-react';
+import { ChevronRight, BookOpen, Sprout, GraduationCap, Zap, X, PlayCircle } from 'lucide-react';
 import { useModeStore } from '../../store/modeStore';
 import { useLangStore } from '../../store/langStore';
 import { GuidedHand } from './GuidedHand';
@@ -139,7 +139,7 @@ export function OnboardingModal({ onClose }: OnboardingModalProps) {
                   onClick={pickBasics}
                 />
                 <LevelOption
-                  icon={<Flame size={22} className="text-gold-400" />}
+                  icon={<Zap size={22} className="text-gold-400" />}
                   title={isEn ? 'Experienced player' : 'Joueur confirmé'}
                   desc={isEn ? 'I already know the strategy' : 'Je maîtrise déjà la stratégie'}
                   accent="gold"
