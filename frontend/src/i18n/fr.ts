@@ -32,6 +32,8 @@ export const fr = {
     equity_title: 'Équité',
     equity_sub: 'Comparaison de mains',
     equity_desc: 'Développe ton intuition sur les confrontations de mains. Quelle main domine l\'autre et de combien ?',
+    outs_title: 'Outs',
+    outs_sub: 'Cartes qui améliorent',
     postflop_title: 'Post-flop',
     postflop_sub: 'Jeu après le flop',
     postflop_desc: 'Texture de board, tirages, continuation bet — navigue le jeu post-flop comme un pro.',

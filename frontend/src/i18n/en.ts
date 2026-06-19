@@ -34,6 +34,8 @@ export const en: Translations = {
     equity_title: 'Equity',
     equity_sub: 'Hand Comparison',
     equity_desc: 'Develop your intuition for hand matchups. Which hand dominates the other and by how much?',
+    outs_title: 'Outs',
+    outs_sub: 'Cards that improve',
     postflop_title: 'Post-flop',
     postflop_sub: 'Play After the Flop',
     postflop_desc: 'Board texture, draws, continuation bet — navigate post-flop play like a pro.',

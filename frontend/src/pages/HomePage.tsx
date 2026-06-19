@@ -96,6 +96,21 @@ export function HomePage() {
         T_EXP_SOON,
       ] as Tier[],
     },
+    {
+      id: 'outs',
+      title: t.home.outs_title,
+      subtitle: t.home.outs_sub,
+      icon: '🎲',
+      color: 'from-amber-900/50 to-felt-900/50 border-amber-700',
+      badge: t.home.badge_math,
+      badgeColor: 'bg-amber-900 text-amber-300',
+      href: '/training?module=outs',
+      tiers: [
+        T_FREE(isEn ? 'Count outs — draws shown + rule of 2 & 4' : 'Compte les outs — tirages affichés + règle de 2 & 4'),
+        T_ADV(isEn ? 'Hints hidden — estimate equity from your outs' : 'Indice caché — estime l\'équité depuis tes outs'),
+        T_EXP_SOON,
+      ] as Tier[],
+    },
   ];
 
   const PREMIUM_MODULES = [
@@ -197,7 +212,7 @@ export function HomePage() {
       {/* Free modules */}
       <section>
         <h2 className="text-2xl font-bold text-white mb-3 text-center">{t.home.modules_title}</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {FREE_MODULES.map((module, i) => (
             <motion.div
               key={module.id}
