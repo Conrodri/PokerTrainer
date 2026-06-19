@@ -10,10 +10,10 @@ type Tier = { icon: React.ReactNode; label: string; desc: string; color: string 
 
 function TierRow({ tier }: { tier: Tier }) {
   return (
-    <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${tier.color}`}>
-      <span className="shrink-0 flex items-center">{tier.icon}</span>
+    <div className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${tier.color}`}>
+      <span className="shrink-0 flex items-center mt-px">{tier.icon}</span>
       <span className="font-semibold shrink-0">{tier.label}</span>
-      <span className="text-gray-400 truncate">{tier.desc}</span>
+      <span className="text-gray-400 leading-snug">{tier.desc}</span>
     </div>
   );
 }
@@ -43,6 +43,12 @@ export function HomePage() {
     desc,
     color: 'border-purple-700/40 bg-purple-950/20 text-purple-300',
   });
+  const T_EXP_SOON: Tier = {
+    icon: <Flame size={11} />,
+    label: isEn ? 'Expert — coming soon' : 'Expert — à venir',
+    desc: '',
+    color: 'border-purple-900/30 bg-purple-950/10 text-purple-600 opacity-60',
+  };
 
   const FREE_MODULES = [
     {
@@ -72,6 +78,7 @@ export function HomePage() {
       tiers: [
         T_FREE(isEn ? 'Pot odds + call/fold decision with guidance' : 'Cote du pot + décision call/fold guidée'),
         T_ADV(isEn ? 'EV shown, hints hidden — reveal resets streak' : 'EV affiché, indice caché — révéler remet la série à 0'),
+        T_EXP_SOON,
       ] as Tier[],
     },
     {
@@ -86,6 +93,7 @@ export function HomePage() {
       tiers: [
         T_FREE(isEn ? 'Compare two hands, guided result' : 'Comparer deux mains, résultat guidé'),
         T_ADV(isEn ? 'Hidden hints — estimate equity on your own' : 'Indice caché — estime l\'équité sans aide'),
+        T_EXP_SOON,
       ] as Tier[],
     },
   ];
@@ -101,6 +109,7 @@ export function HomePage() {
       tiers: [
         T_FREE(isEn ? 'Hand, equity, texture & hint always visible' : 'Main, équité, texture et indice toujours visibles'),
         T_ADV(isEn ? 'Hint hidden — reveal breaks your streak' : 'Indice caché — révéler casse la série'),
+        T_EXP_SOON,
       ] as Tier[],
     },
     {
@@ -113,6 +122,7 @@ export function HomePage() {
       tiers: [
         T_FREE(isEn ? 'Guided at each street with hints' : 'Guidé à chaque rue avec indices'),
         T_ADV(isEn ? 'No hints — decisions judged globally at showdown' : 'Sans indice — décisions jugées au showdown'),
+        T_EXP_SOON,
       ] as Tier[],
     },
     {
@@ -125,6 +135,7 @@ export function HomePage() {
       tiers: [
         T_FREE(isEn ? 'Optimal size shown with justification' : 'Taille optimale affichée avec justification'),
         T_ADV(isEn ? 'Choose the right size without help' : 'Choisir la bonne taille sans aide'),
+        T_EXP_SOON,
       ] as Tier[],
     },
     {
