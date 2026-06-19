@@ -45,9 +45,9 @@ export function HomePage() {
   });
   const T_EXP_SOON: Tier = {
     icon: <Flame size={11} />,
-    label: isEn ? 'Expert — coming soon' : 'Expert — à venir',
-    desc: '',
-    color: 'border-purple-900/30 bg-purple-950/10 text-purple-600 opacity-60',
+    label: 'Expert',
+    desc: isEn ? '— coming soon' : '— à venir',
+    color: 'border-purple-700/40 bg-purple-950/20 text-purple-300',
   };
 
   const FREE_MODULES = [
