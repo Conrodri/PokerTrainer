@@ -28,29 +28,25 @@ const SPRINT_NAMES: Record<string, { fr: string; en: string }> = {
 export const sprintName = (module: string, isEn: boolean) =>
   isEn ? (SPRINT_NAMES[module]?.en ?? 'Sprint') : (SPRINT_NAMES[module]?.fr ?? 'Sprint');
 
-// ── Launcher (intro CTA) — compact so it sits next to the practice button ───────
+// ── Launcher (intro CTA) — compact inline button on the same row as start ────────
 export function ExamLauncher({ module, onStart }: { module: string; onStart: () => void }) {
   const isEn = useLangStore(s => s.lang) === 'en';
   const record = useExamStore(s => s.records[module] ?? 0);
 
   return (
-    <div className="w-full flex flex-col items-center gap-1">
-      <Button
-        variant="secondary" size="lg" fullWidth onClick={onStart}
-        className="flex items-center justify-center gap-2 border border-gold-700/50 text-gold-200"
-      >
-        <Target size={16} className="text-gold-400" />
-        {sprintName(module, isEn)}
-        {record > 0 && (
-          <span className="text-xs font-normal text-gold-400/90">· {isEn ? 'best' : 'record'} {record}</span>
-        )}
-      </Button>
-      <p className="text-[11px] text-gray-500 text-center leading-snug">
-        {isEn
-          ? `Chain exercises until ${EXAM_MAX_ERRORS} mistakes — score = correct answers`
-          : `Enchaîne les exercices jusqu'à ${EXAM_MAX_ERRORS} erreurs — score = bonnes réponses`}
-      </p>
-    </div>
+    <Button
+      variant="secondary" size="lg" onClick={onStart}
+      className="flex items-center justify-center gap-2 bg-indigo-900/60 hover:bg-indigo-800/70 border border-indigo-700/60 text-indigo-200 hover:text-indigo-100 whitespace-nowrap shrink-0"
+      title={isEn
+        ? `Chain exercises until ${EXAM_MAX_ERRORS} mistakes — score = correct answers`
+        : `Enchaîne les exercices jusqu'à ${EXAM_MAX_ERRORS} erreurs — score = bonnes réponses`}
+    >
+      <Target size={16} className="text-indigo-400" />
+      {sprintName(module, isEn)}
+      {record > 0 && (
+        <span className="text-xs font-normal opacity-60">· {record}</span>
+      )}
+    </Button>
   );
 }
 

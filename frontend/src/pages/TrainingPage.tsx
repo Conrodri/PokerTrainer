@@ -13,7 +13,6 @@ import { useT } from '../i18n';
 import { useLangStore } from '../store/langStore';
 import { useModeStore } from '../store/modeStore';
 import { useCustomRangeStore } from '../store/customRangeStore';
-import { Button } from '../components/ui/Button';
 import { MyRangesPanel } from '../components/poker/MyRangesPanel';
 
 // Each trainer is its own chunk: only the selected module's code is fetched.
@@ -55,7 +54,6 @@ export function TrainingPage() {
   const { preflopEnabled, togglePreflopEnabled } = useCustomRangeStore(
     useShallow(s => ({ preflopEnabled: s.preflopEnabled, togglePreflopEnabled: s.togglePreflopEnabled }))
   );
-  const customEnabled = preflopEnabled;
 
   // Complex profiles are usable only in Expert mode → deactivate any active
   // profile outside it. In Beginner, custom ranges are off entirely (GTO only).
@@ -139,54 +137,9 @@ export function TrainingPage() {
         ))}
       </div>
 
-      {/* Range toolbar — preflop only, once the trainer has started (intro
-          dismissed). Hidden in beginner mode (GTO only). */}
-      {isRangeModule && trainerStarted && !isBeginnerMode && (
-        <div className="flex items-center gap-2 -mt-2 flex-wrap">
-
-          {isExercising && isPremium && (
-            <span className="text-xs text-gray-500 italic">
-              {isEn ? '🔒 Range access locked during exercise' : '🔒 Accès aux ranges verrouillé pendant l\'exercice'}
-            </span>
-          )}
-
-          {/* Mes Ranges button — always visible, locked appearance for non-premium */}
-          <Button
-            variant="ghost" size="sm"
-            disabled={isExercising && isPremium}
-            onClick={() => { if (!(isExercising && isPremium)) setShowMyRanges(v => !v); }}
-            className={`flex items-center gap-1.5 text-xs border transition-all ${
-              isExercising && isPremium
-                ? 'text-gray-600 border-gray-700 cursor-not-allowed opacity-40'
-                : showMyRanges
-                  ? 'text-yellow-300 border-yellow-600 bg-yellow-900/20'
-                  : 'text-yellow-400 border-yellow-800/60 hover:bg-yellow-900/20'
-            }`}
-          >
-            {isPremium ? <span>👑</span> : <Lock size={11} />}
-            {isEn ? 'My Ranges' : 'Mes Ranges'}
-          </Button>
-
-          {/* Status indicator (not clickable) — green = a profile or the simple range
-              is active, red = none active (GTO). Activation happens in the panel. */}
-          {isPremium && (
-            <span
-              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border ${
-                customEnabled
-                  ? 'text-green-300 border-green-700 bg-green-900/20'
-                  : 'text-red-300 border-red-700 bg-red-900/20'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${customEnabled ? 'bg-green-400' : 'bg-red-400'}`} />
-              {customEnabled ? (isEn ? 'Active' : 'Activé') : (isEn ? 'Inactive' : 'Désactivé')}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* My Ranges panel — visible to all, locked for non-premium */}
+      {/* My Ranges panel — accessible from the preflop intro "Mes ranges" button */}
       <AnimatePresence>
-        {isRangeModule && trainerStarted && !isBeginnerMode && showMyRanges && (
+        {isRangeModule && !isBeginnerMode && showMyRanges && (
           <MyRangesPanel
             onClose={() => setShowMyRanges(false)}
             positions={PREFLOP_POSITIONS}

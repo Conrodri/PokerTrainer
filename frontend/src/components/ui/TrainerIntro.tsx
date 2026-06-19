@@ -30,15 +30,17 @@ interface TrainerIntroProps {
   /** For non-premium logged-in users with credits left: shows a free-allowance
    *  banner above the (working) start button. */
   freeInfo?: { remaining: number; limit: number };
-  /** Optional secondary CTA (the exam launcher) shown directly under the start
-   *  button so both ways to begin are visible without scrolling. */
+  /** Optional secondary CTA (the exam launcher) shown on the same row as the
+   *  start button so both ways to begin are visible without scrolling. */
   examSlot?: React.ReactNode;
+  /** Optional tertiary action shown below the start+exam row (e.g. "Mes ranges"). */
+  bottomSlot?: React.ReactNode;
 }
 
 export function TrainerIntro({
   emoji, title, description, whatTitle, whatContent,
   steps, beginnerHint, advancedHint, expertHint, startLabel, onStart, mode,
-  locked = false, lockedVariant = 'premium', freeInfo, examSlot,
+  locked = false, lockedVariant = 'premium', freeInfo, examSlot, bottomSlot,
 }: TrainerIntroProps) {
   const isEn = useLangStore(s => s.lang) === 'en';
   const setMode = useModeStore(s => s.setMode);
@@ -240,11 +242,14 @@ export function TrainerIntro({
               </span>
             </div>
           )}
-          <Button size="lg" variant="gold" onClick={onStart} fullWidth>
-            <Play size={16} className="inline mr-2" />
-            {startLabel}
-          </Button>
-          {examSlot}
+          <div className="flex gap-2 w-full">
+            <Button size="lg" variant="gold" onClick={onStart} className="flex-1">
+              <Play size={16} className="inline mr-2" />
+              {startLabel}
+            </Button>
+            {examSlot}
+          </div>
+          {bottomSlot}
           {freeInfo && (
             <Link to="/premium" className="text-[11px] text-gray-500 hover:text-yellow-400 transition-colors flex items-center gap-1">
               <Crown size={10} />

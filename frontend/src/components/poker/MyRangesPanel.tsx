@@ -6,7 +6,8 @@ import { Position } from '../../types/poker';
 import { useAuthStore } from '../../store/authStore';
 import { RangeEditor } from './RangeEditor';
 import { RangeMatrix } from './RangeMatrix';
-import { ExpertRangeEditor, gtoToExpertMix } from './ExpertRangeEditor';
+import { ExpertRangeEditor, gtoToExpertMix, EXPERT_DISPLAY } from './ExpertRangeEditor';
+import { RANKS_ORDER, getNotationFromIndices } from '../../utils/pokerUtils';
 import { HoverTip } from '../ui/HoverTip';
 import { Button } from '../ui/Button';
 import { useT } from '../../i18n';
@@ -31,6 +32,42 @@ function flatToMatrix(flat: number[]): number[][] {
   const m: number[][] = [];
   for (let r = 0; r < 13; r++) m.push(flat.slice(r * 13, r * 13 + 13));
   return m;
+}
+
+// Read-only stacked-bar expert grid (used for the locked-state preview)
+function ExpertGtoMatrix({ mix }: { mix: number[] }) {
+  return (
+    <div className="overflow-auto">
+      <div className="flex">
+        <div className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" />
+        {RANKS_ORDER.map(r => (
+          <div key={r} className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[8px]">{r}</div>
+        ))}
+      </div>
+      {RANKS_ORDER.map((rowRank, rowIdx) => (
+        <div key={rowRank} className="flex">
+          <div className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center text-gray-500 font-mono text-[8px]">{rowRank}</div>
+          {RANKS_ORDER.map((_, colIdx) => {
+            const idx = rowIdx * 13 + colIdx;
+            const notation = getNotationFromIndices(rowIdx, colIdx);
+            return (
+              <div key={idx} title={notation} className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 border border-black/30 relative overflow-hidden">
+                <div className="absolute inset-0 flex">
+                  {EXPERT_DISPLAY.map(a => {
+                    const w = (mix[idx * 4 + a.key] ?? 0) * 100;
+                    return w > 0 ? <div key={a.key} style={{ width: `${w}%`, backgroundColor: a.color }} /> : null;
+                  })}
+                </div>
+                <span className="absolute inset-0 flex items-center justify-center text-white/90 font-bold text-[8px] leading-none tracking-tight pointer-events-none">
+                  {notation}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // ─── Add-profile inline form ─────────────────────────────────────────────────
@@ -157,7 +194,9 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
 }) {
   const isEn = useLangStore(s => s.lang) === 'en';
   const t = useT();
-  const isExpert = !!useAuthStore(s => s.user?.isPremiumExpert);
+  const authUser = useAuthStore(s => s.user);
+  const isExpert = !!authUser?.isPremiumExpert;
+  const isLoggedIn = authUser !== null;
   // Complex ranges (profiles) are an Expert-mode-only feature.
   const isExpertMode = useModeStore(s => s.mode) === 'expert';
   const { preflopEnabled, togglePreflopEnabled } = useCustomRangeStore(
@@ -338,8 +377,9 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
   const selProfile = profiles.find(p => p.id === selProfileId) ?? null;
   const selRange   = selProfile?.stackRanges.find(r => r.id === selRangeId) ?? null;
 
-  // Load profiles
+  // Load profiles — skip entirely when locked (no token, API would 401)
   useEffect(() => {
+    if (locked) { setLoadingP(false); return; }
     (async () => {
       setLoadingP(true);
       try {
@@ -537,6 +577,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
   const [loadingS,    setLoadingS]    = useState(true);
   const [savingS,     setSavingS]     = useState(false);
   const [savedS,      setSavedS]      = useState(false);
+  const [lockedStackTier, setLockedStackTier] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -559,22 +600,25 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
       positions.forEach((pos, i) => { if (gtoResults[i]) newGto[pos] = gtoResults[i]!; });
       setGtoCache(newGto);
 
-      const customResults = await Promise.all(positions.map(async (pos, i) => {
-        try {
-          const data = await rangesApi.get(pos);
-          if (data && Array.isArray(data)) {
-            const m: number[][] = [];
-            for (let r = 0; r < 13; r++) m.push((data as number[]).slice(r * 13, r * 13 + 13));
-            return m;
+      // Skip custom range fetch when locked (no token → would 401)
+      if (!locked) {
+        const customResults = await Promise.all(positions.map(async (pos, i) => {
+          try {
+            const data = await rangesApi.get(pos);
+            if (data && Array.isArray(data)) {
+              const m: number[][] = [];
+              for (let r = 0; r < 13; r++) m.push((data as number[]).slice(r * 13, r * 13 + 13));
+              return m;
+            }
+            return gtoResults[i] ? gtoResults[i]!.map(r => [...r]) : null;
+          } catch {
+            return gtoResults[i] ? gtoResults[i]!.map(r => [...r]) : null;
           }
-          return gtoResults[i] ? gtoResults[i]!.map(r => [...r]) : null;
-        } catch {
-          return gtoResults[i] ? gtoResults[i]!.map(r => [...r]) : null;
-        }
-      }));
-      const newCustom: Record<string, number[][] | null> = {};
-      positions.forEach((pos, i) => { newCustom[pos] = customResults[i]; });
-      setCustomCache(newCustom);
+        }));
+        const newCustom: Record<string, number[][] | null> = {};
+        positions.forEach((pos, i) => { newCustom[pos] = customResults[i]; });
+        setCustomCache(newCustom);
+      }
       setLoadingS(false);
     })();
   }, []);
@@ -653,9 +697,6 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
         )}
       </AnimatePresence>
 
-      {/* Tab content — locked if not premium */}
-      <div className={locked ? 'pointer-events-none select-none opacity-50' : ''}>
-
       {/* Tab switcher — order: Simple, Complex (profiles), Expert, GTO */}
       <div className="flex gap-2 mb-4 flex-wrap">
         <button
@@ -686,7 +727,119 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
       {/* ══ PROFILES TAB ══ */}
       {tab === 'profiles' && (
         <div className="flex flex-col gap-3">
-          {loadingP ? (
+          {locked ? (
+            <>
+              {/* View-only banner */}
+              <div className="flex items-center gap-2 text-[11px] text-orange-300/90 bg-orange-900/20 border border-orange-800/50 rounded-lg px-3 py-2">
+                <Lock size={12} className="shrink-0" />
+                {isEn
+                  ? 'View only — switch to Expert mode to activate or edit complex ranges.'
+                  : 'Visualisation seule — passe en mode Expert pour activer ou éditer les ranges complexes.'}
+              </div>
+
+              {/* Profile list header */}
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">
+                  {isEn ? 'Profiles' : 'Profils'}
+                  <span className="ml-2 text-gray-600 font-normal normal-case">
+                    {isEn
+                      ? '— one active at a time, takes priority over simple range'
+                      : '— un seul actif à la fois, prioritaire sur la range simple'}
+                  </span>
+                </p>
+              </div>
+
+              {/* Static "Profil type" example tab */}
+              <div className="flex flex-wrap gap-2">
+                <div className="px-3 py-1.5 rounded-lg text-sm font-bold border flex items-center gap-1.5 bg-felt-700 text-white border-felt-500">
+                  <span className="text-green-400 text-xs">●</span>
+                  <Flame size={11} className="text-purple-400 shrink-0" />
+                  {isEn ? 'Type profile' : 'Profil type'}
+                </div>
+              </div>
+
+              {/* Profile detail */}
+              <div className="flex flex-col gap-3 border-t border-gray-800 pt-3">
+                <p className="text-white font-semibold text-sm">{isEn ? 'Type profile' : 'Profil type'}</p>
+
+                {/* Stack range tabs */}
+                <div className="flex flex-col gap-1">
+                  <p className="text-[11px] text-gray-500 font-semibold uppercase tracking-wide">
+                    {isEn ? 'Stack tiers' : 'Paliers de stack'}
+                  </p>
+                  <div className="flex gap-2 flex-wrap">
+                    {[
+                      { label: '<20', sublabel: '(0–20bb)' },
+                      { label: '<50', sublabel: '(20–50bb)' },
+                      { label: '<100', sublabel: '(50–100bb)' },
+                    ].map(({ label, sublabel }, i) => (
+                      <button key={label} onClick={() => setLockedStackTier(i)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-all flex items-center gap-1 ${
+                          lockedStackTier === i
+                            ? 'bg-purple-800/60 text-purple-200 border-purple-600'
+                            : 'text-gray-500 border-gray-700 hover:text-gray-300 hover:bg-gray-800'
+                        }`}>
+                        {label} <span className="font-normal text-[10px] opacity-60">{sublabel}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Position tabs */}
+                <div className="flex gap-2 flex-wrap">
+                  {positions.map(pos => (
+                    <button key={pos} onClick={() => setSimplePos(pos)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-all ${
+                        simplePos === pos
+                          ? 'bg-felt-700 text-white border-felt-500'
+                          : 'text-gray-400 border-gray-700 hover:text-white hover:bg-gray-800'
+                      }`}>{pos}</button>
+                  ))}
+                </div>
+
+                {loadingS ? (
+                  <div className="h-32 flex items-center justify-center">
+                    <div className="animate-spin h-8 w-8 border-2 border-felt-500 border-t-transparent rounded-full" />
+                  </div>
+                ) : (
+                  <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-8 xl:gap-12">
+                    {/* Left: expert GTO grid (view-only) */}
+                    <div className="flex flex-col gap-2 flex-1 items-start">
+                      <p className="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
+                        <Flame size={13} className="shrink-0" />
+                        {isEn ? `Your range — ${simplePos}` : `Ta range — ${simplePos}`}
+                      </p>
+                      <div className="flex flex-col gap-1">
+                      {simpleGto
+                        ? <ExpertGtoMatrix mix={gtoToExpertMix(simpleGto, simplePos === 'BB')} />
+                        : <div className="h-48 bg-gray-800/50 rounded-xl" />}
+                      <div className="flex gap-3 text-[11px] text-gray-500 flex-wrap justify-center">
+                        {EXPERT_DISPLAY.map(a => (
+                          <div key={a.key} className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 rounded border border-black/30 shrink-0" style={{ backgroundColor: a.color }} />
+                            <span>{isEn ? a.labelEn : a.labelFr}</span>
+                          </div>
+                        ))}
+                      </div>
+                      </div>
+                    </div>
+
+                    {/* Right: simple GTO reference */}
+                    <div className="flex flex-col items-start gap-2 xl:shrink-0">
+                      <p className="text-xs font-semibold text-felt-300 flex items-center gap-1.5">
+                        <Target size={13} className="shrink-0" />
+                        {isEn ? 'GTO reference' : 'Range GTO (référence)'}
+                        <span className="text-gray-600">— {simplePos}</span>
+                      </p>
+                      {simpleGto
+                        ? renderGtoRef(simpleGto, simplePos)
+                        : <p className="text-[11px] text-gray-600 py-8">{isEn ? 'Loading…' : 'Chargement…'}</p>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : loadingP ? (
             <div className="h-32 flex items-center justify-center">
               <div className="animate-spin h-8 w-8 border-2 border-felt-500 border-t-transparent rounded-full" />
             </div>
@@ -991,41 +1144,43 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
       {/* ══ SIMPLE RANGE TAB ══ */}
       {tab === 'simple' && (
         <>
-          {/* Same layout as the Complex tab: title left, Export/Import + Activate on the right. */}
-          <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-            <p className="text-white font-semibold text-sm">{isEn ? 'Simple ranges' : 'Ranges simples'}</p>
-            <div className="flex items-center gap-2 flex-wrap justify-end">
-              <button
-                onClick={exportSimpleRanges}
-                className="flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 transition-colors"
-                title={isEn ? 'Export all positions as JSON' : 'Exporter toutes les positions en JSON'}
-              >
-                <Download size={12} /> {isEn ? 'Export' : 'Exporter'}
-              </button>
-              <button
-                onClick={() => importSimpleRef.current?.click()}
-                disabled={importing}
-                className="flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 transition-colors disabled:opacity-40"
-                title={isEn ? 'Import ranges from JSON' : 'Importer des ranges depuis un JSON'}
-              >
-                <Upload size={12} /> {isEn ? 'Import' : 'Importer'}
-              </button>
-              <button onClick={handleActivateSimple}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                  simpleActive
-                    ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-red-900/30 hover:text-red-300 hover:border-red-700'
-                    : 'bg-gray-800 text-gray-300 border-gray-600 hover:bg-felt-900/30 hover:text-felt-300 hover:border-felt-700'
-                }`}
-              >
-                {simpleActive
-                  ? <><Check size={12} /> {isEn ? 'Active — click to deactivate' : 'Actives — cliquer pour désactiver'}</>
-                  : <><Zap size={12} /> {isEn ? 'Use these ranges' : 'Activer ces ranges'}</>
-                }
-              </button>
+          {/* Header — hidden when locked */}
+          {!locked && (
+            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+              <p className="text-white font-semibold text-sm">{isEn ? 'Simple ranges' : 'Ranges simples'}</p>
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <button
+                  onClick={exportSimpleRanges}
+                  className="flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 transition-colors"
+                  title={isEn ? 'Export all positions as JSON' : 'Exporter toutes les positions en JSON'}
+                >
+                  <Download size={12} /> {isEn ? 'Export' : 'Exporter'}
+                </button>
+                <button
+                  onClick={() => importSimpleRef.current?.click()}
+                  disabled={importing}
+                  className="flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 transition-colors disabled:opacity-40"
+                  title={isEn ? 'Import ranges from JSON' : 'Importer des ranges depuis un JSON'}
+                >
+                  <Upload size={12} /> {isEn ? 'Import' : 'Importer'}
+                </button>
+                <button onClick={handleActivateSimple}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                    simpleActive
+                      ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-red-900/30 hover:text-red-300 hover:border-red-700'
+                      : 'bg-gray-800 text-gray-300 border-gray-600 hover:bg-felt-900/30 hover:text-felt-300 hover:border-felt-700'
+                  }`}
+                >
+                  {simpleActive
+                    ? <><Check size={12} /> {isEn ? 'Active — click to deactivate' : 'Actives — cliquer pour désactiver'}</>
+                    : <><Zap size={12} /> {isEn ? 'Use these ranges' : 'Activer ces ranges'}</>
+                  }
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Position tabs */}
+          {/* Position tabs — always visible */}
           <div className="flex gap-2 mb-4 flex-wrap">
             {positions.map(pos => (
               <button key={pos} onClick={() => setSimplePos(pos)}
@@ -1041,6 +1196,29 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
             <div className="h-32 flex items-center justify-center">
               <div className="animate-spin h-8 w-8 border-2 border-felt-500 border-t-transparent rounded-full" />
             </div>
+          ) : locked ? (
+            /* View-only: GTO as default range on left, GTO reference on right */
+            <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-8 xl:gap-12">
+              <div className="flex flex-col gap-2 flex-1 items-start">
+                <p className="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
+                  <Sliders size={13} className="shrink-0" />
+                  {isEn ? `Your range — ${simplePos}` : `Ta range — ${simplePos}`}
+                </p>
+                {simpleGto
+                  ? renderGtoRef(simpleGto, simplePos)
+                  : <p className="text-[11px] text-gray-600 py-8">{isEn ? 'Loading…' : 'Chargement…'}</p>}
+              </div>
+              <div className="flex flex-col items-start gap-2 xl:shrink-0">
+                <p className="text-xs font-semibold text-felt-300 flex items-center gap-1.5">
+                  <Target size={13} className="shrink-0" />
+                  {isEn ? 'GTO reference' : 'Range GTO (référence)'}
+                  <span className="text-gray-600">— {simplePos}</span>
+                </p>
+                {simpleGto
+                  ? renderGtoRef(simpleGto, simplePos)
+                  : <p className="text-[11px] text-gray-600 py-8">{isEn ? 'Loading…' : 'Chargement…'}</p>}
+              </div>
+            </div>
           ) : simpleMatrix ? (
             <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-8 xl:gap-12">
               <RangeEditor
@@ -1052,7 +1230,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                 onReset={() => { if (simpleGto) updateSimple(simpleGto.map(r => [...r])); }}
                 isSaving={savingS}
               />
-              {/* GTO reference on the right (same as in Complex ranges) */}
+              {/* GTO reference on the right */}
               <div className="flex flex-col items-start gap-2 xl:shrink-0">
                 <p className="text-xs font-semibold text-felt-300 flex items-center gap-1.5">
                   <Target size={13} className="shrink-0" />
@@ -1070,7 +1248,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
             </p>
           )}
 
-          {savedS && (
+          {!locked && savedS && (
             <p className="text-green-400 text-sm text-center mt-2 font-semibold">
               {isEn ? 'Saved!' : 'Sauvegardé !'}
             </p>
@@ -1078,8 +1256,6 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
         </>
       )}
 
-      {/* end locked wrapper */}
-      </div>
     </motion.div>
   );
 }

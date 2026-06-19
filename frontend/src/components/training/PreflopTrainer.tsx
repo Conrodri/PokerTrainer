@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, ChevronUp, RotateCcw, Info, Zap, Target, Sliders, Lightbulb, Check, X } from 'lucide-react';
+import { ChevronRight, ChevronDown, ChevronUp, RotateCcw, Info, Zap, Target, Sliders, Lightbulb, Check, X, BookOpen } from 'lucide-react';
 import { SourcesFooter } from '../ui/SourcesFooter';
 import type { Source } from '../ui/SourcesFooter';
 
@@ -37,6 +37,7 @@ import { SpoilableHint } from '../ui/SpoilableHint';
 import { handHint } from '../../utils/handHints';
 import { TrainerIntro } from '../ui/TrainerIntro';
 import { useModeStore } from '../../store/modeStore';
+import { useAuthStore } from '../../store/authStore';
 import { VerdictBanner } from '../ui/VerdictBanner';
 import { handToDisplay, getMatrixIndices } from '../../utils/pokerUtils';
 import { useT } from '../../i18n';
@@ -220,6 +221,62 @@ function nearestChip(pct: number): number {
   return EXPERT_FREQ_CHIPS.reduce((a, b) => (Math.abs(b - pct) < Math.abs(a - pct) ? b : a), EXPERT_FREQ_CHIPS[0]);
 }
 
+// ─── Advanced range picker (GTO vs simple custom ranges) ─────────────────────
+
+function AdvancedRangePicker({
+  isEn,
+  onPick,
+  onClose,
+}: {
+  isEn: boolean;
+  onPick: (useCustom: boolean) => void;
+  onClose: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full rounded-2xl border border-gray-700 bg-gray-900/95 backdrop-blur-sm p-5 flex flex-col gap-4"
+    >
+      <h3 className="text-white font-bold text-base text-center">
+        {isEn ? 'Train with which range?' : "S'entraîner avec quelle range ?"}
+      </h3>
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={() => onPick(false)}
+          className="flex items-center gap-4 px-5 py-4 rounded-xl border-2 border-felt-700 bg-felt-900/30 hover:bg-felt-800/50 text-left transition-colors"
+        >
+          <Target size={22} className="text-felt-400 shrink-0" />
+          <div>
+            <p className="text-felt-200 font-bold text-sm">GTO</p>
+            <p className="text-felt-400/70 text-xs mt-0.5">
+              {isEn ? 'Solver-calibrated reference ranges' : 'Ranges de référence calibrées sur solveur'}
+            </p>
+          </div>
+        </button>
+        <button
+          onClick={() => onPick(true)}
+          className="flex items-center gap-4 px-5 py-4 rounded-xl border-2 border-purple-700 bg-purple-900/30 hover:bg-purple-800/50 text-left transition-colors"
+        >
+          <Sliders size={22} className="text-purple-400 shrink-0" />
+          <div>
+            <p className="text-purple-200 font-bold text-sm">{isEn ? 'My Ranges' : 'Mes ranges'}</p>
+            <p className="text-purple-400/70 text-xs mt-0.5">
+              {isEn ? 'Train on your own custom ranges' : 'Entraîne-toi sur tes propres ranges'}
+            </p>
+          </div>
+        </button>
+      </div>
+      <button
+        onClick={onClose}
+        className="text-xs text-gray-500 hover:text-gray-300 text-center transition-colors"
+      >
+        {isEn ? 'Cancel' : 'Annuler'}
+      </button>
+    </motion.div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function PreflopTrainer() {
@@ -280,6 +337,7 @@ export function PreflopTrainer() {
   // all-fold tier can never lock the trainer in an infinite skip loop.
   const foldSkipRef = useRef(0);
   const mode = useModeStore(s => s.mode);
+  const isPremium = !!useAuthStore(s => s.user?.isPremium);
   const preflopEnabled = useCustomRangeStore(s => s.preflopEnabled);
   const setPreflopEnabled = useCustomRangeStore(s => s.setPreflopEnabled);
 
@@ -287,6 +345,9 @@ export function PreflopTrainer() {
   // on before the run can start — a GTO-only expert exam has no point.
   const [examPickerOpen,    setExamPickerOpen]    = useState(false);
   const [examProfiles,      setExamProfiles]      = useState<RangeProfile[] | null>(null);
+
+  // Advanced+premium: before starting, pick GTO or custom ranges.
+  const [rangePickerOpen,   setRangePickerOpen]   = useState(false);
 
   // ─── Sync phase/exercise → store ─────────────────────────────────────────────
   useEffect(() => {
@@ -850,6 +911,15 @@ export function PreflopTrainer() {
   );
 
   if (showIntro) {
+    const startTraining = () => { setShowIntro(false); setTrainerStarted(true); };
+    const handleStartClick = () => {
+      if (mode === 'advanced' && isPremium) {
+        setRangePickerOpen(true);
+      } else {
+        startTraining();
+      }
+    };
+
     return (
       <div className="flex flex-col gap-5 max-w-2xl mx-auto">
         <TrainerIntro
@@ -898,10 +968,19 @@ export function PreflopTrainer() {
           beginnerHint={isEn ? "Shows range frequency & hand context" : "Affiche la fréquence de range & contexte"}
           advancedHint={isEn ? "No hints — play by intuition & memory" : "Sans indices — jouez à l'intuition & mémoire"}
           expertHint={isEn ? "Premium Expert — quizzed on your own ranges (Fold/Call/Raise/All-in mix)" : "Premium Expert — interrogé sur tes propres ranges (mix Fold/Call/Raise/All-in)"}
-          startLabel={isEn ? 'Choose a position' : 'Choisir une position'}
-          onStart={() => { setShowIntro(false); setTrainerStarted(true); }}
+          startLabel={isEn ? 'Start Training' : "Commencer l'entraînement"}
+          onStart={handleStartClick}
           mode={mode}
           examSlot={mode !== 'beginner' ? <ExamLauncher module="preflop" onStart={requestExam} /> : undefined}
+          bottomSlot={mode !== 'beginner' ? (
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('training:open-ranges'))}
+              className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl border border-purple-800/50 bg-purple-950/20 hover:bg-purple-900/30 text-purple-300 hover:text-purple-200 font-semibold text-sm transition-colors"
+            >
+              <BookOpen size={15} className="text-purple-400 shrink-0" />
+              {isEn ? 'My Ranges' : 'Mes ranges'}
+            </button>
+          ) : undefined}
         />
         {examPickerOpen && (
           <ExpertExamProfilePicker
@@ -910,6 +989,17 @@ export function PreflopTrainer() {
             onPick={startExamWithProfile}
             onClose={() => setExamPickerOpen(false)}
             onCreate={() => { setExamPickerOpen(false); window.dispatchEvent(new CustomEvent('training:open-ranges')); }}
+          />
+        )}
+        {rangePickerOpen && (
+          <AdvancedRangePicker
+            isEn={isEn}
+            onPick={(useCustom) => {
+              setPreflopEnabled(useCustom);
+              setRangePickerOpen(false);
+              startTraining();
+            }}
+            onClose={() => setRangePickerOpen(false)}
           />
         )}
       </div>
