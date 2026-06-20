@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { RANKS_ORDER, getNotationFromIndices, actionBg, actionLabel, handToDisplay } from '../../utils/pokerUtils';
 import { HoverTip } from '../ui/HoverTip';
@@ -41,7 +41,11 @@ const cellSizes = {
   lg: 'w-6 h-6 text-[8px] sm:w-10 sm:h-10 sm:text-xs',
 };
 
-export function RangeMatrix({
+// Memoized: a 13×13 grid is 169 cells (each a framer-motion node in the default
+// mode), so skipping re-renders when the parent updates with unchanged props is
+// a real win. Effective only when callers pass stable props — the function/array
+// props (legend, tooltipValue, cellColor) are hoisted or memoized at every site.
+export const RangeMatrix = memo(function RangeMatrix({
   matrix, highlightNotation, onCellClick, size = 'md', showLegend = true,
   title, cellColor, legend, tooltipValue, cellLabel, cellCorner, crisp,
 }: RangeMatrixProps) {
@@ -166,7 +170,7 @@ export function RangeMatrix({
       )}
     </div>
   );
-}
+});
 
 function LegendItem({ color, label, tip }: LegendEntry) {
   return (

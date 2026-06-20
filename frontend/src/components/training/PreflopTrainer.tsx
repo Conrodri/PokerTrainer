@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, ChevronUp, RotateCcw, Info, Zap, Target, Sliders, Lightbulb, Check, X, BookOpen } from 'lucide-react';
 import { SourcesFooter } from '../ui/SourcesFooter';
@@ -99,6 +99,20 @@ interface RangeSectionProps {
 }
 
 function RangeSection({ matrix, mix, highlightNotation, position, isCustom, resolvedLabel, heroStack, isEn, showRange, setShowRange, t }: RangeSectionProps) {
+  // BB-defense legend + tooltip, stabilized (t is a stable per-language object)
+  // so the memoized RangeMatrix isn't re-rendered on every parent update.
+  const bbLegend = useMemo(() => [
+    { color: 'rgba(22,130,60,0.85)', label: t.training.bb_leg_value, tip: { title: t.training.bb_leg_value, text: t.training.bb_tip_value } },
+    { color: 'rgba(202,138,4,0.82)', label: t.training.bb_leg_bluff, tip: { title: t.training.bb_leg_bluff, text: t.training.bb_tip_bluff } },
+    { color: 'rgba(37,99,235,0.70)', label: t.training.bb_leg_call,  tip: { title: t.training.bb_leg_call,  text: t.training.bb_tip_call  } },
+    { color: 'rgba(37,99,235,0.32)', label: t.training.bb_leg_thin,  tip: { title: t.training.bb_leg_thin,  text: t.training.bb_tip_thin  } },
+    { color: '#1a202c',              label: t.training.bb_leg_fold,  tip: { title: t.training.bb_leg_fold,  text: t.training.bb_tip_fold  } },
+  ], [t]);
+  const bbTooltipValue = useCallback((code: number) => ({
+    0: t.training.bb_leg_fold, 1: t.training.bb_leg_call,
+    2: t.training.bb_leg_thin, 3: t.training.bb_leg_value, 4: t.training.bb_leg_bluff,
+  } as Record<number, string>)[code] ?? '', [t]);
+
   if (!matrix && !mix) return null;
   return (
     <motion.div
@@ -160,17 +174,8 @@ function RangeSection({ matrix, mix, highlightNotation, position, isCustom, reso
                 highlightNotation={highlightNotation}
                 size="sm"
                 cellColor={BB_CELL_COLOR}
-                legend={[
-                  { color: 'rgba(22,130,60,0.85)', label: t.training.bb_leg_value, tip: { title: t.training.bb_leg_value, text: t.training.bb_tip_value } },
-                  { color: 'rgba(202,138,4,0.82)', label: t.training.bb_leg_bluff, tip: { title: t.training.bb_leg_bluff, text: t.training.bb_tip_bluff } },
-                  { color: 'rgba(37,99,235,0.70)', label: t.training.bb_leg_call,  tip: { title: t.training.bb_leg_call,  text: t.training.bb_tip_call  } },
-                  { color: 'rgba(37,99,235,0.32)', label: t.training.bb_leg_thin,  tip: { title: t.training.bb_leg_thin,  text: t.training.bb_tip_thin  } },
-                  { color: '#1a202c',              label: t.training.bb_leg_fold,  tip: { title: t.training.bb_leg_fold,  text: t.training.bb_tip_fold  } },
-                ]}
-                tooltipValue={(code) => ({
-                  0: t.training.bb_leg_fold, 1: t.training.bb_leg_call,
-                  2: t.training.bb_leg_thin, 3: t.training.bb_leg_value, 4: t.training.bb_leg_bluff,
-                } as Record<number, string>)[code] ?? ''}
+                legend={bbLegend}
+                tooltipValue={bbTooltipValue}
               />
             ) : (
               <RangeMatrix
