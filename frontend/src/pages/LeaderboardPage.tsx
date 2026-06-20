@@ -6,6 +6,7 @@ import { statsApi } from '../services/api';
 import { LeaderboardEntry, LeaderboardModuleStat } from '../types/poker';
 import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/Button';
+import { HoverTip } from '../components/ui/HoverTip';
 import { useT } from '../i18n';
 import { useLangStore } from '../store/langStore';
 
@@ -86,15 +87,16 @@ function ModuleGrid({ modules, isEn }: {
                   <span />
                 )}
                 {(stat.bestStreak ?? 0) > 0 && (
-                  <span
-                    className="flex items-center gap-0.5 text-[10px] text-orange-400 font-semibold"
-                    title={isEn
-                      ? `Best consecutive streak: ${stat.bestStreak} correct answers in a row`
-                      : `Meilleure série : ${stat.bestStreak} bonnes réponses consécutives`}
+                  <HoverTip
+                    title={isEn ? 'Best streak' : 'Meilleure série'}
+                    text={isEn
+                      ? `${stat.bestStreak} correct answers in a row (free exercise mode)`
+                      : `${stat.bestStreak} bonnes réponses consécutives (mode exercice libre)`}
+                    className="flex items-center gap-0.5 text-[10px] text-orange-400 font-semibold border-none"
                   >
                     <Zap size={9} className="fill-orange-400" />
                     {stat.bestStreak}
-                  </span>
+                  </HoverTip>
                 )}
               </div>
             </div>
