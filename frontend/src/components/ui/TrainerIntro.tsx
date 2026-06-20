@@ -186,6 +186,10 @@ export function TrainerIntro({
       {locked ? (
         lockedVariant === 'login' ? (
           <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-yellow-400 bg-yellow-900/25 border border-yellow-700/40 rounded-full px-3 py-1">
+              <Crown size={12} fill="currentColor" />
+              {isEn ? 'Premium module' : 'Module Premium'}
+            </div>
             <Link to="/login" className="w-full">
               <Button size="lg" variant="gold" fullWidth>
                 <Lock size={16} className="inline mr-2" />
@@ -195,8 +199,8 @@ export function TrainerIntro({
             <p className="flex items-center gap-1.5 text-xs text-gray-500 text-center">
               <Gift size={11} />
               {isEn
-                ? 'Log in for 5 free exercises per day — or go Premium for unlimited'
-                : 'Connecte-toi pour 5 exercices gratuits par jour — ou passe Premium pour un accès illimité'}
+                ? '5 free exercises per day after login — Premium for unlimited access'
+                : '5 exercices gratuits par jour après connexion — Premium pour l\'accès illimité'}
             </p>
           </div>
         ) : lockedVariant === 'quota' ? (
