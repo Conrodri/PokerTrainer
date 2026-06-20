@@ -1,5 +1,5 @@
 import { Card } from '../../types';
-import { createDeck, removeCards, shuffleDeck } from './cards';
+import { createDeck, removeCards } from './cards';
 import { compareHands } from './handEvaluator';
 
 export interface EquityResult {
@@ -17,19 +17,45 @@ export function calculateEquity(
   simulations = 5000
 ): EquityResult {
   const knownCards = [...hand1, ...hand2, ...board];
+  const remainingBoard = 5 - board.length;
+
+  // River: the board is complete, so equity is deterministic — evaluate once
+  // instead of looping identical runouts.
+  if (remainingBoard === 0) {
+    const r = compareHands([...hand1, ...board], [...hand2, ...board]);
+    return {
+      hand1WinPct: r === 1 ? 100 : 0,
+      hand2WinPct: r === -1 ? 100 : 0,
+      tiePct: r === 0 ? 100 : 0,
+      simulations: 1,
+    };
+  }
+
+  // Build the available deck ONCE. Each simulation draws only `remainingBoard`
+  // cards via a partial Fisher-Yates (sampling without replacement) instead of
+  // rebuilding + fully shuffling a 45+ card deck every iteration.
+  const pool = removeCards(createDeck(), knownCards);
+  const poolLen = pool.length;
+
+  // Reusable 7-card buffers (hole + board + runout slots) — no per-iteration alloc.
+  const cards1: Card[] = [...hand1, ...board];
+  const cards2: Card[] = [...hand2, ...board];
+  const baseLen = cards1.length;
+  for (let k = 0; k < remainingBoard; k++) { cards1.push(pool[0]); cards2.push(pool[0]); }
+
   let hand1Wins = 0;
   let hand2Wins = 0;
   let ties = 0;
 
-  const remainingBoard = 5 - board.length;
-
   for (let i = 0; i < simulations; i++) {
-    const deck = shuffleDeck(removeCards(createDeck(), knownCards));
-    const runout = deck.slice(0, remainingBoard);
-    const fullBoard = [...board, ...runout] as Card[];
-
-    const cards1 = [...hand1, ...fullBoard] as Card[];
-    const cards2 = [...hand2, ...fullBoard] as Card[];
+    // Partial Fisher-Yates: place `remainingBoard` random distinct cards at the
+    // front of the pool, regardless of its current order (still uniform).
+    for (let k = 0; k < remainingBoard; k++) {
+      const j = k + Math.floor(Math.random() * (poolLen - k));
+      const tmp = pool[k]; pool[k] = pool[j]; pool[j] = tmp;
+      cards1[baseLen + k] = pool[k];
+      cards2[baseLen + k] = pool[k];
+    }
 
     const result = compareHands(cards1, cards2);
     if (result === 1) hand1Wins++;

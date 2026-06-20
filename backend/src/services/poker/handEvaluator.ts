@@ -1,5 +1,5 @@
 import { Card, HandEvalResult, HandRank } from '../../types';
-import { combinations, parseCard, RANK_VALUE } from './cards';
+import { parseCard } from './cards';
 
 interface ParsedCard {
   rank: string;
@@ -41,11 +41,13 @@ function isStraight(sorted: ParsedCard[]): boolean {
   return isWheel;
 }
 
-// Numeric score for comparison: handRank * 15^5 + kicker values
+// Numeric score for comparison: handRank * 15^5 + kicker values.
+// Precomputed powers of 15 (15^0..15^5) — computeScore runs ~100k×/scenario.
+const POW15 = [1, 15, 225, 3375, 50625, 759375];
 function computeScore(handRank: HandRank, kickers: number[]): number {
-  let score = handRank * Math.pow(15, 5);
+  let score = handRank * POW15[5];
   for (let i = 0; i < kickers.length && i < 5; i++) {
-    score += kickers[i] * Math.pow(15, 4 - i);
+    score += kickers[i] * POW15[4 - i];
   }
   return score;
 }
@@ -174,16 +176,39 @@ export function evaluate5Cards(cards: Card[]): HandEvalResult {
   };
 }
 
-// Find best 5-card hand from up to 7 cards
+// Cached "choose 5 indices from n" tables (n = 5,6,7 in practice). Avoids the
+// recursive, allocation-heavy generic combinations() on the hot path.
+const indexComboCache = new Map<number, number[][]>();
+function chooseFiveIndices(n: number): number[][] {
+  const cached = indexComboCache.get(n);
+  if (cached) return cached;
+  const out: number[][] = [];
+  for (let a = 0; a < n - 4; a++)
+    for (let b = a + 1; b < n - 3; b++)
+      for (let c = b + 1; c < n - 2; c++)
+        for (let d = c + 1; d < n - 1; d++)
+          for (let e = d + 1; e < n; e++)
+            out.push([a, b, c, d, e]);
+  indexComboCache.set(n, out);
+  return out;
+}
+
+// Find best 5-card hand from 5–7 cards.
 export function evaluateBestHand(cards: Card[]): HandEvalResult {
   if (cards.length < 5) throw new Error('Need at least 5 cards');
+  if (cards.length === 5) return evaluate5Cards(cards);
 
-  const combos = combinations(cards, 5);
+  const combos = chooseFiveIndices(cards.length);
+  const five: Card[] = [cards[0], cards[1], cards[2], cards[3], cards[4]];
   let best: HandEvalResult | null = null;
 
-  for (const combo of combos) {
-    const result = evaluate5Cards(combo);
+  for (let ci = 0; ci < combos.length; ci++) {
+    const combo = combos[ci];
+    five[0] = cards[combo[0]]; five[1] = cards[combo[1]]; five[2] = cards[combo[2]];
+    five[3] = cards[combo[3]]; five[4] = cards[combo[4]];
+    const result = evaluate5Cards(five);
     if (!best || result.score > best.score) {
+      result.bestCards = five.slice(); // `five` is reused — clone for the winner
       best = result;
     }
   }
