@@ -42,7 +42,7 @@ export function generatePreflopExercise(position?: Position, lang: 'fr' | 'en' =
 function buildPreflopExplanation(
   notation: string,
   position: Position,
-  action: 'raise' | 'fold',
+  action: 'raise' | 'call' | 'fold',
   frequency: number,
   isMixed: boolean,
   lang: 'fr' | 'en' = 'fr'
@@ -51,7 +51,7 @@ function buildPreflopExplanation(
   return buildPreflopExplanationFr(notation, position, action, frequency, isMixed);
 }
 
-function buildPreflopExplanationFr(notation: string, position: Position, action: 'raise' | 'fold', frequency: number, isMixed: boolean): string {
+function buildPreflopExplanationFr(notation: string, position: Position, action: 'raise' | 'call' | 'fold', frequency: number, isMixed: boolean): string {
   const posDesc: Record<Position, string> = {
     UTG: 'Under the Gun (UTG) — premier à parler, range la plus serrée',
     HJ:  'Hijack (HJ) — position intermédiaire, range modérée',
@@ -78,8 +78,8 @@ function buildPreflopExplanationFr(notation: string, position: Position, action:
     handDesc = `${ranks[notation[0]]}-${ranks[notation[1]]}${suit}`;
   }
 
-  if (isMixed) {
-    return `${handDesc} est une main à stratégie MIXTE depuis ${position}.\n\nFréquence GTO : relancer ${Math.round(frequency * 100)}% du temps.\n\n${posDesc[position]}.\n\nLes mains mixtes signifient que tu dois parfois relancer, parfois se coucher. En pratique, penche-toi vers la relance sauf raison spécifique de folder.\n\n⚠️ Simplification : pour rester lisible, ces mains mixtes sont affichées en jaune (Call) dans la grille. Ce n'est pas exactement ce que ferait la GTO, qui randomise relance/fold précisément à ${Math.round(frequency * 100)}%.`;
+  if (action === 'call') {
+    return `${handDesc} → CALL (jeu mixte) depuis ${position}.\n\n${posDesc[position]}.\n\nFréquence GTO : jouer ${Math.round(frequency * 100)}% du temps. Cette main n'est pas assez forte pour relancer mais mérite d'être jouée passivement — entre passivement ou limp selon le contexte.`;
   }
   if (action === 'raise') {
     return `${handDesc} → RELANCER depuis ${position}.\n\n${posDesc[position]}.\n\nCette main a suffisamment d'équité et de playabilité pour ouvrir. Taille standard : 2-3 BB.`;
@@ -87,7 +87,7 @@ function buildPreflopExplanationFr(notation: string, position: Position, action:
   return `${handDesc} → COUCHER depuis ${position}.\n\n${posDesc[position]}.\n\nCette main n'est pas suffisamment forte pour ouvrir de cette position. Attends de meilleures opportunités.`;
 }
 
-function buildPreflopExplanationEn(notation: string, position: Position, action: 'raise' | 'fold', frequency: number, isMixed: boolean): string {
+function buildPreflopExplanationEn(notation: string, position: Position, action: 'raise' | 'call' | 'fold', frequency: number, isMixed: boolean): string {
   const posDesc: Record<Position, string> = {
     UTG: 'Under the Gun (UTG) — first to act, tightest position',
     HJ:  'Hijack (HJ) — middle position, moderate range',
@@ -114,8 +114,8 @@ function buildPreflopExplanationEn(notation: string, position: Position, action:
     handDesc = `${ranks[notation[0]]}-${ranks[notation[1]]}${suit}`;
   }
 
-  if (isMixed) {
-    return `${handDesc} is a MIXED strategy hand from ${position}.\n\nGTO frequency: raise ${Math.round(frequency * 100)}% of the time.\n\n${posDesc[position]}.\n\nMixed hands mean you should sometimes raise, sometimes fold. In practice, lean toward raising unless you have a specific reason to fold.\n\n⚠️ Simplification: to keep the grid readable, these mixed hands are shown in yellow (Call). This isn't exactly what GTO would do — GTO randomizes raise/fold precisely at ${Math.round(frequency * 100)}%.`;
+  if (action === 'call') {
+    return `${handDesc} → CALL (mixed play) from ${position}.\n\n${posDesc[position]}.\n\nGTO frequency: play ${Math.round(frequency * 100)}% of the time. This hand isn't strong enough to raise but is worth playing passively — limp or call depending on the context.`;
   }
   if (action === 'raise') {
     return `${handDesc} → RAISE from ${position}.\n\n${posDesc[position]}.\n\nThis hand has sufficient equity and playability to open. Standard raise size: 2-3 BB.`;

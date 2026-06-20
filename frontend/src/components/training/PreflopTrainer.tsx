@@ -1311,12 +1311,15 @@ export function PreflopTrainer() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="flex gap-3 sm:gap-6 w-full sm:w-auto"
+                    className="flex gap-2 sm:gap-4 w-full sm:w-auto"
                   >
-                    <Button size="xl" variant="danger" onClick={() => handleAnswer('fold')} className="flex-1 sm:flex-none sm:min-w-[140px]">
+                    <Button size="xl" variant="danger" onClick={() => handleAnswer('fold')} className="flex-1 sm:flex-none sm:min-w-[110px]">
                       Fold
                     </Button>
-                    <Button size="xl" variant="gold" onClick={() => handleAnswer('raise')} className="flex-1 sm:flex-none sm:min-w-[140px]">
+                    <Button size="xl" variant="gold" onClick={() => handleAnswer('call')} className="flex-1 sm:flex-none sm:min-w-[110px]">
+                      Call
+                    </Button>
+                    <Button size="xl" variant="primary" onClick={() => handleAnswer('raise')} className="flex-1 sm:flex-none sm:min-w-[110px]">
                       Raise
                     </Button>
                   </motion.div>
@@ -1326,8 +1329,8 @@ export function PreflopTrainer() {
                   <BeginnerGuide
                     title={isEn ? 'What you must do' : 'Ce qu\'on te demande'}
                     text={isEn
-                      ? `Nobody has played yet — it's your turn to open. You are sitting at **${preflopExercise.position}** and you got **${handToDisplay(preflopExercise.notation)}**.\nYou have 2 choices:\n💰 **Raise** = your hand is good enough, you bet to attack.\n🚫 **Fold** = your hand is too weak, you throw it away and wait for a better one.\n👉 Tip: the **earlier** you speak (UTG, HJ), the **stronger** your hand must be. The **later** you speak (CO, BTN), the **more** hands you can play.`
-                      : `Personne n'a encore joué — c'est à toi d'ouvrir. Tu es assis en **${preflopExercise.position}** et tu as reçu **${handToDisplay(preflopExercise.notation)}**.\nTu as 2 choix :\n💰 **Raise** = ta main est assez bonne, tu mises pour attaquer.\n🚫 **Fold** = ta main est trop faible, tu la jettes et tu attends mieux.\n👉 Astuce : plus tu parles **tôt** (UTG, HJ), plus ta main doit être **forte**. Plus tu parles **tard** (CO, BTN), plus tu peux jouer de mains.`}
+                      ? `Nobody has played yet — it's your turn to open. You are sitting at **${preflopExercise.position}** and you got **${handToDisplay(preflopExercise.notation)}**.\nYou have 3 choices:\n🚀 **Raise** = strong hand, you open with a raise.\n📞 **Call** = borderline hand, you limp in (mixed play).\n🚫 **Fold** = weak hand, you throw it away.\n👉 Tip: the **earlier** you speak (UTG, HJ), the **stronger** your hand must be. The **later** you speak (CO, BTN), the **more** hands you can play.`
+                      : `Personne n'a encore joué — c'est à toi d'ouvrir. Tu es assis en **${preflopExercise.position}** et tu as reçu **${handToDisplay(preflopExercise.notation)}**.\nTu as 3 choix :\n🚀 **Raise** = main forte, tu ouvres avec une mise.\n📞 **Call** = main limite, tu entres passivement (jeu mixte).\n🚫 **Fold** = main trop faible, tu la jettes.\n👉 Astuce : plus tu parles **tôt** (UTG, HJ), plus ta main doit être **forte**. Plus tu parles **tard** (CO, BTN), plus tu peux jouer de mains.`}
                   />
 
                   <SpoilableHint resetKey={preflopExercise.notation + preflopExercise.position} className="w-full max-w-md">
