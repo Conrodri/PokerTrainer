@@ -200,6 +200,61 @@ export function getRandomScenario(difficulty?: 'easy' | 'medium' | 'hard'): PotO
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+// ─── Expert: borderline decisions ────────────────────────────────────────────
+// Real draws whose Rule-of-2&4 equity sits in the "close-able" range (you can't
+// just eyeball call/fold). The generator wraps an ugly pot/bet around them so
+// the required equity lands within a few points of the hero's equity.
+
+const ri = (n: number) => Math.floor(Math.random() * n);
+const pick = <T,>(a: T[]): T => a[ri(a.length)];
+
+interface CloseDraw {
+  heroCards: [string, string]; board: string[]; street: 'flop' | 'turn'; outs: number;
+  drawType: { fr: string; en: string };
+}
+const CLOSE_DRAWS: CloseDraw[] = [
+  { heroCards: ['9d', '8c'], board: ['7h', '6s', '2c'], street: 'flop', outs: 8,
+    drawType: { fr: 'un tirage quinte bilatéral — 8 outs (≈32%)', en: 'an open-ended straight draw — 8 outs (≈32%)' } },
+  { heroCards: ['Ah', 'Kh'], board: ['2h', '9h', 'Jc'], street: 'flop', outs: 9,
+    drawType: { fr: 'un tirage couleur — 9 outs (≈36%)', en: 'a flush draw — 9 outs (≈36%)' } },
+  { heroCards: ['As', 'Ks'], board: ['7d', '8c', '2h'], street: 'flop', outs: 6,
+    drawType: { fr: 'deux surcartes — 6 outs (≈24%)', en: 'two overcards — 6 outs (≈24%)' } },
+  { heroCards: ['Ah', 'Qh'], board: ['Kh', 'Jc', '2h'], street: 'flop', outs: 12,
+    drawType: { fr: 'un tirage combiné couleur + ventre — 12 outs (≈48%)', en: 'a combo flush + gutshot draw — 12 outs (≈48%)' } },
+  { heroCards: ['Ad', 'Kd'], board: ['5d', '9d', 'Jc', '2s'], street: 'turn', outs: 9,
+    drawType: { fr: 'un tirage couleur à la turn — 9 outs (≈18%, une carte)', en: 'a flush draw on the turn — 9 outs (≈18%, one card)' } },
+  { heroCards: ['Jc', 'Td'], board: ['9h', '8s', '3c', '2d'], street: 'turn', outs: 8,
+    drawType: { fr: 'un tirage bilatéral à la turn — 8 outs (≈16%, une carte)', en: 'an open-ended draw on the turn — 8 outs (≈16%, one card)' } },
+  { heroCards: ['9d', '8d'], board: ['Qh', 'Jc', '2s'], street: 'flop', outs: 4,
+    drawType: { fr: 'un tirage par le ventre — 4 outs (≈16%)', en: 'a gutshot — 4 outs (≈16%)' } },
+];
+
+/** Build a borderline call/fold spot: required equity within ~3.5% of the
+ *  hero's equity, with "ugly" pot/bet so it can't be eyeballed. */
+export function generateClosePotOddsScenario(lang: 'fr' | 'en' = 'fr'): PotOddsScenario {
+  const UGLY_POTS = [13, 17, 19, 23, 27, 31];
+  for (;;) {
+    const d = pick(CLOSE_DRAWS);
+    const E = d.outs * (d.street === 'flop' ? 4 : 2);     // Rule of 2 & 4 (%)
+    const pot = pick(UGLY_POTS);
+    const target = (E + (Math.random() * 7 - 3.5)) / 100; // aim just around the threshold
+    const R = Math.max(0.08, Math.min(0.46, target));
+    const bet = Math.max(2, Math.round((R * pot) / (1 - 2 * R)));
+    if (bet > pot * 2.5) continue;
+    const required = (bet / (pot + 2 * bet)) * 100;
+    if (Math.abs(E - required) > 3.5) continue;           // must stay borderline
+    const correctAction: 'call' | 'fold' = E >= required ? 'call' : 'fold';
+    return {
+      potSize: pot, betSize: bet, heroEquity: E, outs: d.outs,
+      correctAction, difficulty: 'hard', street: d.street,
+      heroCards: d.heroCards, board: d.board,
+      context: `Décision limite : tu as ${d.drawType.fr}, face à une mise de ${bet}bb dans un pot de ${pot}bb. Calcule précisément — c'est très serré.`,
+      contextEn: `Borderline decision: you have ${d.drawType.en}, facing a ${bet}bb bet into a ${pot}bb pot. Compute precisely — it's very close.`,
+      drawType: d.drawType,
+    };
+  }
+}
+
 // ─── Equity explanation (where does our equity come from?) ────────────────────
 
 export function buildEquityExplanation(

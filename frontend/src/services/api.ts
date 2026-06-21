@@ -73,16 +73,16 @@ export const trainingApi = {
   getRangeMatrix: (position: Position) =>
     api.get(`/training/preflop/range/${position}`).then(r => r.data.data),
 
-  getPotOddsExercise: () =>
-    api.get('/training/potodds/exercise').then(r => r.data.data),
+  getPotOddsExercise: (difficulty?: string) =>
+    api.get('/training/potodds/exercise', { params: difficulty ? { difficulty } : {} }).then(r => r.data.data),
   checkPotOddsAnswer: (payload: {
     potSize: number; betSize: number; heroEquity: number;
     userAction: string; timeTaken: number; sessionId: string;
   }) => api.post('/training/potodds/check', payload).then(r => r.data.data),
 
-  getEquityExercise: () => {
+  getEquityExercise: (difficulty?: string) => {
     const mode = localStorage.getItem('poker-equity-mode') || 'beginner';
-    return api.get('/training/equity/exercise', { params: { mode } }).then(r => r.data.data);
+    return api.get('/training/equity/exercise', { params: { mode, ...(difficulty ? { difficulty } : {}) } }).then(r => r.data.data);
   },
 
   getOutsExercise: (difficulty?: string) =>

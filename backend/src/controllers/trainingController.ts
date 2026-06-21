@@ -52,7 +52,8 @@ export async function checkPreflopAnswer(req: Request, res: Response): Promise<v
 export async function getPotOddsExercise(req: Request, res: Response): Promise<void> {
   try {
     const lang = getLang(req);
-    const exercise = generatePotOddsExercise(lang);
+    const difficulty = req.query.difficulty === 'expert' ? 'expert' : undefined;
+    const exercise = generatePotOddsExercise(lang, difficulty);
     res.json({ success: true, data: exercise } as ApiResponse);
   } catch {
     res.status(500).json({ success: false, error: 'Failed to generate exercise' } as ApiResponse);
@@ -97,7 +98,8 @@ export async function getEquityExercise(req: Request, res: Response): Promise<vo
   try {
     const lang = getLang(req);
     const mode = (req.query.mode === 'advanced' ? 'advanced' : 'beginner') as 'beginner' | 'advanced';
-    const exercise = generateEquityExercise(lang, mode);
+    const difficulty = req.query.difficulty === 'expert' ? 'expert' : undefined;
+    const exercise = generateEquityExercise(lang, mode, difficulty);
     res.json({ success: true, data: exercise } as ApiResponse);
   } catch {
     res.status(500).json({ success: false, error: 'Failed to generate exercise' } as ApiResponse);

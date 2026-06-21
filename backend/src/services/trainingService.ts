@@ -3,7 +3,7 @@ import { dealHand, dealBoard, toHandNotation } from './poker/cards';
 import { getCorrectAction } from './poker/ranges';
 import { calculateEquity } from './poker/equity';
 import { preflopEquityResult } from './poker/preflopEquity';
-import { getRandomScenario, calculatePotOdds, buildEquityExplanation, buildThresholdExplanation } from './poker/potOdds';
+import { getRandomScenario, generateClosePotOddsScenario, calculatePotOdds, buildEquityExplanation, buildThresholdExplanation } from './poker/potOdds';
 import { generateEquityExplanation } from './poker/equityAnalyzer';
 import { getRandomOutsScenario, buildOutsOptions, buildOutsExplanation, estimateEquityFromOuts } from './poker/outs';
 import { getBBDefenseAction, buildBBDefenseExplanation } from './poker/bbDefense';
@@ -124,8 +124,9 @@ function buildPreflopExplanationEn(notation: string, position: Position, action:
   return `${handDesc} → FOLD from ${position}.\n\n${posDesc[position]}.\n\nThis hand is not strong enough to open from this position. Wait for better spots.`;
 }
 
-export function generatePotOddsExercise(lang: 'fr' | 'en' = 'fr') {
-  const scenario = getRandomScenario();
+export function generatePotOddsExercise(lang: 'fr' | 'en' = 'fr', difficulty?: 'expert') {
+  // Expert → borderline call/fold spots (required equity within ~3% of hero's).
+  const scenario = difficulty === 'expert' ? generateClosePotOddsScenario(lang) : getRandomScenario();
   const result = calculatePotOdds(scenario.potSize, scenario.betSize, scenario.heroEquity, lang);
 
   return {
@@ -149,25 +150,56 @@ export function generatePotOddsExercise(lang: 'fr' | 'en' = 'fr') {
   };
 }
 
-export function generateEquityExercise(lang: 'fr' | 'en' = 'fr', mode: 'beginner' | 'advanced' = 'beginner'): EquityExercise & {
+export function generateEquityExercise(
+  lang: 'fr' | 'en' = 'fr',
+  mode: 'beginner' | 'advanced' = 'beginner',
+  difficulty?: 'expert',
+): EquityExercise & {
   hand1Notation: string;
   hand2Notation: string;
   explanation: string;
   explanationAdvanced: string;
 } {
-  const hand1 = dealHand();
-  const hand2 = dealHand([...hand1]);
-  const board: Card[] = [];
+  const expert = difficulty === 'expert';
 
-  if (Math.random() > 0.5) {
-    board.push(...dealBoard([...hand1, ...hand2], 3));
+  // Preflop uses the O(1) table; with a board we simulate. Expert reject-samples
+  // so the same equity drives both the accept test and the display (no drift), so
+  // board spots run at a slightly lighter 2000 sims to keep sampling affordable.
+  const boardSims = expert ? 2000 : 3000;
+  const dealMatchup = () => {
+    const h1 = dealHand();
+    const h2 = dealHand([...h1]);
+    const withBoard = Math.random() > 0.5;
+    const b: Card[] = withBoard ? [...dealBoard([...h1, ...h2], 3)] : [];
+    const eq = b.length === 0 ? preflopEquityResult(h1, h2) : calculateEquity(h1, h2, b, boardSims);
+    return { h1, h2, b, eq };
+  };
+
+  // Expert → reject-sample for a CLOSE matchup (coin-flips / domination spots)
+  // where you can't just eyeball the winner. Score = the gap between the two
+  // displayed win%s; we keep the *closest* matchup seen, so even if no in-band
+  // spot turns up we still return a tight one — never a lopsided deal. Chop-heavy
+  // boards (big tie%) are pushed away since "which is better" would be ambiguous.
+  type Matchup = typeof m;
+  const winGap = (x: Matchup) => Math.abs(x.eq.hand1WinPct - x.eq.hand2WinPct);
+  const scoreOf = (x: Matchup) => {
+    if (x.eq.tiePct > 25) return 9999;      // chop → avoid
+    const gap = winGap(x);
+    return gap < 4 ? 1000 + gap : gap;      // need a clear (≥4%) but close winner
+  };
+  let m = dealMatchup();
+  if (expert) {
+    let best = scoreOf(m);
+    for (let i = 0; i < 40 && !(best >= 4 && best <= 18); i++) {
+      const cand = dealMatchup();
+      const cs = scoreOf(cand);
+      if (cs < best) { m = cand; best = cs; }
+    }
   }
+  const hand1 = m.h1, hand2 = m.h2, board = m.b, equity = m.eq;
 
   // Preflop (no board): equity depends only on the two hands → O(1) table
   // lookup instead of a 3000-sim Monte Carlo. With a board, simulate as before.
-  const equity = board.length === 0
-    ? preflopEquityResult(hand1, hand2)
-    : calculateEquity(hand1, hand2, board, 3000);
   const hand1Notation = toHandNotation(hand1[0], hand1[1]);
   const hand2Notation = toHandNotation(hand2[0], hand2[1]);
 
