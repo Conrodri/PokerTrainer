@@ -11,6 +11,7 @@ import { Card } from '../src/types';
 import { calculateEquity } from '../src/services/poker/equity';
 import { evaluateBestHand, compareHands, bestScore } from '../src/services/poker/handEvaluator';
 import { createDeck, removeCards, shuffleDeck } from '../src/services/poker/cards';
+import { preflopEquityResult } from '../src/services/poker/preflopEquity';
 
 let failures = 0;
 function check(name: string, cond: boolean, extra = '') {
@@ -72,6 +73,33 @@ eqWithin('AA vs KK', ['Ah','Ad'], ['Kh','Kd'], 82);
 eqWithin('AKs vs QQ', ['Ah','Kh'], ['Qd','Qc'], 46);
 eqWithin('AKo vs JJ', ['Ah','Kd'], ['Jh','Jc'], 43); // pair is ~57/43 favorite
 eqWithin('72o vs AKo', ['7h','2d'], ['Ac','Kd'], 33);
+
+// ── Preflop hard-coded table: accuracy vs MC + lookup speed ──────────────────
+console.log('\nPreflop table — lookup vs 50k MC (±2%):');
+function tableVsMC(name: string, h1: [Card, Card], h2: [Card, Card], tol = 2) {
+  const tb = preflopEquityResult(h1, h2);
+  const tEq = tb.hand1WinPct + tb.tiePct / 2;
+  const mc = calculateEquity(h1, h2, [], 50000);
+  const mEq = mc.hand1WinPct + mc.tiePct / 2;
+  check(name, Math.abs(tEq - mEq) <= tol, `table ${tEq.toFixed(1)}% vs MC ${mEq.toFixed(1)}%`);
+}
+tableVsMC('AA vs KK', ['Ah', 'Ad'], ['Kh', 'Kd']);
+tableVsMC('AKs vs QQ', ['Ah', 'Kh'], ['Qd', 'Qc']);
+tableVsMC('AKo vs JJ', ['Ah', 'Kd'], ['Jh', 'Jc']);
+tableVsMC('72o vs AKo', ['7h', '2d'], ['Ac', 'Kd']);
+tableVsMC('JTs vs 99', ['Jh', 'Th'], ['9d', '9c']);
+tableVsMC('A5s vs KQo', ['Ah', '5h'], ['Kd', 'Qc']);
+{
+  const pairs: [[Card, Card], [Card, Card]][] = [
+    [['Ah', 'Kh'], ['Qd', 'Qc']], [['7h', '2d'], ['Ac', 'Kd']], [['Jh', 'Th'], ['9d', '9c']],
+  ];
+  const ITER = 2_000_000;
+  let acc = 0;
+  const t0 = performance.now();
+  for (let n = 0; n < ITER; n++) { const p = pairs[n % 3]; acc += preflopEquityResult(p[0], p[1]).hand1WinPct; }
+  const us = ((performance.now() - t0) / ITER) * 1000;
+  console.log(`  lookup: ${us.toFixed(4)} µs/call (${ITER.toLocaleString()} calls)`);
+}
 
 // ── Speed: postflop "8 × 300" pattern, per street ────────────────────────────
 console.log('\nSpeed — postflop pattern (8 villains × 300 runouts):');

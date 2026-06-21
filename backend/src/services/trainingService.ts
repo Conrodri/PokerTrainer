@@ -2,6 +2,7 @@ import { Card, Position, PreflopExercise, EquityExercise } from '../types';
 import { dealHand, dealBoard, toHandNotation } from './poker/cards';
 import { getCorrectAction } from './poker/ranges';
 import { calculateEquity } from './poker/equity';
+import { preflopEquityResult } from './poker/preflopEquity';
 import { getRandomScenario, calculatePotOdds, buildEquityExplanation, buildThresholdExplanation } from './poker/potOdds';
 import { generateEquityExplanation } from './poker/equityAnalyzer';
 import { getRandomOutsScenario, buildOutsOptions, buildOutsExplanation, estimateEquityFromOuts } from './poker/outs';
@@ -162,7 +163,11 @@ export function generateEquityExercise(lang: 'fr' | 'en' = 'fr', mode: 'beginner
     board.push(...dealBoard([...hand1, ...hand2], 3));
   }
 
-  const equity = calculateEquity(hand1, hand2, board, 3000);
+  // Preflop (no board): equity depends only on the two hands → O(1) table
+  // lookup instead of a 3000-sim Monte Carlo. With a board, simulate as before.
+  const equity = board.length === 0
+    ? preflopEquityResult(hand1, hand2)
+    : calculateEquity(hand1, hand2, board, 3000);
   const hand1Notation = toHandNotation(hand1[0], hand1[1]);
   const hand2Notation = toHandNotation(hand2[0], hand2[1]);
 
