@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useLangStore } from '../../store/langStore';
 import { Hand } from '../poker/Card';
@@ -60,6 +60,7 @@ const POSITION_TIPS: Record<Position, { fr: string; en: string }> = {
 
 export function PokerRulesPage() {
   const isEn = useLangStore(s => s.lang) === 'en';
+  const navigate = useNavigate();
   const [activePos, setActivePos] = useState<Position>('BTN');
 
   const rangePct: Record<Position, string> = {
@@ -172,9 +173,13 @@ export function PokerRulesPage() {
   ] as const;
 
   const modules = [
-    { id: 'preflop', label: isEn ? '🎯 Preflop' : '🎯 Préflop', color: 'bg-felt-700 hover:bg-felt-600 border-felt-500' },
-    { id: 'outs',    label: isEn ? '🎲 Outs' : '🎲 Outs',       color: 'bg-blue-800 hover:bg-blue-700 border-blue-600' },
-    { id: 'equity',  label: isEn ? '⚖️ Equity' : '⚖️ Équité',   color: 'bg-purple-800 hover:bg-purple-700 border-purple-600' },
+    { id: 'preflop',   label: isEn ? '🎯 Preflop' : '🎯 Préflop',        color: 'bg-felt-700 hover:bg-felt-600 border-felt-500' },
+    { id: 'outs',      label: isEn ? '🎲 Outs' : '🎲 Outs',              color: 'bg-blue-800 hover:bg-blue-700 border-blue-600' },
+    { id: 'equity',    label: isEn ? '⚖️ Equity' : '⚖️ Équité',          color: 'bg-purple-800 hover:bg-purple-700 border-purple-600' },
+    { id: 'potodds',   label: isEn ? '📊 Pot Odds' : '📊 Pot Odds',      color: 'bg-cyan-800 hover:bg-cyan-700 border-cyan-600' },
+    { id: 'postflop',  label: isEn ? '🃏 Post-flop' : '🃏 Post-flop',    color: 'bg-rose-800 hover:bg-rose-700 border-rose-600' },
+    { id: 'betsizing', label: isEn ? '💰 Bet Sizing' : '💰 Bet Sizing',  color: 'bg-orange-800 hover:bg-orange-700 border-orange-600' },
+    { id: 'fullhand',  label: isEn ? '🎰 Full Hand' : '🎰 Main complète', color: 'bg-indigo-800 hover:bg-indigo-700 border-indigo-600' },
   ] as const;
 
   const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
@@ -488,7 +493,7 @@ export function PokerRulesPage() {
           {modules.map(m => (
             <button
               key={m.id}
-              onClick={() => window.dispatchEvent(new CustomEvent('training:module', { detail: m.id }))}
+              onClick={() => navigate(`/training?module=${m.id}`)}
               className={`px-4 py-2 rounded-xl text-sm font-bold text-white border transition-all ${m.color}`}
             >
               {m.label}
@@ -497,7 +502,7 @@ export function PokerRulesPage() {
         </div>
 
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent('training:module', { detail: 'preflop' }))}
+          onClick={() => navigate('/training?module=preflop')}
           className="w-full py-3 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
         >
           {isEn ? 'Start training →' : 'Commencer l\'entraînement →'}
