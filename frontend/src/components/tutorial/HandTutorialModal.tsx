@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Hand } from '../poker/Card';
+import { RichLine } from '../ui/RichText';
 
 // ─── Step data ────────────────────────────────────────────────────────────────
 
@@ -13,10 +14,10 @@ export const HAND_STEPS = [
     color: 'text-blue-400 border-blue-700 bg-blue-900/20',
     heroCards: ['Ah', 'Kd'] as const,
     board: [] as const,
-    contextFr: "Tu es au CO (Cutoff). BTN est dealer, SB poste 0.5bb et BB poste 1bb. UTG relance à 3bb, tout le monde se couche jusqu'à toi.",
-    contextEn: "You're in CO (Cutoff). BTN is dealer, SB posts 0.5bb and BB posts 1bb. UTG raises to 3bb, everyone folds to you.",
-    actionFr: "💡 A-K est une main premium (~top 3%). Tu 3-bet à 9bb. BB se couche, UTG appelle. Pot : ~19bb — tu entres dans le flop.",
-    actionEn: "💡 A-K is a premium hand (~top 3%). You 3-bet to 9bb. BB folds, UTG calls. Pot: ~19bb — you go to the flop.",
+    contextFr: "Tu es au CO. Un joueur en UTG relance, et tout le monde fold jusqu'à toi. Tu regardes tes deux cartes.",
+    contextEn: "You're in the CO. A player in UTG raises, and everyone folds to you. You look at your two cards.",
+    actionFr: "💡 A-K est une main premium : une des plus fortes au départ. Tu décides de 3-bet pour prendre l'initiative. UTG call. Direction le flop !",
+    actionEn: "💡 A-K is a premium hand: one of the strongest to start with. You 3-bet to take the initiative. UTG calls. On to the flop!",
   },
   {
     labelFr: 'Flop',
@@ -24,10 +25,10 @@ export const HAND_STEPS = [
     color: 'text-blue-400 border-blue-700 bg-blue-900/20',
     heroCards: ['Ah', 'Kd'] as const,
     board: ['As', 'Th', '5d'] as const,
-    contextFr: 'Le croupier pose 3 cartes communes : A♠ T♥ 5♦. UTG checke (ne mise rien).',
-    contextEn: 'The dealer places 3 community cards: A♠ T♥ 5♦. UTG checks (bets nothing).',
-    actionFr: "💡 Tu as Paire d'As avec le meilleur kicker (K). C'est une main forte ! Tu mises 10bb (~55% du pot) pour protéger et construire le pot. UTG appelle. Pot : ~39bb.",
-    actionEn: "💡 You have top pair with the best kicker (K). That's a strong hand! You bet 10bb (~55% pot) to protect and build the pot. UTG calls. Pot: ~39bb.",
+    contextFr: 'Le flop arrive : A♠ T♥ 5♦. Tu touches une paire d\'As. UTG check (il ne mise rien).',
+    contextEn: 'The flop comes: A♠ T♥ 5♦. You pair your Ace. UTG checks (bets nothing).',
+    actionFr: "💡 Tu as top pair (la plus haute paire) avec un kicker Roi : une main forte. Tu mises un peu plus de la moitié du pot pour la faire payer. UTG call.",
+    actionEn: "💡 You have top pair (the highest pair) with a King kicker: a strong hand. You bet a bit over half the pot to get paid. UTG calls.",
   },
   {
     labelFr: 'Turn',
@@ -35,10 +36,10 @@ export const HAND_STEPS = [
     color: 'text-yellow-400 border-yellow-700 bg-yellow-900/20',
     heroCards: ['Ah', 'Kd'] as const,
     board: ['As', 'Th', '5d', 'Kc'] as const,
-    contextFr: 'La 4ème carte tombe : K♣. UTG checke encore.',
-    contextEn: 'The 4th card falls: K♣. UTG checks again.',
-    actionFr: '💡 Tu as maintenant Deux Paires (As & Rois) — une très bonne main ! Tu mises 20bb pour extraire de la valeur. UTG appelle. Pot : ~79bb.',
-    actionEn: '💡 You now have Two Pair (Aces & Kings) — a very strong hand! You bet 20bb for value. UTG calls. Pot: ~79bb.',
+    contextFr: 'La turn tombe : K♣. UTG check encore.',
+    contextEn: 'The turn falls: K♣. UTG checks again.',
+    actionFr: '💡 Tu touches maintenant two pair (As et Rois) — une très belle main ! Tu fais un value bet : tu mises pour faire payer une main plus faible. UTG call.',
+    actionEn: '💡 You now have two pair (Aces and Kings) — a great hand! You make a value bet: betting to get paid by a weaker hand. UTG calls.',
   },
   {
     labelFr: 'River & Showdown',
@@ -46,10 +47,10 @@ export const HAND_STEPS = [
     color: 'text-red-400 border-red-700 bg-red-900/20',
     heroCards: ['Ah', 'Kd'] as const,
     board: ['As', 'Th', '5d', 'Kc', '2h'] as const,
-    contextFr: "La dernière carte : 2♥. Rien de dangereux. UTG checke une dernière fois.",
-    contextEn: 'The last card: 2♥. Nothing dangerous. UTG checks one last time.',
-    actionFr: '🏆 Deux Paires (As & Rois) — tu mises 40bb pour le maximum. UTG se couche. Tu remportes le pot de ~79bb !',
-    actionEn: '🏆 Two Pair (Aces & Kings) — you bet 40bb for maximum value. UTG folds. You win the ~79bb pot!',
+    contextFr: "Dernière carte, la river : 2♥. Elle ne change rien. UTG check une dernière fois.",
+    contextEn: 'Last card, the river: 2♥. It changes nothing. UTG checks one last time.',
+    actionFr: '🏆 Tu gardes two pair (As et Rois). Tu mises une dernière fois pour le maximum. UTG fold : tu remportes le pot, sans même aller au showdown !',
+    actionEn: '🏆 You still have two pair (Aces and Kings). You bet one last time for maximum value. UTG folds: you win the pot, without even reaching showdown!',
   },
 ] as const;
 
@@ -93,12 +94,12 @@ export function TutorialHand({ isEn, onClose }: { isEn: boolean; onClose?: () =>
 
       {/* Context */}
       <p className="text-sm text-gray-300 text-center leading-relaxed">
-        {isEn ? s.contextEn : s.contextFr}
+        <RichLine text={isEn ? s.contextEn : s.contextFr} />
       </p>
 
       {/* Action */}
       <div className="bg-gray-800/60 rounded-xl px-4 py-3 border border-gray-700 text-sm text-gray-200 leading-relaxed">
-        {isEn ? s.actionEn : s.actionFr}
+        <RichLine text={isEn ? s.actionEn : s.actionFr} />
       </div>
 
       {/* Navigation */}

@@ -256,6 +256,34 @@ export const GLOSSARY: GlossaryEntry[] = [
     definitionEn: 'Three of a kind formed with one hole card + a pair on the board. Less disguised than a set.',
     category: 'strength',
   },
+  {
+    id: 'toppair',
+    fr: 'Top pair (meilleure paire)', en: 'Top pair',
+    definitionFr: 'Une paire formée avec la plus haute carte de la board. Souvent une main forte, surtout avec un bon kicker.',
+    definitionEn: 'A pair made with the highest card on the board. Usually a strong hand, especially with a good kicker.',
+    category: 'strength',
+  },
+  {
+    id: 'twopair',
+    fr: 'Two pair (deux paires)', en: 'Two pair',
+    definitionFr: 'Deux paires différentes en même temps (ex : As et Rois). Une main très solide au flop comme au turn.',
+    definitionEn: 'Two different pairs at once (e.g. Aces and Kings). A very strong hand on the flop or turn.',
+    category: 'strength',
+  },
+  {
+    id: 'kicker',
+    fr: 'Kicker', en: 'Kicker',
+    definitionFr: 'La carte d\'accompagnement qui départage deux mains de même force. Ex : A-K et A-Q ont la même paire d\'As, mais le K l\'emporte sur le Q.',
+    definitionEn: 'The side card that breaks ties between hands of equal rank. E.g. A-K and A-Q both pair Aces, but the K beats the Q.',
+    category: 'strength',
+  },
+  {
+    id: 'premium',
+    fr: 'Main premium', en: 'Premium hand',
+    definitionFr: 'Une des meilleures mains de départ (ex : AA, KK, QQ, AK). Assez forte pour relancer et 3-bet depuis n\'importe quelle position.',
+    definitionEn: 'One of the best starting hands (e.g. AA, KK, QQ, AK). Strong enough to raise and 3-bet from any position.',
+    category: 'strength',
+  },
 
   // ── Textures de board ─────────────────────────────────────────────────────────
   {
