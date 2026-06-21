@@ -220,12 +220,19 @@ export function PotOddsTrainer() {
                 {/* Cards display */}
                 <CardDisplay heroCards={ex.heroCards as [CardStr, CardStr]} board={ex.board as CardStr[]} street={ex.street} isEn={isEn} />
 
-                {/* Numbers */}
-                <div className="grid grid-cols-3 gap-2">
-                  <NumberCard label={t.training.pot_lbl}    value={`${ex.potSize}bb`}   color="text-white"    icon="🏆" />
-                  <NumberCard label={t.training.bet_lbl}    value={`${ex.betSize}bb`}   color="text-red-400"  icon="🎯" />
-                  <NumberCard label={t.training.equity_lbl} value={`${ex.heroEquity}%`} color="text-blue-400" icon="📊" />
-                </div>
+                {/* Numbers — expert hides equity to force mental outs calculation */}
+                {mode === 'expert' ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <NumberCard label={t.training.pot_lbl} value={`${ex.potSize}bb`} color="text-white"   icon="🏆" />
+                    <NumberCard label={t.training.bet_lbl} value={`${ex.betSize}bb`} color="text-red-400" icon="🎯" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    <NumberCard label={t.training.pot_lbl}    value={`${ex.potSize}bb`}   color="text-white"    icon="🏆" />
+                    <NumberCard label={t.training.bet_lbl}    value={`${ex.betSize}bb`}   color="text-red-400"  icon="🎯" />
+                    <NumberCard label={t.training.equity_lbl} value={`${ex.heroEquity}%`} color="text-blue-400" icon="📊" />
+                  </div>
+                )}
 
                 {/* Question */}
                 <div className="text-center bg-gray-900/60 rounded-xl py-4 border border-gray-700">
@@ -403,6 +410,24 @@ export function PotOddsTrainer() {
               </div>
             )}
           </StepPanel>}
+
+          {/* Expert result: full calculation breakdown so the user can verify their reasoning */}
+          {mode === 'expert' && lastResult && (
+            <div className="bg-gray-900/50 rounded-2xl p-4 border border-purple-900/30 space-y-2 font-mono text-sm">
+              <p className="text-purple-300 font-semibold font-sans text-xs uppercase tracking-wide">
+                {isEn ? 'Calculation' : 'Calcul'}
+              </p>
+              <p className="text-gray-300">
+                {isEn ? 'Equity' : 'Équité'} : {ex.outs} × {ex.street === 'flop' ? 4 : 2} = <span className="text-blue-400 font-bold">{ex.heroEquity}%</span>
+              </p>
+              <p className="text-gray-300">
+                {isEn ? 'Required' : 'Seuil'} : {ex.betSize} ÷ ({ex.potSize}+{ex.betSize * 2}) = <span className="text-yellow-400 font-bold">{lastResult.requiredEquity}%</span>
+              </p>
+              <div className={`p-2 rounded-lg text-center font-bold ${ev >= 0 ? 'text-green-400 bg-green-900/20' : 'text-red-400 bg-red-900/20'}`}>
+                EV = {ev >= 0 ? '+' : ''}{ev.toFixed(2)}bb {ev >= 0 ? '✅' : '❌'}
+              </div>
+            </div>
+          )}
 
           {/* Explanation — handled by StepPanels above for PotOdds; no ExplanationPanel needed */}
 
