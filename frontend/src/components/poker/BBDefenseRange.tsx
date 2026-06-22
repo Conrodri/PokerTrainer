@@ -8,11 +8,11 @@ interface BBDefenseRangeProps {
   highlightNotation?: string;
 }
 
-// code: 0=fold, 1=call, 2=thin call, 3=value 3-bet, 4=bluff 3-bet
+// code: 0=fold, 1=call, 3=value 3-bet, 4=bluff 3-bet
 const CODE_BG: Record<number, string> = {
   0: '#1a202c',
   1: 'rgba(37,99,235,0.70)',
-  2: 'rgba(37,99,235,0.32)',
+  2: 'rgba(37,99,235,0.70)', // legacy alias → call
   3: 'rgba(22,130,60,0.85)',
   4: 'rgba(202,138,4,0.82)',
 };
@@ -25,7 +25,7 @@ export function BBDefenseRange({ grid, highlightNotation }: BBDefenseRangeProps)
   const codeLabel = (code: number): string => ({
     0: t.training.bb_leg_fold,
     1: t.training.bb_leg_call,
-    2: t.training.bb_leg_thin,
+    2: t.training.bb_leg_call, // legacy alias → call
     3: t.training.bb_leg_value,
     4: t.training.bb_leg_bluff,
   }[code] ?? '');
@@ -84,7 +84,6 @@ export function BBDefenseRange({ grid, highlightNotation }: BBDefenseRangeProps)
         <LegendItem color={CODE_BG[3]} label={t.training.bb_leg_value} />
         <LegendItem color={CODE_BG[4]} label={t.training.bb_leg_bluff} />
         <LegendItem color={CODE_BG[1]} label={t.training.bb_leg_call} />
-        <LegendItem color={CODE_BG[2]} label={t.training.bb_leg_thin} />
         <LegendItem color={CODE_BG[0]} label={t.training.bb_leg_fold} />
       </div>
     </div>

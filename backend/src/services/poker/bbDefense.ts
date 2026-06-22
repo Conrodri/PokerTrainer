@@ -11,7 +11,7 @@ export interface BBDefenseClass {
   action: BBAction;   // primary recommended action
   alt: BBAction;      // acceptable alternative when the hand is a mix
   isMixed: boolean;   // true when both `action` and `alt` are fine
-  kind: 'value3bet' | 'bluff3bet' | 'call' | 'thincall' | 'fold';
+  kind: 'value3bet' | 'bluff3bet' | 'call' | 'fold';
 }
 
 const RV: Record<string, number> = {
@@ -39,7 +39,7 @@ export function getBBDefenseAction(notation: string): BBDefenseClass {
     }
     if (hi === 13) {                                   // Kx suited
       if (lo >= 9) return mk('call', 'call', false, 'call');       // KQs–K9s
-      if (lo >= 5) return mk('call', 'fold', true, 'thincall');    // K8s–K5s
+      if (lo >= 5) return mk('call', 'fold', true, 'call');         // K8s–K5s
       return mk('fold', 'fold', false, 'fold');
     }
     if (hi === 12) {                                   // Qx suited
@@ -55,7 +55,7 @@ export function getBBDefenseAction(notation: string): BBDefenseClass {
       return mk('fold', 'fold', false, 'fold');
     }
     if (gap <= 1 && lo >= 4) return mk('call', 'call', false, 'call');     // 98s–54s connectors
-    if (gap === 2 && lo >= 5) return mk('call', 'fold', true, 'thincall'); // 97s–75s one-gappers
+    if (gap === 2 && lo >= 5) return mk('call', 'fold', true, 'call');    // 97s–75s one-gappers
     return mk('fold', 'fold', false, 'fold');
   }
 
@@ -74,7 +74,7 @@ export function getBBDefenseAction(notation: string): BBDefenseClass {
     return mk('fold', 'fold', false, 'fold');
   }
   if (hi === 11 && lo === 10) return mk('call', 'call', false, 'call'); // JTo
-  if (hi === 10 && lo === 9)  return mk('call', 'fold', true, 'thincall'); // T9o
+  if (hi === 10 && lo === 9)  return mk('call', 'fold', true, 'call');    // T9o
   return mk('fold', 'fold', false, 'fold');
 }
 
@@ -83,7 +83,7 @@ function mk(action: BBAction, alt: BBAction, isMixed: boolean, kind: BBDefenseCl
 }
 
 // ─── Full 13×13 range grid (for display) ─────────────────────────────────────
-// Cell code: 0=fold, 1=call, 2=thin call, 3=value 3-bet, 4=bluff 3-bet.
+// Cell code: 0=fold, 1=call, 3=value 3-bet, 4=bluff 3-bet.
 // Indexing matches the frontend getNotationFromIndices() convention.
 
 const GRID_RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
@@ -97,7 +97,7 @@ function notationFromIndices(row: number, col: number): string {
 }
 
 const KIND_CODE: Record<BBDefenseClass['kind'], number> = {
-  fold: 0, call: 1, thincall: 2, value3bet: 3, bluff3bet: 4,
+  fold: 0, call: 1, value3bet: 3, bluff3bet: 4,
 };
 
 export function buildBBDefenseGrid(): number[][] {
@@ -130,7 +130,6 @@ export function buildBBDefenseExplanation(
       value3bet: `**${hand}** is strong enough to **3-bet for value**: you want to build the pot with a hand that dominates the ${opener}'s wide opening range.`,
       bluff3bet: `**${hand}** is a **3-bet bluff (semi-bluff)**: the ace blocker reduces villain's strong hands, and the suit gives playability. Raising or just calling are both fine here.`,
       call: `**${hand}** is good enough to **defend by calling** — playable and well ahead of the bottom of villain's range — but not strong enough to 3-bet.`,
-      thincall: `**${hand}** is a **thin call**: borderline defend. Calling is fine given your great price; folding is also acceptable.`,
       fold: `**${hand}** is **too weak to defend**, even closing the action in the BB. It plays poorly out of position against an open — **fold**.`,
     };
     return [intro, verdict[cls.kind]].join('\n\n');
@@ -141,7 +140,6 @@ export function buildBBDefenseExplanation(
     value3bet: `**${hand}** est assez forte pour **3-bet à la valeur** : tu veux gonfler le pot avec une main qui domine la range d'ouverture large du ${opener}.`,
     bluff3bet: `**${hand}** est un **3-bet bluff (semi-bluff)** : l'as bloque les grosses mains adverses et la couleur assure la jouabilité. Relancer ou simplement payer sont tous deux corrects.`,
     call: `**${hand}** est assez bonne pour **défendre en payant** — jouable et devant le bas de la range adverse — mais pas assez pour 3-bet.`,
-    thincall: `**${hand}** est un **call fin** : défense limite. Payer est correct vu ta cote ; se coucher est aussi acceptable.`,
     fold: `**${hand}** est **trop faible pour défendre**, même en clôturant l'action en BB. Elle se joue mal hors de position face à une ouverture — **fold**.`,
   };
   return [intro, verdict[cls.kind]].join('\n\n');

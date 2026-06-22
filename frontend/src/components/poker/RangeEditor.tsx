@@ -7,33 +7,34 @@ import { HoverTip } from '../ui/HoverTip';
 import { useLangStore } from '../../store/langStore';
 
 // ── BB defense scheme: 5 categories keyed by cell code (0-4) ──────────────────
-// Matches the backend bbDefense.ts grid (0=fold,1=call,2=thin,3=value3bet,4=bluff3bet).
+// Matches the backend bbDefense.ts grid (0=fold, 1=call, 3=value3bet, 4=bluff3bet).
 const BB_CATEGORIES = [
   { code: 0, color: '#1a202c',              labelFr: 'Fold',         labelEn: 'Fold' },
   { code: 1, color: 'rgba(37,99,235,0.70)', labelFr: 'Call',         labelEn: 'Call' },
-  { code: 2, color: 'rgba(37,99,235,0.32)', labelFr: 'Call fin',     labelEn: 'Thin call' },
+  { code: 1, color: 'rgba(37,99,235,0.70)', labelFr: 'Call',         labelEn: 'Call' }, // legacy index 2 → call
   { code: 3, color: 'rgba(22,130,60,0.85)', labelFr: '3-bet valeur', labelEn: 'Value 3-bet' },
   { code: 4, color: 'rgba(202,138,4,0.82)', labelFr: '3-bet bluff',  labelEn: 'Bluff 3-bet' },
 ] as const;
 
-// Display + click-cycle order (by code): 3-bet bluff → 3-bet valeur → Call → Call fin → Fold.
-const BB_CYCLE = [4, 3, 1, 2, 0];
+// Click-cycle order: 3-bet bluff → 3-bet valeur → Call → Fold.
+const BB_CYCLE = [4, 3, 1, 0];
 
 const BB_TIPS: Record<number, { fr: string; en: string }> = {
   0: { fr: 'Main trop faible pour défendre hors de position : on se couche.',
        en: 'Too weak to defend out of position — fold.' },
   1: { fr: 'Suivre la mise pour défendre ta blinde : main jouable, mais pas assez forte pour relancer.',
        en: 'Call to defend your blind: playable, but not strong enough to 3-bet.' },
-  2: { fr: 'Call limite (marginal) : défense optionnelle grâce à ta bonne cote en BB ; se coucher reste acceptable.',
-       en: 'Borderline (marginal) call: optional defense thanks to your great BB price; folding is also acceptable.' },
   3: { fr: 'Relancer (3-bet) une main forte pour gonfler le pot : tu domines la range d\'ouverture adverse.',
        en: 'Re-raise (3-bet) a strong hand to build the pot: you dominate villain\'s opening range.' },
   4: { fr: 'Relancer (3-bet) sans main faite, en semi-bluff : souvent avec un bloqueur (un As).',
        en: 'Re-raise (3-bet) as a semi-bluff, often with a blocker (an ace).' },
 };
 
-/** Normalize any stored value to a valid BB category code (0-4). */
-const toCode = (v: number): number => Math.max(0, Math.min(4, Math.round(v || 0)));
+/** Normalize any stored value to a valid BB category code. Code 2 (legacy thin call) → 1 (call). */
+const toCode = (v: number): number => {
+  const c = Math.max(0, Math.min(4, Math.round(v || 0)));
+  return c === 2 ? 1 : c;
+};
 
 // Hover explanations for the editor's legend terms (custom opening range).
 const LEGEND_TIPS = {
@@ -71,7 +72,7 @@ export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSav
     const next = matrix.map(r => [...r]);
     const cur = next[row][col];
     if (isBB) {
-      // Cycle in legend order: 3-bet bluff → 3-bet valeur → Call → Call fin → Fold → …
+      // Cycle: 3-bet bluff → 3-bet valeur → Call → Fold → …
       const idx = BB_CYCLE.indexOf(toCode(cur));
       next[row][col] = BB_CYCLE[(idx + 1) % BB_CYCLE.length];
     } else {
@@ -158,7 +159,7 @@ export function RangeEditor({ matrix, onChange, position, onSave, onReset, isSav
       {/* Legend */}
       <div className="flex gap-4 text-xs text-gray-400 justify-center flex-wrap">
         {isBB ? (
-          // Same order as the click cycle: 3-bet bluff → 3-bet valeur → Call → Call fin → Fold
+          // Same order as the click cycle: 3-bet bluff → 3-bet valeur → Call → Fold
           BB_CYCLE.map(code => BB_CATEGORIES[code]).map(cat => (
             <LegendItem
               key={cat.code}

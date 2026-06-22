@@ -28,7 +28,7 @@ function gtoExpertData(): Record<string, number[]> {
       const mix: number[] = [];
       for (const code of codes) {
         if (code === 0) mix.push(1, 0, 0, 0);          // fold
-        else if (code <= 2) mix.push(0, 1, 0, 0);      // call / thin call
+        else if (code <= 2) mix.push(0, 1, 0, 0);      // call
         else mix.push(0, 0, 1, 0);                     // 3-bet (value/bluff) → raise
       }
       data[pos] = mix;

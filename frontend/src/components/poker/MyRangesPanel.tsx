@@ -24,7 +24,7 @@ import {
 
 // Cell code -> colour for the GTO BB-defense reference grid (0-4).
 const BB_GTO_CELL_COLOR = (code: number): string => ({
-  0: '#1a202c', 1: 'rgba(37,99,235,0.70)', 2: 'rgba(37,99,235,0.32)',
+  0: '#1a202c', 1: 'rgba(37,99,235,0.70)', 2: 'rgba(37,99,235,0.70)',
   3: 'rgba(22,130,60,0.85)', 4: 'rgba(202,138,4,0.82)',
 } as Record<number, string>)[code] ?? '#1a202c';
 
@@ -209,12 +209,11 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
     { color: 'rgba(202,138,4,0.82)', label: t.training.bb_leg_bluff, tip: { title: t.training.bb_leg_bluff, text: t.training.bb_tip_bluff } },
     { color: 'rgba(22,130,60,0.85)', label: t.training.bb_leg_value, tip: { title: t.training.bb_leg_value, text: t.training.bb_tip_value } },
     { color: 'rgba(37,99,235,0.70)', label: t.training.bb_leg_call,  tip: { title: t.training.bb_leg_call,  text: t.training.bb_tip_call  } },
-    { color: 'rgba(37,99,235,0.32)', label: t.training.bb_leg_thin,  tip: { title: t.training.bb_leg_thin,  text: t.training.bb_tip_thin  } },
     { color: '#1a202c',              label: t.training.bb_leg_fold,  tip: { title: t.training.bb_leg_fold,  text: t.training.bb_tip_fold  } },
   ], [t]);
   const bbGtoTooltipValue = useCallback((code: number) => ({
     0: t.training.bb_leg_fold, 1: t.training.bb_leg_call,
-    2: t.training.bb_leg_thin, 3: t.training.bb_leg_value, 4: t.training.bb_leg_bluff,
+    2: t.training.bb_leg_call, 3: t.training.bb_leg_value, 4: t.training.bb_leg_bluff,
   } as Record<number, string>)[code] ?? '', [t]);
   // Read-only GTO reference matrix (BB = 5-category defense grid, others = open-raise).
   const renderGtoRef = (matrix: number[][] | null | undefined, position: string) => {

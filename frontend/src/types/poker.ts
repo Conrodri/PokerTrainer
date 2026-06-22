@@ -95,7 +95,7 @@ export interface BBDefenseExercise {
   correctAction: 'fold' | 'call' | '3bet';
   altAction: 'fold' | 'call' | '3bet';
   isMixed: boolean;
-  kind: 'value3bet' | 'bluff3bet' | 'call' | 'thincall' | 'fold';
+  kind: 'value3bet' | 'bluff3bet' | 'call' | 'fold';
   explanation: string;
 }
 

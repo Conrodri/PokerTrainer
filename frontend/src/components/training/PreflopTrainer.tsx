@@ -72,11 +72,11 @@ function HandHintPanel({ notation, isEn }: { notation: string; isEn: boolean }) 
 }
 
 // Cell code → colour for the GTO BB-defense grid.
-// Codes: 0=fold, 1=call, 2=thin call, 3=value 3-bet, 4=bluff 3-bet (see backend bbDefense.ts).
+// Codes: 0=fold, 1=call, 3=value 3-bet, 4=bluff 3-bet (see backend bbDefense.ts).
 const BB_CELL_COLOR = (code: number): string => ({
   0: '#1a202c',
   1: 'rgba(37,99,235,0.70)',
-  2: 'rgba(37,99,235,0.32)',
+  2: 'rgba(37,99,235,0.70)', // legacy alias → call
   3: 'rgba(22,130,60,0.85)',
   4: 'rgba(202,138,4,0.82)',
 } as Record<number, string>)[code] ?? '#1a202c';
@@ -105,12 +105,11 @@ function RangeSection({ matrix, mix, highlightNotation, position, isCustom, reso
     { color: 'rgba(22,130,60,0.85)', label: t.training.bb_leg_value, tip: { title: t.training.bb_leg_value, text: t.training.bb_tip_value } },
     { color: 'rgba(202,138,4,0.82)', label: t.training.bb_leg_bluff, tip: { title: t.training.bb_leg_bluff, text: t.training.bb_tip_bluff } },
     { color: 'rgba(37,99,235,0.70)', label: t.training.bb_leg_call,  tip: { title: t.training.bb_leg_call,  text: t.training.bb_tip_call  } },
-    { color: 'rgba(37,99,235,0.32)', label: t.training.bb_leg_thin,  tip: { title: t.training.bb_leg_thin,  text: t.training.bb_tip_thin  } },
     { color: '#1a202c',              label: t.training.bb_leg_fold,  tip: { title: t.training.bb_leg_fold,  text: t.training.bb_tip_fold  } },
   ], [t]);
   const bbTooltipValue = useCallback((code: number) => ({
     0: t.training.bb_leg_fold, 1: t.training.bb_leg_call,
-    2: t.training.bb_leg_thin, 3: t.training.bb_leg_value, 4: t.training.bb_leg_bluff,
+    2: t.training.bb_leg_call, 3: t.training.bb_leg_value, 4: t.training.bb_leg_bluff,
   } as Record<number, string>)[code] ?? '', [t]);
 
   if (!matrix && !mix) return null;
@@ -1388,14 +1387,13 @@ export function PreflopTrainer() {
               {!isExpertQuiz && (
                 (preflopEnabled && customMatrix) ? (
                   <div className="flex gap-2 flex-wrap justify-center">
-                    {/* Precise 5-category label from your range (3-bet valeur/bluff, Call, Call fin, Fold) */}
                     <span
                       className="px-3 py-1.5 rounded-full border border-black/30 text-xs font-bold text-white"
                       style={{ backgroundColor: BB_CELL_COLOR(bbCustomCode ?? 0) }}
                     >
                       {isEn ? 'Your range' : 'Ta range'} : <strong>{({
                         0: t.training.bb_leg_fold, 1: t.training.bb_leg_call,
-                        2: t.training.bb_leg_thin, 3: t.training.bb_leg_value, 4: t.training.bb_leg_bluff,
+                        2: t.training.bb_leg_call, 3: t.training.bb_leg_value, 4: t.training.bb_leg_bluff,
                       } as Record<number, string>)[bbCustomCode ?? 0]}</strong>
                     </span>
                     {bbSelected && (
@@ -1412,7 +1410,6 @@ export function PreflopTrainer() {
                     {isEn ? 'Recommended' : 'Recommandé'} : <strong>{
                       bbExercise.kind === 'value3bet' ? (isEn ? '3-bet value' : '3-bet valeur')
                         : bbExercise.kind === 'bluff3bet' ? '3-bet bluff'
-                        : bbExercise.kind === 'thincall'  ? (isEn ? 'thin call' : 'call fin')
                         : bbExercise.correctAction
                     }</strong>
                   </span>
