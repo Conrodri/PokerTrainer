@@ -37,6 +37,30 @@ import { ExamLauncher, ExamHud, ExamResult } from './ExamMode';
 
 type Phase = 'exercise' | 'result';
 
+/** Build 4 equity-% options around the correct value.
+ *  Step = rule increment (4 on flop, 2 on turn) to keep distractors plausible. */
+function buildEquityOptions(correct: number, street: 'flop' | 'turn'): number[] {
+  const step = street === 'flop' ? 4 : 2;
+  const candidates = new Set<number>([correct]);
+  for (const delta of [-step * 2, -step, step, step * 2]) {
+    const v = correct + delta;
+    if (v > 0 && v <= 68) candidates.add(v);
+  }
+  // Pad with more values if needed
+  for (const delta of [-step * 3, step * 3]) {
+    if (candidates.size >= 4) break;
+    const v = correct + delta;
+    if (v > 0 && v <= 68) candidates.add(v);
+  }
+  // Shuffle
+  const arr = [...candidates];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, 4);
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function OutsTrainer() {
@@ -49,7 +73,9 @@ export function OutsTrainer() {
   const [showIntro, setShowIntro] = useState(true);
   const [phase, setPhase] = useState<Phase>('exercise');
   const [selected, setSelected] = useState<number | null>(null);
+  const [equityOptions, setEquityOptions] = useState<number[]>([]);
   const mode = useModeStore(s => s.mode);
+  const isExpert = mode === 'expert';
 
   // Exam mode (advanced/expert): loop exercises until 3 errors; score = correct.
   const { examActive, examFinished, startRun, quitRun, recordAnswer } = useExamRunner('outs');
@@ -67,9 +93,17 @@ export function OutsTrainer() {
     await fetchOutsExercise();
   };
 
+  // Rebuild equity options whenever exercise changes in expert mode
+  useEffect(() => {
+    if (isExpert && outsExercise) {
+      setEquityOptions(buildEquityOptions(outsExercise.equityEstimate, outsExercise.street));
+    }
+  }, [outsExercise, isExpert]);
+
   const handleAnswer = (value: number) => {
     if (!outsExercise) return;
-    const correct = value === outsExercise.outs;
+    const correctValue = isExpert ? outsExercise.equityEstimate : outsExercise.outs;
+    const correct = value === correctValue;
     setSelected(value);
     setPhase('result');
     recordResult(correct, correct ? 15 : 5, 'outs');
@@ -109,7 +143,8 @@ export function OutsTrainer() {
     setPhase('exercise');
   };
 
-  const isCorrect = !!outsExercise && selected === outsExercise.outs;
+  const correctValue = outsExercise ? (isExpert ? outsExercise.equityEstimate : outsExercise.outs) : null;
+  const isCorrect = selected !== null && selected === correctValue;
   const ex = outsExercise;
   const streetLabel = ex ? { flop: 'Flop', turn: 'Turn' }[ex.street] : '';
 
@@ -157,7 +192,7 @@ export function OutsTrainer() {
           ]}
           beginnerHint={isEn ? "Shows draw type hints & rule of 2/4" : "Affiche le type de tirage & règle 2/4"}
           advancedHint={isEn ? 'No hints — count from scratch' : 'Sans indices — comptez de tête'}
-          expertHint={isEn ? 'Premium Expert — the most demanding level, zero help' : 'Premium Expert — le niveau le plus exigeant, aucune aide'}
+          expertHint={isEn ? 'Skip outs — estimate equity % directly (harder scenarios, rule of 2 & 4 required)' : 'Skip outs — estime l\'équité % directement (scénarios durs, règle 2 & 4 obligatoire)'}
           startLabel={isEn ? 'Start training' : "Commencer l'entraînement"}
           onStart={handleStart}
           mode={mode}
@@ -242,26 +277,38 @@ export function OutsTrainer() {
                 </div>
 
                 {/* Question */}
-                <p className="text-center text-white font-semibold text-lg">{t.training.outs_question}</p>
+                <p className="text-center text-white font-semibold text-lg">
+                  {isExpert
+                    ? (isEn ? "What is your equity on the next card?" : "Quelle est ton équité sur la prochaine carte ?")
+                    : t.training.outs_question}
+                </p>
                 <p className="text-center text-xs text-gray-400 -mt-3 max-w-md mx-auto leading-snug">
-                  {isEn
-                    ? 'Count the cards that give you a likely winning hand — your draw completing AND improving to top pair count; weak/low pairs that wouldn’t win do not.'
-                    : 'Compte les cartes qui te donnent une main probablement gagnante — ton tirage qui rentre ET passer top paire comptent ; les petites paires qui ne gagneraient pas, non.'}
+                  {isExpert
+                    ? (isEn
+                        ? `Count your outs, then apply the rule of ${ex.street === "flop" ? "4 (×4, two cards to come)" : "2 (×2, one card to come)"} to estimate equity.`
+                        : `Compte tes outs, puis applique la règle du ${ex.street === "flop" ? "4 (×4, deux cartes à venir)" : "2 (×2, une carte à venir)"} pour estimer l’équité.`)
+                    : (isEn
+                        ? "Count the cards that give you a likely winning hand — your draw completing AND improving to top pair count; weak/low pairs that wouldn’t win do not."
+                        : "Compte les cartes qui te donnent une main probablement gagnante — ton tirage qui rentre ET passer top paire comptent ; les petites paires qui ne gagneraient pas, non.")}
                 </p>
 
                 {/* Options */}
                 <div className="grid grid-cols-2 gap-3">
-                  {ex.options.map(opt => (
+                  {(isExpert ? equityOptions : ex.options).map(opt => (
                     <motion.button
                       key={opt}
                       onClick={() => handleAnswer(opt)}
-                      whileHover={{ scale: 1.03, borderColor: '#34d399' }}
+                      whileHover={{ scale: 1.03, borderColor: "#34d399" }}
                       whileTap={{ scale: 0.97 }}
                       className="bg-gray-800/80 border-2 border-gray-600 rounded-2xl py-5 flex flex-col items-center gap-1 cursor-pointer transition-all group"
                     >
-                      <span className="text-3xl font-black font-mono text-white">{opt}</span>
+                      <span className="text-3xl font-black font-mono text-white">
+                        {isExpert ? `${opt}%` : opt}
+                      </span>
                       <span className="text-felt-400 text-xs font-semibold group-hover:text-felt-300">
-                        {t.training.outs_select}
+                        {isExpert
+                          ? (isEn ? "equity" : "équité")
+                          : t.training.outs_select}
                       </span>
                     </motion.button>
                   ))}
@@ -318,17 +365,33 @@ export function OutsTrainer() {
                 <Target size={12} /> {t.training.outs_your_outs}
               </p>
               <p className="text-3xl font-black font-mono text-felt-300">{ex.outs}</p>
-              {!isCorrect && selected !== null && (
-                <p className="text-xs text-red-400 mt-1">
-                  {isEn ? 'You picked' : 'Ton choix'} : {selected}
-                </p>
-              )}
             </div>
             <div className="bg-gray-900/60 rounded-xl p-4 text-center border border-gray-700">
               <p className="text-xs text-gray-500 mb-1">{t.training.outs_est_equity}</p>
               <p className="text-3xl font-black font-mono text-blue-400">≈{ex.equityEstimate}%</p>
+              {isExpert && !isCorrect && selected !== null && (
+                <p className="text-xs text-red-400 mt-1">
+                  {isEn ? 'You picked' : 'Ton choix'} : {selected}%
+                </p>
+              )}
             </div>
           </div>
+          {/* Expert: show outs breakdown since we only asked about equity */}
+          {isExpert && (
+            <div className="bg-gray-800/60 rounded-2xl p-4 border border-gray-700">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                {isEn ? 'Outs breakdown' : 'Détail des outs'}
+              </p>
+              <ul className="space-y-1.5">
+                {ex.draws.map((d, i) => (
+                  <li key={i} className="text-sm text-gray-300 flex gap-2">
+                    <span className="text-gold-400">•</span>
+                    <span>{d}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Next button + session stats — hidden during an exam (auto-advances) */}
           {!examActive && (

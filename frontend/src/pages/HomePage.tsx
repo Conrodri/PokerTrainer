@@ -78,7 +78,7 @@ export function HomePage() {
       tiers: [
         T_FREE(isEn ? 'Count outs — draws shown + rule of 2 & 4' : 'Compte les outs — tirages affichés + règle de 2 & 4'),
         T_ADV(isEn ? 'Hints hidden — estimate equity from your outs' : 'Indice caché — estime l\'équité depuis tes outs'),
-        T_EXP_SOON,
+        T_EXP(isEn ? 'Skip outs — pick the equity % directly (harder scenarios, rule of 2 & 4 in your head)' : 'Skip outs — choisis l\'équité % directement (scénarios durs, règle 2 & 4 de tête)'),
       ] as Tier[],
     },
     {
