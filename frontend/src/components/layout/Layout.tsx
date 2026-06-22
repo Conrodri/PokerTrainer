@@ -21,7 +21,8 @@ export function Layout({ children }: { children: ReactNode }) {
 
   const navigate  = useNavigate();
   const { pathname } = useLocation();
-  const showBack = pathname !== '/';
+  // /training manages its own back button (placed below the module tabs)
+  const showBack = pathname !== '/' && pathname !== '/training';
 
   return (
     <div className="min-h-screen text-white overflow-x-hidden" style={{ backgroundColor: BG_THEMES[bgTheme].bg }}>

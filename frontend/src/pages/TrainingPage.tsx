@@ -1,5 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { useTrainingStore } from '../store/trainingStore';
@@ -32,6 +33,7 @@ export function TrainingPage() {
   const isEn = lang === 'en';
   const user = useAuthStore(s => s.user);
 
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { startSession, setModule, resetSession, isExercising, trainerStarted, currentPosition } = useTrainingStore(
     useShallow(s => ({ startSession: s.startSession, setModule: s.setModule, resetSession: s.resetSession, isExercising: s.isExercising, trainerStarted: s.trainerStarted, currentPosition: s.currentPosition }))
@@ -136,6 +138,17 @@ export function TrainingPage() {
           </button>
         ))}
       </div>
+
+      {/* Back button — shown below the module tabs, hidden once an exercise starts */}
+      {!trainerStarted && (
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors group w-fit -mt-3"
+        >
+          <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+          <span>Retour</span>
+        </button>
+      )}
 
       {/* My Ranges panel — accessible from the preflop intro "Mes ranges" button */}
       <AnimatePresence>
