@@ -185,8 +185,8 @@ export function GuidedHand({ onFinish, onSkip }: GuidedHandProps) {
       <div className="flex-1 w-full max-w-xl lg:max-w-6xl mx-auto px-4 py-5 flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-center lg:gap-10">
 
         {/* ── Table column ── */}
-        <div className="w-full flex flex-col items-center gap-3">
-          <div className="w-full max-w-md lg:max-w-2xl mx-auto">
+        <div className="w-full flex flex-col items-center gap-2">
+          <div className="w-full max-w-lg lg:max-w-3xl mx-auto">
             <PokerTable
               heroPosition="BB"
               interactive={false}
@@ -201,9 +201,36 @@ export function GuidedHand({ onFinish, onSkip }: GuidedHandProps) {
             />
           </div>
 
+          {/* Hero cards at the BB seat — face-down until "Ta main" step (i >= 2) */}
+          <div className="-mt-4 sm:-mt-5 flex gap-1.5 relative z-10">
+            {HERO.map((c, k) =>
+              i < 2 ? (
+                <div
+                  key={k}
+                  style={{
+                    width:        isMobile ? 26 : 36,
+                    height:       isMobile ? 36 : 50,
+                    borderRadius: isMobile ? 4 : 5,
+                    background:   'linear-gradient(145deg, #1e3a6e 0%, #0f1e3d 100%)',
+                    border:       '1.5px solid rgba(255,255,255,0.15)',
+                    boxShadow:    '0 3px 8px rgba(0,0,0,0.8)',
+                    flexShrink:   0,
+                  }}
+                />
+              ) : (
+                <Card
+                  key={k}
+                  card={c as CardStr}
+                  size={isMobile ? 'sm' : 'md'}
+                  animate={k === 0 && i === 2}
+                />
+              )
+            )}
+          </div>
+
           {/* Villain reveal at showdown */}
           {step.revealVillain && (
-            <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
               <span>{isEn ? 'BTN shows:' : 'Le BTN montre :'}</span>
               <div className="flex gap-1">
                 {VILLAIN.map((c, k) => <Card key={k} card={c as CardStr} size="sm" animate={false} />)}
