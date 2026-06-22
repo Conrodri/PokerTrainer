@@ -22,13 +22,17 @@ const MODULE_ROWS: Row[] = [
 ];
 
 const FEATURE_ROWS: Row[] = [
-  { icon: '🎓', fr: 'Modes Débutant & Avancé',          en: 'Beginner & Advanced modes',     tiers: [true,  true, true] },
-  { icon: '📈', fr: 'Statistiques détaillées par module', en: 'Detailed stats per module',     tiers: [false, true, true] },
-  { icon: '👑', fr: 'Badge Premium au classement',        en: 'Premium badge on leaderboard',  tiers: [false, true, true] },
-  { icon: '🗂️', fr: 'Ranges personnalisées (simples)',    en: 'Custom ranges (simple)',        tiers: [false, true, true] },
-  { icon: '🔥', fr: 'Mode Expert (sans aucune aide)',     en: 'Expert mode (zero help)',       tiers: [false, false, true] },
-  { icon: '🎚️', fr: 'Ranges complexes (mix Fold/Call/Raise/All-in)', en: 'Complex ranges (Fold/Call/Raise/All-in mix)', tiers: [false, false, true] },
-  { icon: '🏁', fr: 'Sprints experts sur tes propres ranges', en: 'Expert sprints on your own ranges', tiers: [false, false, true] },
+  { icon: '🎓', fr: 'Modes Débutant & Avancé',               en: 'Beginner & Advanced modes',          tiers: [true,  true,  true ] },
+  { icon: '📈', fr: 'Statistiques détaillées par module',     en: 'Detailed stats per module',          tiers: [false, true,  true ] },
+  { icon: '👑', fr: 'Badge Premium au classement',            en: 'Premium badge on leaderboard',       tiers: [false, true,  true ] },
+  { icon: '🗂️', fr: 'Ranges personnalisées (simples)',        en: 'Custom ranges (simple)',             tiers: [false, true,  true ] },
+  { icon: '🔥', fr: 'Mode Expert — aucune aide affichée',     en: 'Expert mode — zero on-screen help', tiers: [false, false, true ] },
+  { icon: '⏱️', fr: 'Chrono réduit + équité masquée (Équité)', en: 'Reduced timer + hidden equity (Equity)', tiers: [false, false, true ] },
+  { icon: '🧮', fr: 'Calcul pot odds de zéro + décomp. EV',  en: 'Pot odds from scratch + EV breakdown', tiers: [false, false, true ] },
+  { icon: '📐', fr: 'Choix taille de mise post-flop (33/67/100%)', en: 'Bet size choice post-flop (33/67/100%)', tiers: [false, false, true ] },
+  { icon: '🎲', fr: 'Estimation équité % directe (Outs)',     en: 'Direct equity % estimation (Outs)',  tiers: [false, false, true ] },
+  { icon: '🎚️', fr: 'Ranges complexes (mix Fold/Call/Raise/All-in)', en: 'Complex ranges (Fold/Call/Raise/All-in mix)', tiers: [false, false, true ] },
+  { icon: '🏁', fr: 'Préflop expert sur TES propres ranges',  en: 'Expert pre-flop on YOUR own ranges', tiers: [false, false, true ] },
 ];
 
 const PERKS = [
@@ -40,9 +44,13 @@ const PERKS = [
 
 const EXPERT_PERKS = [
   { icon: <Flame size={18} className="text-purple-400" />,   fr: 'Tout Premium, plus :', en: 'Everything in Premium, plus:' },
-  { icon: <Crown size={18} className="text-purple-400" />,   fr: 'Mode Expert — aucune aide affichée', en: 'Expert mode — no on-screen help' },
-  { icon: <Sliders size={18} className="text-purple-400" />, fr: 'Ranges complexes : mix de fréquences par main', en: 'Complex ranges: per-hand frequency mix' },
-  { icon: <Target size={18} className="text-purple-400" />,  fr: 'Sprints qui t\'interrogent sur TES ranges', en: 'Sprints that quiz you on YOUR ranges' },
+  { icon: <Crown size={18} className="text-purple-400" />,   fr: 'Mode Expert — zéro indice sur tous les modules', en: 'Expert mode — zero hints across all modules' },
+  { icon: <Target size={18} className="text-purple-400" />,  fr: 'Équité : chrono réduit, équité masquée — estimation pure', en: 'Equity: reduced timer, hidden equity — pure estimation' },
+  { icon: <BookOpen size={18} className="text-purple-400" />,fr: 'Outs : estime l\'équité % directement (règle 2 & 4)', en: 'Outs: estimate equity % directly (rule of 2 & 4)' },
+  { icon: <BarChart2 size={18} className="text-purple-400" />,fr: 'Pot Odds : calcule de zéro + décomposition EV complète', en: 'Pot Odds: calculate from scratch + full EV breakdown' },
+  { icon: <Zap size={18} className="text-purple-400" />,     fr: 'Post-flop / Bet Sizing : spots difficiles pondérés (pots 3-bet, river, OOP)', en: 'Post-flop / Bet Sizing: weighted hard spots (3-bet pots, river, OOP)' },
+  { icon: <Sliders size={18} className="text-purple-400" />, fr: 'Ranges complexes : mix Fold/Call/Raise/All-in par main', en: 'Complex ranges: Fold/Call/Raise/All-in mix per hand' },
+  { icon: <Star size={18} className="text-purple-400" />,    fr: 'Préflop expert : entraîne-toi sur TES propres ranges', en: 'Expert pre-flop: train on YOUR own custom ranges' },
 ] as const;
 
 // ─── PremiumPage ──────────────────────────────────────────────────────────────
@@ -253,8 +261,8 @@ export function PremiumPage() {
             {
               q: isEn ? 'What\'s the difference between Premium and Expert?' : 'Quelle différence entre Premium et Expert ?',
               a: isEn
-                ? 'Premium unlocks every training module. Expert adds the Expert mode and complex multi-action ranges (Fold/Call/Raise/All-in), with sprints that quiz you on your own ranges.'
-                : 'Premium débloque tous les modules. Expert ajoute le mode Expert et les ranges complexes multi-actions (Fold/Call/Raise/All-in), avec des sprints qui t\'interrogent sur tes propres ranges.',
+                ? 'Premium unlocks all 7 training modules. Expert goes further: every module gets a harder Expert mode (hidden equity, reduced timer on Equity; equity % estimation on Outs; full EV breakdown on Pot Odds; weighted hard spots on Bet Sizing & Post-flop), plus complex multi-action ranges (Fold/Call/Raise/All-in per hand) and pre-flop sprints on your own ranges.'
+                : 'Premium débloque les 7 modules d\'entraînement. Expert va plus loin : chaque module passe en mode Expert difficile (équité masquée + chrono réduit sur Équité ; estimation équité % sur Outs ; décomposition EV complète sur Pot Odds ; spots durs pondérés sur Bet Sizing & Post-flop), plus les ranges complexes multi-actions (Fold/Call/Raise/All-in par main) et les sprints préflop sur tes propres ranges.',
             },
             {
               q: isEn ? 'How do I activate it?' : 'Comment l\'activer ?',
