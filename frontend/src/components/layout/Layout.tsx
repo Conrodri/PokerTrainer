@@ -1,4 +1,6 @@
 import { ReactNode, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import { Navbar } from './Navbar';
 import { useThemeStore, BG_THEMES, TABLE_COLORS } from '../../store/themeStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -17,11 +19,24 @@ export function Layout({ children }: { children: ReactNode }) {
     root.style.setProperty('--table-edge',   table.edge);
   }, [bgTheme, tableColor]);
 
+  const navigate  = useNavigate();
+  const { pathname } = useLocation();
+  const showBack = pathname !== '/';
+
   return (
     <div className="min-h-screen text-white overflow-x-hidden" style={{ backgroundColor: BG_THEMES[bgTheme].bg }}>
       <Navbar />
       <main className="pt-14">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+          {showBack && (
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1 text-sm text-gray-400 hover:text-white transition-colors mb-4 -ml-1 group"
+            >
+              <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+              <span>Retour</span>
+            </button>
+          )}
           {children}
         </div>
       </main>
