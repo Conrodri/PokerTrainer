@@ -5,7 +5,7 @@ import { useLangStore } from '../../store/langStore';
 import { useThemeStore, SUIT_COLORS } from '../../store/themeStore';
 
 // Clockwise game order (BTN deals, then SB left of BTN, then BB, etc.)
-const CLOCKWISE: Position[] = ['BTN', 'SB', 'BB', 'UTG', 'HJ', 'CO'];
+export const CLOCKWISE: Position[] = ['BTN', 'SB', 'BB', 'UTG', 'HJ', 'CO'];
 
 // ─── Seat layout: hero always at S0 (bottom center) ───────────────────────
 // cx/cy  = blind-token / dealer-chip position.

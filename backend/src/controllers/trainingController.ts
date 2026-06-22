@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import * as fs   from 'fs';
+import * as path from 'path';
 import { generatePreflopExercise, generatePotOddsExercise, generateEquityExercise, generateOutsExercise, generateBBDefenseExercise, calculateExerciseXP } from '../services/trainingService';
 import { calculatePotOdds } from '../services/poker/potOdds';
 import { getRangeMatrix, getRangeFrequency, getRangePercentage, getCorrectAction } from '../services/poker/ranges';
@@ -6,7 +8,63 @@ import { buildBBDefenseGrid } from '../services/poker/bbDefense';
 import { Position, ApiResponse } from '../types';
 import prisma from '../config/database';
 
+const PREGEN_FILE = path.resolve(__dirname, '../../data/pregenerated.json');
+
+function loadPregenEquity(): { equityFr: object[]; equityEn: object[] } {
+  try {
+    const raw = JSON.parse(fs.readFileSync(PREGEN_FILE, 'utf8'));
+    return { equityFr: raw.equityFr ?? [], equityEn: raw.equityEn ?? [] };
+  } catch {
+    return { equityFr: [], equityEn: [] };
+  }
+}
+
 type Lang = 'fr' | 'en';
+
+// ─── Equity exercise pool ─────────────────────────────────────────────────────
+// Pre-generates beginner equity exercises (non-expert) to avoid the ~20ms
+// Monte Carlo wait when a board is dealt (50% of cases).
+// Two separate pools for FR and EN since explanation text is language-specific.
+
+const EQUITY_POOL_TARGET    = 15;
+const EQUITY_POOL_THRESHOLD = 4;
+const equityPoolFr: object[] = [];
+const equityPoolEn: object[] = [];
+let   equityRefilling        = false;
+
+async function refillEquityPool(): Promise<void> {
+  if (equityRefilling) return;
+  equityRefilling = true;
+  try {
+    while (equityPoolFr.length < EQUITY_POOL_TARGET || equityPoolEn.length < EQUITY_POOL_TARGET) {
+      if (equityPoolFr.length < EQUITY_POOL_TARGET) {
+        equityPoolFr.push(generateEquityExercise('fr', 'beginner'));
+        await new Promise(resolve => setImmediate(resolve));
+      }
+      if (equityPoolEn.length < EQUITY_POOL_TARGET) {
+        equityPoolEn.push(generateEquityExercise('en', 'beginner'));
+        await new Promise(resolve => setImmediate(resolve));
+      }
+    }
+  } finally {
+    equityRefilling = false;
+  }
+}
+
+/** Call once from server.ts after startup to warm the equity exercise pool. */
+export function initEquityPool(): void {
+  const { equityFr, equityEn } = loadPregenEquity();
+  if (equityFr.length > 0) {
+    equityPoolFr.push(...equityFr.slice(0, EQUITY_POOL_TARGET));
+    console.log(`[equityPool] loaded ${equityPoolFr.length} FR + ${Math.min(equityEn.length, EQUITY_POOL_TARGET)} EN from file`);
+  }
+  if (equityEn.length > 0) {
+    equityPoolEn.push(...equityEn.slice(0, EQUITY_POOL_TARGET));
+  }
+  if (equityPoolFr.length < EQUITY_POOL_TARGET || equityPoolEn.length < EQUITY_POOL_TARGET) {
+    refillEquityPool().catch(err => console.error('[equityPool] init error:', err));
+  }
+}
 
 function getLang(req: Request): Lang {
   const q = req.query.lang as string;
@@ -96,9 +154,22 @@ export async function checkPotOddsAnswer(req: Request, res: Response): Promise<v
 
 export async function getEquityExercise(req: Request, res: Response): Promise<void> {
   try {
-    const lang = getLang(req);
-    const mode = (req.query.mode === 'advanced' ? 'advanced' : 'beginner') as 'beginner' | 'advanced';
+    const lang       = getLang(req);
+    const mode       = (req.query.mode === 'advanced' ? 'advanced' : 'beginner') as 'beginner' | 'advanced';
     const difficulty = req.query.difficulty === 'expert' ? 'expert' : undefined;
+
+    // Serve from pool for the most common case: beginner, non-expert
+    if (mode === 'beginner' && !difficulty) {
+      const pool = lang === 'en' ? equityPoolEn : equityPoolFr;
+      if (pool.length > 0) {
+        const data = pool.shift()!;
+        if (equityPoolFr.length < EQUITY_POOL_THRESHOLD || equityPoolEn.length < EQUITY_POOL_THRESHOLD) {
+          refillEquityPool().catch(err => console.error('[equityPool] refill error:', err));
+        }
+        return void res.json({ success: true, data } as ApiResponse);
+      }
+    }
+
     const exercise = generateEquityExercise(lang, mode, difficulty);
     res.json({ success: true, data: exercise } as ApiResponse);
   } catch {

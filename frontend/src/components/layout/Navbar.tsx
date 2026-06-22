@@ -284,13 +284,6 @@ export function Navbar() {
                       <span>{isEn ? 'Hand tutorial' : 'Main pas à pas'}</span>
                     </button>
                     <MobileNavLink to="/glossary" icon={<BookMarked size={15} />} label={isEn ? 'Glossary' : 'Lexique'} active={location.pathname.startsWith('/glossary')} />
-                    <button
-                      onClick={() => { setTutorialOpen(true); setMobileOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-                    >
-                      <span className="w-4 flex items-center justify-center shrink-0"><GraduationCap size={15} /></span>
-                      <span>{isEn ? 'Tutorial' : 'Tutoriel'}</span>
-                    </button>
 
                     {/* Training section */}
                     <div className="mx-3 my-1.5 border-t border-gray-800" />

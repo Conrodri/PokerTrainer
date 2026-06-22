@@ -39,5 +39,8 @@ Thumbs.db
 # ── Claude Code internal files ─────────────────────────────────────────────────
 .claude/
 
+# ── Pre-generated exercise cache (generated artifact — regenerated at build time) ──
+backend/data/
+
 # ── TypeScript cache ───────────────────────────────────────────────────────────
 *.tsbuildinfo

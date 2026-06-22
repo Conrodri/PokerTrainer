@@ -17,10 +17,6 @@ export function getSuitSymbol(suit: Suit): string {
   return { h: '♥︎', d: '♦︎', c: '♣︎', s: '♠︎' }[suit];
 }
 
-export function isRedSuit(suit: Suit): boolean {
-  return suit === 'h' || suit === 'd';
-}
-
 // Convert hand notation to display string
 export function handToDisplay(notation: string): string {
   if (notation.length === 2) return `${notation[0]}${notation[0]}`; // pair
@@ -51,13 +47,6 @@ export function getNotationFromIndices(row: number, col: number): string {
   return `${r2}${r1}o`; // offsuit (lower triangle, col is higher rank)
 }
 
-// Number of combos for a hand
-export function combosCount(notation: string): number {
-  if (notation.length === 2) return 6; // pairs
-  if (notation.endsWith('s')) return 4; // suited
-  return 12; // offsuit
-}
-
 export function xpToLevel(xp: number): { level: number; progressPct: number; nextLevelXp: number } {
   // Level thresholds: each level requires more XP
   const thresholds = [0, 100, 250, 500, 900, 1500, 2500, 4000, 6500, 10000, 15000];
@@ -72,25 +61,6 @@ export function xpToLevel(xp: number): { level: number; progressPct: number; nex
     }
   }
   return { level, progressPct: 100, nextLevelXp: 0 };
-}
-
-export function accuracyColor(accuracy: number): string {
-  if (accuracy >= 80) return 'text-green-400';
-  if (accuracy >= 60) return 'text-yellow-400';
-  return 'text-red-400';
-}
-
-export function formatAccuracy(correct: number, total: number): string {
-  if (total === 0) return '—';
-  return `${Math.round((correct / total) * 100)}%`;
-}
-
-// Frequency color for range matrix cell
-export function frequencyColor(freq: number): string {
-  if (freq === 0) return 'bg-gray-800 hover:bg-gray-700';
-  if (freq < 0.4) return 'bg-yellow-700 hover:bg-yellow-600';
-  if (freq < 0.8) return 'bg-yellow-500 hover:bg-yellow-400';
-  return 'bg-green-700 hover:bg-green-600';
 }
 
 export function frequencyBg(freq: number): string {
@@ -112,6 +82,17 @@ export function actionBg(freq: number): string {
   if (freq <= 0) return '#1a202c';                // Fold
   if (freq > 0.5) return 'rgba(22,130,60,0.85)';   // Raise
   return 'rgba(202,138,4,0.9)';                    // Call
+}
+
+/** Cell background colour for the BB-defense grid (codes 0–4, code 2 = legacy alias for call). */
+export function bbCellColor(code: number): string {
+  return ({
+    0: '#1a202c',
+    1: 'rgba(37,99,235,0.70)',
+    2: 'rgba(37,99,235,0.70)',
+    3: 'rgba(22,130,60,0.85)',
+    4: 'rgba(202,138,4,0.82)',
+  } as Record<number, string>)[code] ?? '#1a202c';
 }
 
 /** Label for the simplified Raise / Call / Fold scheme (matches getCorrectAction). */

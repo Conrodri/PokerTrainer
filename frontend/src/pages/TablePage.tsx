@@ -3,16 +3,9 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Position } from '../types/poker';
-import { PokerTable } from '../components/poker/PokerTable';
+import { PokerTable, CLOCKWISE, POSITION_COLORS } from '../components/poker/PokerTable';
 import { Button } from '../components/ui/Button';
 import { useT } from '../i18n';
-
-const CLOCKWISE: Position[] = ['BTN', 'SB', 'BB', 'UTG', 'HJ', 'CO'];
-
-const POSITION_COLORS: Record<Position, string> = {
-  BTN: '#16a34a', SB: '#2563eb', BB: '#dc2626',
-  UTG: '#b45309', HJ: '#7c3aed', CO: '#0891b2',
-};
 
 const RANGE_PCT: Record<Position, string> = {
   BTN: '~45%', SB: '~35%', BB: t_def('Défend', 'Defend'), UTG: '~15%', HJ: '~20%', CO: '~26%',

@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useLangStore } from '../../store/langStore';
 import { Hand } from '../poker/Card';
-import { PokerTable } from '../poker/PokerTable';
+import { PokerTable, CLOCKWISE, POSITION_COLORS } from '../poker/PokerTable';
 import { Position } from '../../types/poker';
 import { PokerTerm } from '../ui/PokerTerm';
 import { TutorialHand } from '../tutorial/HandTutorialModal';
@@ -21,13 +21,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 // ─── Interactive table constants ─────────────────────────────────────────────
-
-const CLOCKWISE: Position[] = ['BTN', 'SB', 'BB', 'UTG', 'HJ', 'CO'];
-
-const POSITION_COLORS: Record<Position, string> = {
-  BTN: '#16a34a', SB: '#2563eb', BB: '#dc2626',
-  UTG: '#b45309', HJ: '#7c3aed', CO: '#0891b2',
-};
 
 const POSITION_TIPS: Record<Position, { fr: string; en: string }> = {
   BTN: {

@@ -4,6 +4,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import routes from './routes';
+import { initFlopPool, initExpertFlopPool } from './controllers/postflopController';
+import { initEquityPool } from './controllers/trainingController';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001');
@@ -75,6 +77,9 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 app.listen(PORT, () => {
   console.log(`\n🃏 PokerPeak API running on http://localhost:${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}\n`);
+  initFlopPool();
+  initExpertFlopPool();
+  initEquityPool();
 });
 
 export default app;

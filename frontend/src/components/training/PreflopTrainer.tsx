@@ -39,7 +39,7 @@ import { TrainerIntro } from '../ui/TrainerIntro';
 import { useModeStore } from '../../store/modeStore';
 import { useAuthStore } from '../../store/authStore';
 import { VerdictBanner } from '../ui/VerdictBanner';
-import { handToDisplay, getMatrixIndices, frequencyBg } from '../../utils/pokerUtils';
+import { handToDisplay, getMatrixIndices, frequencyBg, bbCellColor } from '../../utils/pokerUtils';
 import { useT } from '../../i18n';
 import { useLangStore } from '../../store/langStore';
 import { useCustomRangeStore } from '../../store/customRangeStore';
@@ -70,16 +70,6 @@ function HandHintPanel({ notation, isEn }: { notation: string; isEn: boolean }) 
     </div>
   );
 }
-
-// Cell code → colour for the GTO BB-defense grid.
-// Codes: 0=fold, 1=call, 3=value 3-bet, 4=bluff 3-bet (see backend bbDefense.ts).
-const BB_CELL_COLOR = (code: number): string => ({
-  0: '#1a202c',
-  1: 'rgba(37,99,235,0.70)',
-  2: 'rgba(37,99,235,0.70)', // legacy alias → call
-  3: 'rgba(22,130,60,0.85)',
-  4: 'rgba(202,138,4,0.82)',
-} as Record<number, string>)[code] ?? '#1a202c';
 
 // ─── Shared range matrix collapsible section ──────────────────────────────────
 
@@ -172,7 +162,7 @@ function RangeSection({ matrix, mix, highlightNotation, position, isCustom, reso
                 matrix={matrix}
                 highlightNotation={highlightNotation}
                 size="sm"
-                cellColor={BB_CELL_COLOR}
+                cellColor={bbCellColor}
                 legend={bbLegend}
                 tooltipValue={bbTooltipValue}
               />
@@ -1389,7 +1379,7 @@ export function PreflopTrainer() {
                   <div className="flex gap-2 flex-wrap justify-center">
                     <span
                       className="px-3 py-1.5 rounded-full border border-black/30 text-xs font-bold text-white"
-                      style={{ backgroundColor: BB_CELL_COLOR(bbCustomCode ?? 0) }}
+                      style={{ backgroundColor: bbCellColor(bbCustomCode ?? 0) }}
                     >
                       {isEn ? 'Your range' : 'Ta range'} : <strong>{({
                         0: t.training.bb_leg_fold, 1: t.training.bb_leg_call,

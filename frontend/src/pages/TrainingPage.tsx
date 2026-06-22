@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, useState, useMemo, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -69,7 +69,7 @@ export function TrainingPage() {
   const isPremium = !!user?.isPremium;
   const isRangeModule = activeModule === 'preflop';
 
-  const TABS: { id: TrainingModule; label: string; icon: string; premium?: boolean }[] = [
+  const TABS = useMemo<{ id: TrainingModule; label: string; icon: string; premium?: boolean }[]>(() => [
     { id: 'preflop',   label: t.training.tab_preflop,   icon: '🎯' },
     { id: 'outs',      label: t.training.tab_outs,      icon: '🎲' },
     { id: 'equity',    label: t.training.tab_equity,    icon: '⚖️' },
@@ -77,7 +77,7 @@ export function TrainingPage() {
     { id: 'postflop',  label: isEn ? 'Post-flop'   : 'Post-flop',     icon: '🃏', premium: true },
     { id: 'betsizing', label: isEn ? 'Bet Sizing'  : 'Bet Sizing',    icon: '📐', premium: true },
     { id: 'fullhand',  label: isEn ? 'Full Hand'   : 'Main complète', icon: '🎰', premium: true },
-  ];
+  ], [t, isEn]);
 
   // Sync activeModule when URL param changes (e.g. navbar dropdown click)
   useEffect(() => {

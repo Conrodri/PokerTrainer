@@ -7,7 +7,7 @@ import { useAuthStore } from '../../store/authStore';
 import { RangeEditor } from './RangeEditor';
 import { RangeMatrix } from './RangeMatrix';
 import { ExpertRangeEditor, gtoToExpertMix, EXPERT_DISPLAY } from './ExpertRangeEditor';
-import { RANKS_ORDER, getNotationFromIndices, frequencyBg } from '../../utils/pokerUtils';
+import { RANKS_ORDER, getNotationFromIndices, frequencyBg, bbCellColor } from '../../utils/pokerUtils';
 import { HoverTip } from '../ui/HoverTip';
 import { Button } from '../ui/Button';
 import { useT } from '../../i18n';
@@ -21,12 +21,6 @@ import {
   validateComplexImport,
   validateSimpleRangeImport,
 } from '../../utils/rangeImportValidator';
-
-// Cell code -> colour for the GTO BB-defense reference grid (0-4).
-const BB_GTO_CELL_COLOR = (code: number): string => ({
-  0: '#1a202c', 1: 'rgba(37,99,235,0.70)', 2: 'rgba(37,99,235,0.70)',
-  3: 'rgba(22,130,60,0.85)', 4: 'rgba(202,138,4,0.82)',
-} as Record<number, string>)[code] ?? '#1a202c';
 
 function flatToMatrix(flat: number[]): number[][] {
   const m: number[][] = [];
@@ -224,7 +218,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
           matrix={matrix}
           size="sm"
           crisp
-          cellColor={BB_GTO_CELL_COLOR}
+          cellColor={bbCellColor}
           legend={bbGtoLegend}
           tooltipValue={bbGtoTooltipValue}
         />
