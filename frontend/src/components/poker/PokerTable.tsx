@@ -151,7 +151,7 @@ export interface PokerTableProps {
 export function PokerTable({
   heroPosition, onPositionChange, interactive = true, className = '', compact = false,
   activePlayers, potDisplay, heroCards, boardCards, seatInfos, boardCardSize,
-  showHeroStack = false, showVillainCards = true,
+  showHeroStack = false, showVillainCards = false,
 }: PokerTableProps) {
   // Effective board-card size: explicit prop > compact default > full default
   const bCardSize = boardCardSize ?? (compact ? 'sm' : 'md');

@@ -289,11 +289,11 @@ export function PreflopTrainer() {
   const t = useT();
   const isMobile = useIsMobile();
   const {
-    preflopExercise, lastResult, sessionStats, isLoading,
+    preflopExercise, lastResult, sessionStats, isLoading, storeError,
     fetchPreflopExercise, checkPreflopAnswer, recordResult,
     setIsExercising, setCurrentPosition, setTrainerStarted, setSelectingPosition,
   } = useTrainingStore(useShallow(s => ({
-    preflopExercise: s.preflopExercise, lastResult: s.lastResult, sessionStats: s.sessionStats, isLoading: s.isLoading,
+    preflopExercise: s.preflopExercise, lastResult: s.lastResult, sessionStats: s.sessionStats, isLoading: s.isLoading, storeError: s.error,
     fetchPreflopExercise: s.fetchPreflopExercise, checkPreflopAnswer: s.checkPreflopAnswer, recordResult: s.recordResult,
     setIsExercising: s.setIsExercising, setCurrentPosition: s.setCurrentPosition, setTrainerStarted: s.setTrainerStarted, setSelectingPosition: s.setSelectingPosition,
   })));
@@ -979,7 +979,7 @@ export function PreflopTrainer() {
           onStart={handleStartClick}
           mode={mode}
           examSlot={mode !== 'beginner' ? <ExamLauncher module="preflop" onStart={requestExam} /> : undefined}
-          bottomSlot={mode !== 'beginner' ? (
+          bottomSlot={
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('training:open-ranges'))}
               className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl border border-purple-800/50 bg-purple-950/20 hover:bg-purple-900/30 text-purple-300 hover:text-purple-200 font-semibold text-sm transition-colors"
@@ -987,7 +987,7 @@ export function PreflopTrainer() {
               <BookOpen size={15} className="text-purple-400 shrink-0" />
               {isEn ? 'My Ranges' : 'Mes ranges'}
             </button>
-          ) : undefined}
+          }
         />
         {examPickerOpen && (
           <ExpertExamProfilePicker
@@ -1261,7 +1261,14 @@ export function PreflopTrainer() {
             >
               {isLoading ? (
                 <Spinner />
-              ) : preflopExercise ? (
+              ) : !preflopExercise ? (
+                <div className="flex flex-col items-center gap-4 py-8 text-center">
+                  <p className="text-red-400 text-sm">{storeError ?? (isEn ? 'Failed to load exercise' : 'Impossible de charger l\'exercice')}</p>
+                  <Button variant="secondary" onClick={() => fetchPreflopExercise(selectedPosition)}>
+                    {isEn ? 'Retry' : 'Réessayer'}
+                  </Button>
+                </div>
+              ) : (
                 <>
                   <div className="w-full max-w-xs sm:max-w-xl mx-auto">
                     <PokerTable
@@ -1358,7 +1365,7 @@ export function PreflopTrainer() {
                     </label>
                   )}
                 </>
-              ) : null}
+              )}
             </motion.div>
           )}
         </AnimatePresence>

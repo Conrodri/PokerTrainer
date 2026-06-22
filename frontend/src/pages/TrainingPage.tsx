@@ -152,7 +152,7 @@ export function TrainingPage() {
 
       {/* My Ranges panel — accessible from the preflop intro "Mes ranges" button */}
       <AnimatePresence>
-        {isRangeModule && !isBeginnerMode && showMyRanges && (
+        {isRangeModule && showMyRanges && (
           <MyRangesPanel
             onClose={() => setShowMyRanges(false)}
             positions={PREFLOP_POSITIONS}
