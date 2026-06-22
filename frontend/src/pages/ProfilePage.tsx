@@ -440,8 +440,8 @@ export function ProfilePage() {
           ) : subInfo ? (
             <div className="flex flex-col gap-4">
 
-              {/* Current tier badge */}
-              <div className="flex items-center gap-3">
+              {/* Current tier badge + price */}
+              <div className="flex items-center gap-3 flex-wrap">
                 {subInfo.tier === 'expert' ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-900/40 border border-purple-700/60 text-purple-300 text-sm font-bold rounded-full">
                     <Flame size={13} /> Expert 👑
@@ -454,6 +454,12 @@ export function ProfilePage() {
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border border-gray-700 text-gray-400 text-sm font-bold rounded-full">
                     {isEn ? 'Free plan' : 'Plan Gratuit'}
                   </span>
+                )}
+                {subInfo.tier === 'expert' && (
+                  <span className="text-sm text-purple-400 font-semibold">24,99 € / {isEn ? 'month' : 'mois'}</span>
+                )}
+                {subInfo.tier === 'premium' && (
+                  <span className="text-sm text-yellow-400 font-semibold">9,99 € / {isEn ? 'month' : 'mois'}</span>
                 )}
                 {subActionMsg && (
                   <span className="text-xs text-green-400 flex items-center gap-1"><Check size={12} />{subActionMsg}</span>
@@ -516,30 +522,37 @@ export function ProfilePage() {
                 {/* Downgrade expert → premium */}
                 {subInfo.tier === 'expert' && (
                   downgradeConfirm ? (
-                    <div className="flex items-center gap-2 p-3 rounded-xl bg-yellow-900/20 border border-yellow-700/40 text-sm">
-                      <span className="text-yellow-300 flex-1">
-                        {isEn ? 'Confirm downgrade to Premium?' : 'Confirmer le passage en Premium ?'}
-                      </span>
-                      <button
-                        disabled={subActionLoading}
-                        onClick={async () => {
-                          setSubActionLoading(true);
-                          try {
-                            await subscriptionApi.downgrade();
-                            setSubInfo(await subscriptionApi.get());
-                            setSubActionMsg(isEn ? 'Downgraded to Premium.' : 'Passé en Premium.');
-                            setTimeout(() => setSubActionMsg(''), 3000);
-                          } catch {}
-                          setSubActionLoading(false);
-                          setDowngradeConfirm(false);
-                        }}
-                        className="px-3 py-1 bg-yellow-700 hover:bg-yellow-600 text-white rounded-lg text-xs font-bold transition-colors"
-                      >
-                        {isEn ? 'Confirm' : 'Confirmer'}
-                      </button>
-                      <button onClick={() => setDowngradeConfirm(false)} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-bold transition-colors">
-                        {isEn ? 'Cancel' : 'Annuler'}
-                      </button>
+                    <div className="flex flex-col gap-2 p-3 rounded-xl bg-yellow-900/20 border border-yellow-700/40 text-sm">
+                      <p className="text-yellow-300 font-semibold">
+                        {isEn ? 'Switch to Premium at next renewal?' : 'Passer en Premium au prochain renouvellement ?'}
+                      </p>
+                      <p className="text-yellow-500/80 text-xs">
+                        {isEn
+                          ? 'Your Expert access remains active until expiry. At renewal, you will be billed 9.99 €/month instead of 24.99 €/month.'
+                          : "Ton accès Expert reste actif jusqu'à expiration. Au renouvellement, tu seras facturé 9,99 €/mois au lieu de 24,99 €/mois."}
+                      </p>
+                      <div className="flex gap-2 mt-1">
+                        <button
+                          disabled={subActionLoading}
+                          onClick={async () => {
+                            setSubActionLoading(true);
+                            try {
+                              await subscriptionApi.downgrade();
+                              setSubInfo(await subscriptionApi.get());
+                              setSubActionMsg(isEn ? 'Scheduled switch to Premium.' : 'Passage en Premium planifié.');
+                              setTimeout(() => setSubActionMsg(''), 3000);
+                            } catch {}
+                            setSubActionLoading(false);
+                            setDowngradeConfirm(false);
+                          }}
+                          className="px-3 py-1.5 bg-yellow-700 hover:bg-yellow-600 text-white rounded-lg text-xs font-bold transition-colors"
+                        >
+                          {isEn ? 'Confirm' : 'Confirmer'}
+                        </button>
+                        <button onClick={() => setDowngradeConfirm(false)} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-bold transition-colors">
+                          {isEn ? 'Cancel' : 'Annuler'}
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <button
@@ -547,7 +560,12 @@ export function ProfilePage() {
                       className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-800/60 border border-gray-700 text-gray-300 text-sm font-semibold hover:border-yellow-700/50 hover:text-yellow-300 transition-all"
                     >
                       <ArrowDownCircle size={14} />
-                      {isEn ? 'Switch to Premium' : 'Passer en Premium'}
+                      <span className="flex-1 text-left">
+                        {isEn ? 'Switch to Premium at renewal' : 'Passer en Premium au renouvellement'}
+                        <span className="block text-xs font-normal text-gray-500 mt-0.5">
+                          {isEn ? '9.99 €/month instead of 24.99 €/month' : '9,99 €/mois au lieu de 24,99 €/mois'}
+                        </span>
+                      </span>
                     </button>
                   )
                 )}
