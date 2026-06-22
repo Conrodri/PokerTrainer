@@ -4,7 +4,7 @@ services:
     env: node
     region: frankfurt
     plan: free
-    buildCommand: cd backend && npm install --include=dev && npm run build && npx prisma db push --accept-data-loss && npm run pregenerate
+    buildCommand: cd backend && npm install --include=dev && npm run build && npx prisma db push --accept-data-loss
     startCommand: cd backend && node dist/server.js
     envVars:
       - key: NODE_ENV
