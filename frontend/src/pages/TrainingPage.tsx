@@ -143,9 +143,9 @@ export function TrainingPage() {
       {!trainerStarted && (
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors group w-fit -mt-3"
+          className="flex items-center gap-2 w-fit px-4 py-2 rounded-xl text-sm font-semibold text-gray-300 hover:text-white bg-gray-800/60 hover:bg-gray-700/70 border border-gray-700/50 hover:border-gray-500/60 transition-all duration-150 group -mt-2"
         >
-          <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+          <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           <span>Retour</span>
         </button>
       )}
