@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { authApi } from '../services/api';
+import { analytics } from '../lib/analytics';
 
 interface User {
   id: string;
@@ -44,6 +45,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const data = await authApi.login({ email, password });
       localStorage.setItem('token', data.token);
+      analytics.login('email');
       set({ user: data.user, token: data.token, isLoading: false, verificationPending: null });
     } catch (err: any) {
       const apiError = err.response?.data?.error;
@@ -62,6 +64,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const data = await authApi.register({ username, email, password });
       if (data?.needsVerification) {
+        analytics.signup();
         set({ verificationPending: data.email ?? email, isLoading: false });
       } else {
         // Fallback: old behavior if emailVerified is skipped
@@ -83,6 +86,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ token, isLoading: true });
     try {
       const data = await authApi.me();
+      analytics.login('google');
       set({ user: data, isLoading: false });
     } catch {
       localStorage.removeItem('token');

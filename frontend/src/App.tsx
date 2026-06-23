@@ -1,6 +1,7 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 import { Layout } from './components/layout/Layout';
 import { HomePage } from './pages/HomePage';
 import { Spinner } from './components/ui/Spinner';
@@ -76,6 +77,7 @@ export default function App() {
       </Layout>
 
       <CookieBanner />
+      <Analytics />
 
       <AnimatePresence>
         {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}

@@ -7,6 +7,7 @@ import { RichText } from './RichText';
 import { useLangStore } from '../../store/langStore';
 import { useModeStore, TrainingMode } from '../../store/modeStore';
 import { useAuthStore } from '../../store/authStore';
+import { analytics } from '../../lib/analytics';
 
 interface TrainerIntroProps {
   emoji: string;
@@ -247,7 +248,7 @@ export function TrainerIntro({
             </div>
           )}
           <div className="flex gap-2 w-full">
-            <Button size="lg" variant="gold" onClick={onStart} className="flex-1">
+            <Button size="lg" variant="gold" onClick={() => { analytics.moduleStarted(title); onStart(); }} className="flex-1">
               <Play size={16} className="inline mr-2" />
               {startLabel}
             </Button>

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useLangStore } from '../store/langStore';
+import { analytics } from '../lib/analytics';
 
 // ─── Tiered comparison ────────────────────────────────────────────────────────
 // Each row lists availability per tier: [free, premium, expert].
@@ -56,6 +57,9 @@ export function PremiumPage() {
   // Manual activation for now (swapped for the checkout call once billing is wired).
   const subscribeHref = (tier: 'Premium' | 'Expert') =>
     `mailto:contact@pokerpeak.app?subject=${encodeURIComponent(`Abonnement ${tier}`)}`;
+
+  const handleSubscribeClick = (tier: 'Premium' | 'Expert') =>
+    analytics.premiumCtaClicked(tier.toLowerCase());
 
   const cell = (on: boolean) =>
     on
@@ -162,6 +166,7 @@ export function PremiumPage() {
           ) : (
             <a
               href={subscribeHref('Premium')}
+              onClick={() => handleSubscribeClick('Premium')}
               className="mt-auto text-center py-2 rounded-xl bg-gold-600 hover:bg-gold-500 text-gray-900 text-xs font-black transition-colors flex items-center justify-center gap-1.5"
             >
               {isEn ? 'Choose Premium' : 'Choisir Premium'}
@@ -202,6 +207,7 @@ export function PremiumPage() {
           ) : (
             <a
               href={subscribeHref('Expert')}
+              onClick={() => handleSubscribeClick('Expert')}
               className="mt-auto text-center py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black transition-colors flex items-center justify-center gap-1.5"
             >
               {isPremium ? (isEn ? 'Upgrade to Expert' : 'Passer à Expert') : (isEn ? 'Choose Expert' : 'Choisir Expert')}

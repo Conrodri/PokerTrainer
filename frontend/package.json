@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "axios": "^1.6.5",
     "framer-motion": "^11.0.3",
     "lucide-react": "^0.323.0",

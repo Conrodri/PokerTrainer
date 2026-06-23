@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { authApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { analytics } from '../lib/analytics';
 
 type Status = 'loading' | 'success' | 'error';
 
@@ -26,6 +27,7 @@ export function VerifyEmailPage() {
         if (data?.token) {
           localStorage.setItem('token', data.token);
           setUser(data.user);
+          analytics.emailVerified();
         }
         setStatus('success');
       })
