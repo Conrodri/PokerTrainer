@@ -2,6 +2,7 @@ import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { Navbar } from './Navbar';
+import { Footer } from './Footer';
 import { useThemeStore, BG_THEMES, TABLE_COLORS } from '../../store/themeStore';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -44,6 +45,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
           {children}
         </div>
+        <Footer />
       </main>
     </div>
   );

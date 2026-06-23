@@ -5,6 +5,7 @@ import { Layout } from './components/layout/Layout';
 import { HomePage } from './pages/HomePage';
 import { Spinner } from './components/ui/Spinner';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { CookieBanner } from './components/ui/CookieBanner';
 import { OnboardingModal } from './components/onboarding/OnboardingModal';
 import { isOnboardingDone } from './components/onboarding/onboardingState';
 import { useAuthStore } from './store/authStore';
@@ -24,6 +25,8 @@ const GlossaryPage = lazy(() => import('./pages/GlossaryPage').then(m => ({ defa
 const LearningPathPage = lazy(() => import('./pages/LearningPathPage').then(m => ({ default: m.LearningPathPage })));
 const PremiumPage = lazy(() => import('./pages/PremiumPage').then(m => ({ default: m.PremiumPage })));
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage').then(m => ({ default: m.AuthCallbackPage })));
+const CGUPage     = lazy(() => import('./pages/CGUPage').then(m => ({ default: m.CGUPage })));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
 
 export default function App() {
   const fetchMe = useAuthStore(s => s.fetchMe);
@@ -63,10 +66,14 @@ export default function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/premium" element={<PremiumPage />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
+              <Route path="/cgu"          element={<CGUPage />} />
+              <Route path="/privacy"      element={<PrivacyPage />} />
             </Routes>
           </Suspense>
         </ErrorBoundary>
       </Layout>
+
+      <CookieBanner />
 
       <AnimatePresence>
         {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}
