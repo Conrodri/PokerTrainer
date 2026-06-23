@@ -12,17 +12,21 @@
 import * as fs   from 'fs';
 import * as path from 'path';
 import { buildFlopExercise, buildExpertFlopExercise, buildFullHandExercise } from '../controllers/postflopController';
-import { generateEquityExercise } from '../services/trainingService';
+import { generateEquityExercise, generatePreflopExercise } from '../services/trainingService';
 
 const OUT_FILE = path.resolve(__dirname, '../../data/pregenerated.json');
 
 // ─── Targets ──────────────────────────────────────────────────────────────────
 const TARGETS = {
-  flop:       1500,
-  expertFlop:  400,
-  equityFr:    800,
-  equityEn:    800,
-  fullHand:    600,
+  flop:              1500,
+  expertFlop:         400,
+  equityFr:          1200,
+  equityEn:          1200,
+  equityAdvancedFr:   300,
+  equityAdvancedEn:   300,
+  preflopFr:          500,
+  preflopEn:          500,
+  fullHand:           600,
 };
 
 // ─── Dedup helpers ────────────────────────────────────────────────────────────
@@ -41,6 +45,11 @@ function equityKey(ex: any): string {
 /** Unique key for a full-hand exercise: sorted hero + villain + community cards. */
 function fullHandKey(ex: any): string {
   return [...ex.heroHand, ...ex.villainHand, ...ex.flop, ex.turn, ex.river].sort().join(',');
+}
+
+/** Unique key for a preflop exercise: sorted actual cards + position. */
+function preflopKey(ex: any): string {
+  return [...ex.hand].sort().join(',') + '@' + ex.position;
 }
 
 function dedupe<T>(exercises: T[], keyFn: (ex: T) => string): { unique: T[]; dupes: number } {
@@ -100,41 +109,70 @@ async function main() {
   console.log('\n🃏  PokerPeak — exercise pre-generation (with dedup)\n');
 
   // Load existing
-  let existing = { flop: [] as any[], expertFlop: [] as any[], equityFr: [] as any[], equityEn: [] as any[], fullHand: [] as any[] };
+  let existing = {
+    flop: [] as any[], expertFlop: [] as any[],
+    equityFr: [] as any[], equityEn: [] as any[],
+    equityAdvancedFr: [] as any[], equityAdvancedEn: [] as any[],
+    preflopFr: [] as any[], preflopEn: [] as any[],
+    fullHand: [] as any[],
+  };
   try {
     const raw = JSON.parse(fs.readFileSync(OUT_FILE, 'utf8'));
-    existing = { flop: raw.flop ?? [], expertFlop: raw.expertFlop ?? [], equityFr: raw.equityFr ?? [], equityEn: raw.equityEn ?? [], fullHand: raw.fullHand ?? [] };
-    console.log(`  Loaded from file: flop=${existing.flop.length} expertFlop=${existing.expertFlop.length} equityFr=${existing.equityFr.length} equityEn=${existing.equityEn.length} fullHand=${existing.fullHand.length}`);
+    existing = {
+      flop:             raw.flop             ?? [],
+      expertFlop:       raw.expertFlop       ?? [],
+      equityFr:         raw.equityFr         ?? [],
+      equityEn:         raw.equityEn         ?? [],
+      equityAdvancedFr: raw.equityAdvancedFr ?? [],
+      equityAdvancedEn: raw.equityAdvancedEn ?? [],
+      preflopFr:        raw.preflopFr        ?? [],
+      preflopEn:        raw.preflopEn        ?? [],
+      fullHand:         raw.fullHand         ?? [],
+    };
+    console.log(`  Loaded: flop=${existing.flop.length} expertFlop=${existing.expertFlop.length} equityFr=${existing.equityFr.length} equityEn=${existing.equityEn.length} equityAdvFr=${existing.equityAdvancedFr.length} equityAdvEn=${existing.equityAdvancedEn.length} preflopFr=${existing.preflopFr.length} preflopEn=${existing.preflopEn.length} fullHand=${existing.fullHand.length}`);
   } catch {
     console.log('  No existing file — starting from scratch.');
   }
 
   // Deduplicate existing
-  const { unique: flop0,       dupes: d1 } = dedupe(existing.flop,       flopKey);
-  const { unique: expertFlop0, dupes: d2 } = dedupe(existing.expertFlop,  flopKey);
-  const { unique: equityFr0,   dupes: d3 } = dedupe(existing.equityFr,    equityKey);
-  const { unique: equityEn0,   dupes: d4 } = dedupe(existing.equityEn,    equityKey);
-  const { unique: fullHand0,   dupes: d5 } = dedupe(existing.fullHand,    fullHandKey);
-  const totalDupes = d1 + d2 + d3 + d4 + d5;
+  const { unique: flop0,             dupes: d1 } = dedupe(existing.flop,             flopKey);
+  const { unique: expertFlop0,       dupes: d2 } = dedupe(existing.expertFlop,       flopKey);
+  const { unique: equityFr0,         dupes: d3 } = dedupe(existing.equityFr,         equityKey);
+  const { unique: equityEn0,         dupes: d4 } = dedupe(existing.equityEn,         equityKey);
+  const { unique: equityAdvancedFr0, dupes: d5 } = dedupe(existing.equityAdvancedFr, equityKey);
+  const { unique: equityAdvancedEn0, dupes: d6 } = dedupe(existing.equityAdvancedEn, equityKey);
+  const { unique: preflopFr0,        dupes: d7 } = dedupe(existing.preflopFr,        preflopKey);
+  const { unique: preflopEn0,        dupes: d8 } = dedupe(existing.preflopEn,        preflopKey);
+  const { unique: fullHand0,         dupes: d9 } = dedupe(existing.fullHand,         fullHandKey);
+  const totalDupes = d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8 + d9;
   if (totalDupes > 0) console.log(`  Removed ${totalDupes} duplicate(s) from existing data.\n`);
   else console.log('  No duplicates found in existing data.\n');
 
   // Top up to target
-  const flop       = topUp('Flop (non-expert)',  flop0,       TARGETS.flop,       flopKey,      buildFlopExercise);
-  const expertFlop = topUp('Flop (expert)',       expertFlop0, TARGETS.expertFlop, flopKey,      buildExpertFlopExercise);
-  const equityFr   = topUp('Equity FR',           equityFr0,   TARGETS.equityFr,   equityKey,    () => generateEquityExercise('fr', 'beginner'));
-  const equityEn   = topUp('Equity EN',           equityEn0,   TARGETS.equityEn,   equityKey,    () => generateEquityExercise('en', 'beginner'));
-  const fullHand   = topUp('Full Hand',            fullHand0,   TARGETS.fullHand,   fullHandKey,  buildFullHandExercise);
+  const flop             = topUp('Flop (non-expert)',    flop0,             TARGETS.flop,             flopKey,     buildFlopExercise);
+  const expertFlop       = topUp('Flop (expert)',         expertFlop0,       TARGETS.expertFlop,       flopKey,     buildExpertFlopExercise);
+  const equityFr         = topUp('Equity beginner FR',    equityFr0,         TARGETS.equityFr,         equityKey,   () => generateEquityExercise('fr', 'beginner'));
+  const equityEn         = topUp('Equity beginner EN',    equityEn0,         TARGETS.equityEn,         equityKey,   () => generateEquityExercise('en', 'beginner'));
+  const equityAdvancedFr = topUp('Equity advanced FR',    equityAdvancedFr0, TARGETS.equityAdvancedFr, equityKey,   () => generateEquityExercise('fr', 'advanced'));
+  const equityAdvancedEn = topUp('Equity advanced EN',    equityAdvancedEn0, TARGETS.equityAdvancedEn, equityKey,   () => generateEquityExercise('en', 'advanced'));
+  const preflopFr        = topUp('Preflop FR',            preflopFr0,        TARGETS.preflopFr,        preflopKey,  () => generatePreflopExercise(undefined, 'fr'));
+  const preflopEn        = topUp('Preflop EN',            preflopEn0,        TARGETS.preflopEn,        preflopKey,  () => generatePreflopExercise(undefined, 'en'));
+  const fullHand         = topUp('Full Hand',             fullHand0,         TARGETS.fullHand,         fullHandKey, buildFullHandExercise);
 
   // Save
-  const data = { flop, expertFlop, equityFr, equityEn, fullHand, generatedAt: new Date().toISOString() };
+  const data = { flop, expertFlop, equityFr, equityEn, equityAdvancedFr, equityAdvancedEn, preflopFr, preflopEn, fullHand, generatedAt: new Date().toISOString() };
   fs.mkdirSync(path.dirname(OUT_FILE), { recursive: true });
   fs.writeFileSync(OUT_FILE, JSON.stringify(data));
 
   const kb    = Math.round(fs.statSync(OUT_FILE).size / 1024);
-  const total = flop.length + expertFlop.length + equityFr.length + equityEn.length + fullHand.length;
+  const total = flop.length + expertFlop.length + equityFr.length + equityEn.length
+              + equityAdvancedFr.length + equityAdvancedEn.length
+              + preflopFr.length + preflopEn.length + fullHand.length;
   console.log(`\n✅  ${total} unique exercises saved → ${OUT_FILE} (${kb} KB)`);
-  console.log(`    flop=${flop.length}  expertFlop=${expertFlop.length}  equityFr=${equityFr.length}  equityEn=${equityEn.length}  fullHand=${fullHand.length}\n`);
+  console.log(`    flop=${flop.length}  expertFlop=${expertFlop.length}`);
+  console.log(`    equityFr=${equityFr.length}  equityEn=${equityEn.length}`);
+  console.log(`    equityAdvFr=${equityAdvancedFr.length}  equityAdvEn=${equityAdvancedEn.length}`);
+  console.log(`    preflopFr=${preflopFr.length}  preflopEn=${preflopEn.length}  fullHand=${fullHand.length}\n`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

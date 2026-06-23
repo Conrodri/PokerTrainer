@@ -10,24 +10,32 @@ import prisma from '../config/database';
 
 const PREGEN_FILE = path.resolve(__dirname, '../../data/pregenerated.json');
 
-function loadPregenEquity(): { equityFr: object[]; equityEn: object[] } {
+function loadPregenTraining(): {
+  equityFr: object[]; equityEn: object[];
+  equityAdvancedFr: object[]; equityAdvancedEn: object[];
+  preflopFr: object[]; preflopEn: object[];
+} {
   try {
     const raw = JSON.parse(fs.readFileSync(PREGEN_FILE, 'utf8'));
-    return { equityFr: raw.equityFr ?? [], equityEn: raw.equityEn ?? [] };
+    return {
+      equityFr:         raw.equityFr          ?? [],
+      equityEn:         raw.equityEn          ?? [],
+      equityAdvancedFr: raw.equityAdvancedFr  ?? [],
+      equityAdvancedEn: raw.equityAdvancedEn  ?? [],
+      preflopFr:        raw.preflopFr         ?? [],
+      preflopEn:        raw.preflopEn         ?? [],
+    };
   } catch {
-    return { equityFr: [], equityEn: [] };
+    return { equityFr: [], equityEn: [], equityAdvancedFr: [], equityAdvancedEn: [], preflopFr: [], preflopEn: [] };
   }
 }
 
 type Lang = 'fr' | 'en';
 
-// ─── Equity exercise pool ─────────────────────────────────────────────────────
-// Pre-generates beginner equity exercises (non-expert) to avoid the ~20ms
-// Monte Carlo wait when a board is dealt (50% of cases).
-// Two separate pools for FR and EN since explanation text is language-specific.
+// ─── Equity beginner pool ─────────────────────────────────────────────────────
 
-const EQUITY_POOL_TARGET    = 15;
-const EQUITY_POOL_THRESHOLD = 4;
+const EQUITY_POOL_TARGET    = 40;
+const EQUITY_POOL_THRESHOLD = 10;
 const equityPoolFr: object[] = [];
 const equityPoolEn: object[] = [];
 let   equityRefilling        = false;
@@ -51,19 +59,82 @@ async function refillEquityPool(): Promise<void> {
   }
 }
 
-/** Call once from server.ts after startup to warm the equity exercise pool. */
+// ─── Equity advanced pool ─────────────────────────────────────────────────────
+
+const EQUITY_ADV_TARGET    = 40;
+const EQUITY_ADV_THRESHOLD = 10;
+const equityAdvPoolFr: object[] = [];
+const equityAdvPoolEn: object[] = [];
+let   equityAdvRefilling        = false;
+
+async function refillEquityAdvPool(): Promise<void> {
+  if (equityAdvRefilling) return;
+  equityAdvRefilling = true;
+  try {
+    while (equityAdvPoolFr.length < EQUITY_ADV_TARGET || equityAdvPoolEn.length < EQUITY_ADV_TARGET) {
+      if (equityAdvPoolFr.length < EQUITY_ADV_TARGET) {
+        equityAdvPoolFr.push(generateEquityExercise('fr', 'advanced'));
+        await new Promise(resolve => setImmediate(resolve));
+      }
+      if (equityAdvPoolEn.length < EQUITY_ADV_TARGET) {
+        equityAdvPoolEn.push(generateEquityExercise('en', 'advanced'));
+        await new Promise(resolve => setImmediate(resolve));
+      }
+    }
+  } finally {
+    equityAdvRefilling = false;
+  }
+}
+
+// ─── Preflop pool ─────────────────────────────────────────────────────────────
+
+const PREFLOP_POOL_TARGET    = 30;
+const PREFLOP_POOL_THRESHOLD = 8;
+const preflopPoolFr: object[] = [];
+const preflopPoolEn: object[] = [];
+let   preflopRefilling        = false;
+
+async function refillPreflopPool(): Promise<void> {
+  if (preflopRefilling) return;
+  preflopRefilling = true;
+  try {
+    while (preflopPoolFr.length < PREFLOP_POOL_TARGET || preflopPoolEn.length < PREFLOP_POOL_TARGET) {
+      if (preflopPoolFr.length < PREFLOP_POOL_TARGET) {
+        preflopPoolFr.push(generatePreflopExercise(undefined, 'fr'));
+        await new Promise(resolve => setImmediate(resolve));
+      }
+      if (preflopPoolEn.length < PREFLOP_POOL_TARGET) {
+        preflopPoolEn.push(generatePreflopExercise(undefined, 'en'));
+        await new Promise(resolve => setImmediate(resolve));
+      }
+    }
+  } finally {
+    preflopRefilling = false;
+  }
+}
+
+// ─── Init (called from server.ts) ────────────────────────────────────────────
+
 export function initEquityPool(): void {
-  const { equityFr, equityEn } = loadPregenEquity();
-  if (equityFr.length > 0) {
-    equityPoolFr.push(...equityFr.slice(0, EQUITY_POOL_TARGET));
-    console.log(`[equityPool] loaded ${equityPoolFr.length} FR + ${Math.min(equityEn.length, EQUITY_POOL_TARGET)} EN from file`);
-  }
-  if (equityEn.length > 0) {
-    equityPoolEn.push(...equityEn.slice(0, EQUITY_POOL_TARGET));
-  }
-  if (equityPoolFr.length < EQUITY_POOL_TARGET || equityPoolEn.length < EQUITY_POOL_TARGET) {
+  const { equityFr, equityEn, equityAdvancedFr, equityAdvancedEn, preflopFr, preflopEn } = loadPregenTraining();
+
+  equityPoolFr.push(...equityFr.slice(0, EQUITY_POOL_TARGET));
+  equityPoolEn.push(...equityEn.slice(0, EQUITY_POOL_TARGET));
+  equityAdvPoolFr.push(...equityAdvancedFr.slice(0, EQUITY_ADV_TARGET));
+  equityAdvPoolEn.push(...equityAdvancedEn.slice(0, EQUITY_ADV_TARGET));
+  preflopPoolFr.push(...preflopFr.slice(0, PREFLOP_POOL_TARGET));
+  preflopPoolEn.push(...preflopEn.slice(0, PREFLOP_POOL_TARGET));
+
+  console.log(`[equityPool]    beginner: ${equityPoolFr.length} FR + ${equityPoolEn.length} EN`);
+  console.log(`[equityPool]    advanced: ${equityAdvPoolFr.length} FR + ${equityAdvPoolEn.length} EN`);
+  console.log(`[preflopPool]   ${preflopPoolFr.length} FR + ${preflopPoolEn.length} EN`);
+
+  if (equityPoolFr.length < EQUITY_POOL_TARGET || equityPoolEn.length < EQUITY_POOL_TARGET)
     refillEquityPool().catch(err => console.error('[equityPool] init error:', err));
-  }
+  if (equityAdvPoolFr.length < EQUITY_ADV_TARGET || equityAdvPoolEn.length < EQUITY_ADV_TARGET)
+    refillEquityAdvPool().catch(err => console.error('[equityAdvPool] init error:', err));
+  if (preflopPoolFr.length < PREFLOP_POOL_TARGET || preflopPoolEn.length < PREFLOP_POOL_TARGET)
+    refillPreflopPool().catch(err => console.error('[preflopPool] init error:', err));
 }
 
 function getLang(req: Request): Lang {
@@ -75,6 +146,18 @@ export async function getPreflopExercise(req: Request, res: Response): Promise<v
   try {
     const position = req.query.position as Position | undefined;
     const lang = getLang(req);
+
+    // Serve from pool when position is not constrained (random mode)
+    if (!position) {
+      const pool = lang === 'en' ? preflopPoolEn : preflopPoolFr;
+      if (pool.length > 0) {
+        const data = pool.shift()!;
+        if (preflopPoolFr.length < PREFLOP_POOL_THRESHOLD || preflopPoolEn.length < PREFLOP_POOL_THRESHOLD)
+          refillPreflopPool().catch(err => console.error('[preflopPool] refill error:', err));
+        return void res.json({ success: true, data } as ApiResponse);
+      }
+    }
+
     const exercise = generatePreflopExercise(position, lang);
     res.json({ success: true, data: exercise } as ApiResponse);
   } catch {
@@ -158,14 +241,22 @@ export async function getEquityExercise(req: Request, res: Response): Promise<vo
     const mode       = (req.query.mode === 'advanced' ? 'advanced' : 'beginner') as 'beginner' | 'advanced';
     const difficulty = req.query.difficulty === 'expert' ? 'expert' : undefined;
 
-    // Serve from pool for the most common case: beginner, non-expert
+    // Serve from pool for non-expert beginner and advanced cases
     if (mode === 'beginner' && !difficulty) {
       const pool = lang === 'en' ? equityPoolEn : equityPoolFr;
       if (pool.length > 0) {
         const data = pool.shift()!;
-        if (equityPoolFr.length < EQUITY_POOL_THRESHOLD || equityPoolEn.length < EQUITY_POOL_THRESHOLD) {
+        if (equityPoolFr.length < EQUITY_POOL_THRESHOLD || equityPoolEn.length < EQUITY_POOL_THRESHOLD)
           refillEquityPool().catch(err => console.error('[equityPool] refill error:', err));
-        }
+        return void res.json({ success: true, data } as ApiResponse);
+      }
+    }
+    if (mode === 'advanced' && !difficulty) {
+      const pool = lang === 'en' ? equityAdvPoolEn : equityAdvPoolFr;
+      if (pool.length > 0) {
+        const data = pool.shift()!;
+        if (equityAdvPoolFr.length < EQUITY_ADV_THRESHOLD || equityAdvPoolEn.length < EQUITY_ADV_THRESHOLD)
+          refillEquityAdvPool().catch(err => console.error('[equityAdvPool] refill error:', err));
         return void res.json({ success: true, data } as ApiResponse);
       }
     }
