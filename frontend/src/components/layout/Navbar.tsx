@@ -23,6 +23,7 @@ const MODULES = [
   { id: 'postflop',  icon: '🃏', labelFr: 'Post-flop',      labelEn: 'Post-flop',   premium: true  },
   { id: 'betsizing', icon: '📐', labelFr: 'Bet Sizing',     labelEn: 'Bet Sizing',  premium: true  },
   { id: 'fullhand',  icon: '🎰', labelFr: 'Main complète',  labelEn: 'Full Hand',   premium: true  },
+  { id: 'bluff',     icon: '🎭', labelFr: 'Bluff',          labelEn: 'Bluff',       premium: true  },
 ] as const;
 
 export function Navbar() {

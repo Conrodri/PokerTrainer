@@ -7,7 +7,7 @@ import prisma from '../config/database';
 // Europe/Paris time (the app's audience), regardless of server timezone.
 
 export const FREE_LIMIT = 3;
-export const FREE_MODULES = ['postflop', 'fullhand', 'betsizing'] as const;
+export const FREE_MODULES = ['postflop', 'fullhand', 'betsizing', 'bluff'] as const;
 export type FreeModule = (typeof FREE_MODULES)[number];
 
 export function isFreeModule(m: string): m is FreeModule {

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { quotaApi } from '../services/api';
 
-export type QuotaModule = 'postflop' | 'fullhand' | 'betsizing';
+export type QuotaModule = 'postflop' | 'fullhand' | 'betsizing' | 'bluff';
 const DEFAULT_LIMIT = 3;
 
 interface QuotaState {
@@ -20,7 +20,7 @@ interface QuotaState {
 
 export const useQuotaStore = create<QuotaState>((set, get) => ({
   limit: DEFAULT_LIMIT,
-  remaining: { postflop: DEFAULT_LIMIT, fullhand: DEFAULT_LIMIT, betsizing: DEFAULT_LIMIT },
+  remaining: { postflop: DEFAULT_LIMIT, fullhand: DEFAULT_LIMIT, betsizing: DEFAULT_LIMIT, bluff: DEFAULT_LIMIT },
   loaded: false,
   loading: false,
 
@@ -40,6 +40,7 @@ export const useQuotaStore = create<QuotaState>((set, get) => ({
           postflop:  data.modules.postflop?.remaining  ?? 0,
           fullhand:  data.modules.fullhand?.remaining  ?? 0,
           betsizing: data.modules.betsizing?.remaining ?? 0,
+          bluff:     data.modules.bluff?.remaining     ?? 0,
         },
         loaded: true,
         loading: false,

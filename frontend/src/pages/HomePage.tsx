@@ -159,9 +159,12 @@ export function HomePage() {
       subtitle: t.home.bluff_sub,
       icon: '🎭',
       badge: isEn ? 'Psychology' : 'Psychologie',
-      href: '#',
-      comingSoon: true,
-      tiers: [] as Tier[],
+      href: '/training?module=bluff',
+      tiers: [
+        T_FREE(isEn ? 'Factor grid + detailed explanation always shown' : 'Grille de facteurs + explication détaillée toujours affichée'),
+        T_ADV(isEn ? 'Factors & explanation revealed after answering' : 'Facteurs & explication révélés après la réponse'),
+        T_EXP(isEn ? 'No hints — pure read on position, range and board dynamics' : 'Aucun indice — lecture pure de la position, range et dynamique du board'),
+      ] as Tier[],
     },
   ];
 

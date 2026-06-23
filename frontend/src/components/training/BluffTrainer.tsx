@@ -5,13 +5,18 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTrainingStore } from '../../store/trainingStore';
 import { useModeStore, showHints } from '../../store/modeStore';
 import { useLangStore } from '../../store/langStore';
+import { useAuthStore } from '../../store/authStore';
+import { useQuotaStore } from '../../store/quotaStore';
+import { useExerciseLock } from '../../hooks/useExerciseLock';
 import { Button } from '../ui/Button';
 import { SessionStatsBar } from '../ui/SessionStatsBar';
 import { VerdictBanner } from '../ui/VerdictBanner';
 import { TrainerIntro } from '../ui/TrainerIntro';
+import { QuotaLockPanel } from '../ui/QuotaLockPanel';
 import { Spinner } from '../ui/Spinner';
 import { RichText } from '../ui/RichText';
 import { Card } from '../poker/Card';
+import { quotaApi } from '../../services/api';
 import type { BluffAction, BluffExercise, BluffFactorScore } from '../../types/poker';
 import type { CardStr } from '../../types/poker';
 
@@ -235,16 +240,51 @@ export function BluffTrainer() {
       setTrainerStarted:  s.setTrainerStarted,
     })));
 
+  // Premium access / daily free-quota for non-premium users
+  const user      = useAuthStore(s => s.user);
+  const isPremium = !!user?.isPremium;
+  const loggedIn  = !!user;
+  const quota     = useQuotaStore();
+  const [quotaBlocked, setQuotaBlocked] = useState(false);
+
   const [showIntro, setShowIntro]       = useState(true);
   const [phase, setPhase]               = useState<Phase>('exercise');
   const [selected, setSelected]         = useState<BluffAction | null>(null);
   const [startTime, setStartTime]       = useState(Date.now());
   const [showFullExplanation, setShowFullExplanation] = useState(false);
 
+  // Refresh free-quota counts when a non-premium user opens the module
+  useEffect(() => {
+    if (loggedIn && !isPremium) quota.refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedIn, isPremium]);
+
+  // Lock mode switching while a question is on screen
+  useExerciseLock(!showIntro && phase === 'exercise' && !!bluffExercise);
+
+  const nextExercise = async () => {
+    if (!isPremium) {
+      try {
+        const r = await quotaApi.consume('bluff');
+        if (r && !r.unlimited && typeof r.remaining === 'number') quota.set('bluff', r.remaining);
+      } catch (e: any) {
+        if (e?.response?.status === 402) { quota.set('bluff', 0); setQuotaBlocked(true); }
+        return;
+      }
+    }
+    fetchBluffExercise();
+  };
+
+  const backToIntro = () => {
+    setQuotaBlocked(false);
+    setShowIntro(true);
+    setTrainerStarted(false);
+  };
+
   const handleStart = () => {
     setShowIntro(false);
     setTrainerStarted(true);
-    fetchBluffExercise();
+    nextExercise();
     setStartTime(Date.now());
   };
 
@@ -264,7 +304,7 @@ export function BluffTrainer() {
     setPhase('exercise');
     setShowFullExplanation(false);
     setStartTime(Date.now());
-    fetchBluffExercise();
+    nextExercise();
     setIsExercising(true);
   };
 
@@ -274,6 +314,14 @@ export function BluffTrainer() {
   }, [showIntro, phase, setIsExercising]);
 
   if (showIntro) return <BluffIntro onStart={handleStart} />;
+
+  if (quotaBlocked) {
+    return (
+      <div className="flex flex-col gap-5 max-w-2xl mx-auto">
+        <QuotaLockPanel limit={quota.limit} onBackToIntro={backToIntro} />
+      </div>
+    );
+  }
 
   if (isLoading || !bluffExercise) {
     return (
