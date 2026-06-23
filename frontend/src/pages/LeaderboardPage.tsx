@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Zap, Target, ChevronDown, Timer } from 'lucide-react';
+import { Trophy, Zap, Target, ChevronDown, Timer, Crown, Lock } from 'lucide-react';
 import { statsApi } from '../services/api';
 import { LeaderboardEntry, LeaderboardModuleStat } from '../types/poker';
 import { useAuthStore } from '../store/authStore';
@@ -143,6 +143,7 @@ export function LeaderboardPage() {
     });
   };
 
+  const isPremium = !!(user?.isPremium || user?.isPremiumExpert);
   const rankEmoji  = ['🥇', '🥈', '🥉'];
   const rankBg     = [
     'bg-gold-900/30 border-gold-700',
@@ -180,6 +181,21 @@ export function LeaderboardPage() {
         <h1 className="text-3xl font-bold text-white mb-2">{t.leaderboard.title}</h1>
         <p className="text-gray-400">{t.leaderboard.subtitle}</p>
       </div>
+
+      {/* Non-premium upsell banner */}
+      {!isPremium && (
+        <div className="flex items-center gap-3 bg-gold-900/20 border border-gold-700/40 rounded-xl px-4 py-3 text-sm">
+          <Lock size={16} className="text-gold-400 shrink-0" />
+          <p className="text-gray-300 flex-1">
+            {isEn
+              ? 'Only Premium members appear in the ranking. '
+              : 'Seuls les membres Premium apparaissent dans le classement. '}
+            <Link to="/premium" className="text-gold-400 hover:underline font-medium">
+              {isEn ? 'Upgrade to be ranked →' : 'Passe Premium pour y figurer →'}
+            </Link>
+          </p>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center h-40 items-center">
@@ -225,6 +241,10 @@ export function LeaderboardPage() {
                       >
                         {entry.username}
                       </Link>
+                      <Crown
+                        size={12}
+                        className={`shrink-0 ${entry.isPremiumExpert ? 'text-purple-400' : 'text-gold-400'}`}
+                      />
                       {isMe && (
                         <span className="text-xs bg-felt-800 text-felt-300 px-1.5 py-0.5 rounded shrink-0">
                           {t.leaderboard.you}

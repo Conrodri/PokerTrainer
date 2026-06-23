@@ -138,6 +138,7 @@ export interface LeaderboardModuleStat {
 export interface LeaderboardEntry {
   rank: number;
   username: string;
+  isPremiumExpert: boolean;
   xp: number;
   level: number;
   totalExercises: number;

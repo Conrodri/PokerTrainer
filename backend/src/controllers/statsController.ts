@@ -55,9 +55,10 @@ export async function getLeaderboard(req: Request, res: Response): Promise<void>
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
 
     const leaders = await prisma.playerStats.findMany({
+      where: { user: { OR: [{ isPremium: true }, { isPremiumExpert: true }] } },
       orderBy: { xp: 'desc' },
       take: limit,
-      include: { user: { select: { username: true } } },
+      include: { user: { select: { username: true, isPremium: true, isPremiumExpert: true } } },
     });
 
     const userIds = leaders.map(l => l.userId);
@@ -71,6 +72,7 @@ export async function getLeaderboard(req: Request, res: Response): Promise<void>
     const formatted = leaders.map((l, i) => ({
       rank: i + 1,
       username: l.user.username,
+      isPremiumExpert: l.user.isPremiumExpert,
       xp: l.xp,
       level: l.level,
       totalExercises: l.totalExercises,
