@@ -62,8 +62,8 @@ export function HomePage() {
       href: '/training?module=preflop',
       tiers: [
         T_FREE(isEn ? 'GTO ranges — fold / raise by position' : 'Ranges GTO — fold / raise par position'),
-        { ...T_ADV(isEn ? 'Custom simple ranges (169 hands, saveable profiles)' : 'Ranges simples perso (169 mains, profils sauvegardables)'), label: isEn ? 'Advanced 👑' : 'Avancé 👑' },
-        { ...T_EXP(isEn ? 'Multi-action frequency mixes (Fold / Call / Raise / All-in)' : 'Fréquences multi-actions (Fold / Call / Raise / All-in)'), label: 'Expert 👑' },
+        T_ADV(isEn ? 'Custom simple ranges (169 hands, saveable profiles)' : 'Ranges simples perso (169 mains, profils sauvegardables)'),
+        T_EXP(isEn ? 'Multi-action frequency mixes (Fold / Call / Raise / All-in)' : 'Fréquences multi-actions (Fold / Call / Raise / All-in)'),
       ] as Tier[],
     },
     {
