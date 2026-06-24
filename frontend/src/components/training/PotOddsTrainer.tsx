@@ -222,9 +222,17 @@ export function PotOddsTrainer() {
 
                 {/* Numbers — expert hides equity to force mental outs calculation */}
                 {mode === 'expert' ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    <NumberCard label={t.training.pot_lbl} value={`${ex.potSize}bb`} color="text-white"   icon="🏆" />
-                    <NumberCard label={t.training.bet_lbl} value={`${ex.betSize}bb`} color="text-red-400" icon="🎯" />
+                  <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <NumberCard label={t.training.pot_lbl} value={`${ex.potSize}bb`} color="text-white"   icon="🏆" />
+                      <NumberCard label={t.training.bet_lbl} value={`${ex.betSize}bb`} color="text-red-400" icon="🎯" />
+                    </div>
+                    {ex.impliedWinnings !== undefined && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <NumberCard label={isEn ? 'Villain stack' : 'Stack villain'} value={`${ex.villainStackBehind}bb`} color="text-orange-400" icon="💰" />
+                        <NumberCard label={isEn ? 'Implied winnings (stated)' : 'Implied odds (annoncés)'} value={`+${ex.impliedWinnings}bb`} color="text-emerald-400" icon="🎰" />
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 gap-2">
@@ -421,11 +429,36 @@ export function PotOddsTrainer() {
                 {isEn ? 'Equity' : 'Équité'} : {ex.outs} × {ex.street === 'flop' ? 4 : 2} = <span className="text-blue-400 font-bold">{ex.heroEquity}%</span>
               </p>
               <p className="text-gray-300">
-                {isEn ? 'Required' : 'Seuil'} : {ex.betSize} ÷ ({ex.potSize}+{ex.betSize * 2}) = <span className="text-yellow-400 font-bold">{lastResult.requiredEquity}%</span>
+                {isEn ? 'Direct threshold' : 'Seuil direct'} : {ex.betSize} ÷ ({ex.potSize}+{ex.betSize * 2}) = <span className="text-yellow-400 font-bold">{lastResult.requiredEquity}%</span>
+                {' '}{ex.heroEquity >= (lastResult.requiredEquity ?? 0) ? '✅' : '❌'}
               </p>
-              <div className={`p-2 rounded-lg text-center font-bold ${ev >= 0 ? 'text-green-400 bg-green-900/20' : 'text-red-400 bg-red-900/20'}`}>
-                EV = {ev >= 0 ? '+' : ''}{ev.toFixed(2)}bb {ev >= 0 ? '✅' : '❌'}
-              </div>
+              {ex.impliedWinnings !== undefined && ex.impliedRequiredEquity !== undefined && (
+                <p className="text-gray-300">
+                  {isEn ? 'Implied threshold' : 'Seuil implied'} : {ex.betSize} ÷ ({ex.potSize + ex.betSize * 2}+{ex.impliedWinnings}) = <span className="text-emerald-400 font-bold">{ex.impliedRequiredEquity}%</span>
+                  {' '}{ex.heroEquity >= ex.impliedRequiredEquity ? '✅' : '❌'}
+                </p>
+              )}
+              {ex.impliedWinnings === undefined ? (
+                <div className={`p-2 rounded-lg text-center font-bold ${ev >= 0 ? 'text-green-400 bg-green-900/20' : 'text-red-400 bg-red-900/20'}`}>
+                  EV = {ev >= 0 ? '+' : ''}{ev.toFixed(2)}bb {ev >= 0 ? '✅' : '❌'}
+                </div>
+              ) : (
+                <div className={`p-2 rounded-lg text-center font-bold font-sans text-xs ${ex.correctAction === 'call' ? 'text-green-400 bg-green-900/20' : 'text-red-400 bg-red-900/20'}`}>
+                  {ex.correctAction === 'call'
+                    ? (isEn ? 'CALL ✅ — implied odds make it profitable' : 'CALL ✅ — les implied odds le rendent rentable')
+                    : (isEn ? 'FOLD ❌ — even implied odds aren\'t enough' : 'FOLD ❌ — même les implied odds ne suffisent pas')}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Expert implied odds explanation */}
+          {mode === 'expert' && ex.impliedExplanation && (
+            <div className="bg-emerald-950/20 rounded-2xl p-4 border border-emerald-900/30 space-y-1">
+              <p className="text-emerald-300 font-semibold text-xs uppercase tracking-wide mb-2">
+                {isEn ? 'Implied Odds Breakdown' : 'Analyse Implied Odds'}
+              </p>
+              <RichText text={ex.impliedExplanation} />
             </div>
           )}
 

@@ -1,7 +1,7 @@
 import { Position, PreflopExercise, EquityExercise } from '../types';
 import { dealHand, toHandNotation } from './poker/cards';
 import { getCorrectAction } from './poker/ranges';
-import { getRandomScenario, generateClosePotOddsScenario, calculatePotOdds, buildEquityExplanation, buildThresholdExplanation } from './poker/potOdds';
+import { getRandomScenario, generateClosePotOddsScenario, generateImpliedOddsScenario, calculatePotOdds, buildEquityExplanation, buildThresholdExplanation, buildImpliedOddsExplanation } from './poker/potOdds';
 import { getRandomOutsScenario, buildOutsOptions, buildOutsExplanation, estimateEquityFromOuts } from './poker/outs';
 import { getBBDefenseAction, buildBBDefenseExplanation } from './poker/bbDefense';
 
@@ -122,9 +122,20 @@ function buildPreflopExplanationEn(notation: string, position: Position, action:
 }
 
 export function generatePotOddsExercise(lang: 'fr' | 'en' = 'fr', difficulty?: 'expert') {
-  // Expert → borderline call/fold spots (required equity within ~3% of hero's).
-  const scenario = difficulty === 'expert' ? generateClosePotOddsScenario(lang) : getRandomScenario();
+  // Expert → implied odds scenarios (direct odds vs implied winnings).
+  const isExpert = difficulty === 'expert';
+  const scenario = isExpert ? generateImpliedOddsScenario(lang) : getRandomScenario();
   const result = calculatePotOdds(scenario.potSize, scenario.betSize, scenario.heroEquity, lang);
+
+  // Compute implied fields when present
+  const impliedWinnings = scenario.impliedWinnings;
+  const villainStackBehind = scenario.villainStackBehind;
+  let impliedRequiredEquity: number | undefined;
+  if (impliedWinnings !== undefined) {
+    const call = scenario.betSize;
+    const totalDirect = scenario.potSize + scenario.betSize + call;
+    impliedRequiredEquity = Math.round((call / (totalDirect + impliedWinnings)) * 1000) / 10;
+  }
 
   return {
     potSize: scenario.potSize,
@@ -144,6 +155,12 @@ export function generatePotOddsExercise(lang: 'fr' | 'en' = 'fr', difficulty?: '
     equityExplanationAdvanced: buildEquityExplanation(scenario, lang, 'advanced'),
     thresholdExplanation: buildThresholdExplanation(scenario.potSize, scenario.betSize, result.requiredEquity, scenario.heroEquity, lang, 'beginner'),
     thresholdExplanationAdvanced: buildThresholdExplanation(scenario.potSize, scenario.betSize, result.requiredEquity, scenario.heroEquity, lang, 'advanced'),
+    ...(impliedWinnings !== undefined && {
+      impliedWinnings,
+      villainStackBehind,
+      impliedRequiredEquity,
+      impliedExplanation: buildImpliedOddsExplanation(scenario, lang),
+    }),
   };
 }
 

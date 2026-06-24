@@ -74,6 +74,9 @@ export interface PotOddsScenario {
   street: 'flop' | 'turn';
   outs: number;
   drawType: { fr: string; en: string };
+  // Implied odds fields (expert mode only)
+  villainStackBehind?: number;
+  impliedWinnings?: number;
 }
 
 // Every scenario is built so that heroEquity matches the Rule of 2 & 4
@@ -303,6 +306,130 @@ export function buildEquityExplanation(
 function formatRatio(pot: number, bet: number): string {
   const r = (pot + bet) / bet;
   return Number.isInteger(r) ? `${r}:1` : `${r.toFixed(1)}:1`;
+}
+
+// ─── Expert: implied odds scenarios ──────────────────────────────────────────
+// Each scenario states an implied winnings figure (told to the user).
+// The correct action is derived from implied odds, not direct pot odds.
+// Most interesting cases: direct=FOLD but implied=CALL (or vice versa).
+
+interface ImpliedDraw {
+  heroCards: [string, string];
+  board: string[];
+  street: 'flop' | 'turn';
+  outs: number;
+  drawType: { fr: string; en: string };
+  potSize: number;
+  betSize: number;
+  impliedWinnings: number;
+  villainStackBehind: number;
+}
+
+const EXPERT_IMPLIED_DRAWS: ImpliedDraw[] = [
+  // A — turn flush draw: direct FOLD (30.8%) → implied CALL (18% > 16.7%)
+  {
+    heroCards: ['Ad', 'Kd'], board: ['5d', '9d', 'Jc', '2s'], street: 'turn',
+    outs: 9, potSize: 10, betSize: 8, impliedWinnings: 22, villainStackBehind: 50,
+    drawType: { fr: 'un tirage couleur à la turn — 9 outs (≈18%)', en: 'a flush draw on the turn — 9 outs (≈18%)' },
+  },
+  // B — flop gutshot: direct FOLD (25%) → implied FOLD (16% < 18.4%)
+  {
+    heroCards: ['9d', '8c'], board: ['Qh', 'Jc', '2s'], street: 'flop',
+    outs: 4, potSize: 14, betSize: 7, impliedWinnings: 10, villainStackBehind: 25,
+    drawType: { fr: 'un tirage par le ventre — 4 outs (≈16%)', en: 'a gutshot — 4 outs (≈16%)' },
+  },
+  // C — turn OESD: direct FOLD (20.8%) → implied CALL (16% > 11.9%)
+  {
+    heroCards: ['Jc', 'Td'], board: ['9h', '8s', '3c', '2d'], street: 'turn',
+    outs: 8, potSize: 14, betSize: 5, impliedWinnings: 18, villainStackBehind: 45,
+    drawType: { fr: 'un tirage bilatéral à la turn — 8 outs (≈16%)', en: 'an open-ended straight draw on the turn — 8 outs (≈16%)' },
+  },
+  // D — flop flush draw: direct CALL (28.2%) confirmed by implied (36% > 20.4%)
+  {
+    heroCards: ['Ah', 'Kh'], board: ['2h', '9h', 'Jc'], street: 'flop',
+    outs: 9, potSize: 17, betSize: 11, impliedWinnings: 15, villainStackBehind: 60,
+    drawType: { fr: 'un tirage couleur au flop — 9 outs (≈36%)', en: 'a flush draw on the flop — 9 outs (≈36%)' },
+  },
+  // E — flop overcards: direct FOLD (30%) → implied FOLD (24% < 25.9%)
+  {
+    heroCards: ['As', 'Ks'], board: ['7d', '8c', '2h'], street: 'flop',
+    outs: 6, potSize: 20, betSize: 15, impliedWinnings: 8, villainStackBehind: 35,
+    drawType: { fr: 'deux surcartes — 6 outs (≈24%)', en: 'two overcards — 6 outs (≈24%)' },
+  },
+  // F — turn flush draw, small bet: direct CALL (12.5%) confirmed by implied (18% > 9.6%)
+  {
+    heroCards: ['9c', '8c'], board: ['Ac', '5c', 'Kd', '2h'], street: 'turn',
+    outs: 9, potSize: 30, betSize: 5, impliedWinnings: 12, villainStackBehind: 55,
+    drawType: { fr: 'un tirage couleur à la turn — 9 outs (≈18%)', en: 'a flush draw on the turn — 9 outs (≈18%)' },
+  },
+];
+
+export function generateImpliedOddsScenario(lang: 'fr' | 'en' = 'fr'): PotOddsScenario {
+  const d = pick(EXPERT_IMPLIED_DRAWS);
+  const heroEquity = d.outs * (d.street === 'flop' ? 4 : 2);
+  const call = d.betSize;
+  const totalDirect = d.potSize + d.betSize + call;
+  const totalImplied = totalDirect + d.impliedWinnings;
+  const impliedReq = (call / totalImplied) * 100;
+  const correctAction: 'call' | 'fold' = heroEquity >= impliedReq ? 'call' : 'fold';
+
+  return {
+    potSize: d.potSize,
+    betSize: d.betSize,
+    heroEquity,
+    outs: d.outs,
+    correctAction,
+    difficulty: 'hard',
+    street: d.street,
+    heroCards: d.heroCards,
+    board: d.board,
+    impliedWinnings: d.impliedWinnings,
+    villainStackBehind: d.villainStackBehind,
+    drawType: d.drawType,
+    context: `Mode expert — implied odds. Tu as ${d.drawType.fr}, face à une mise de ${d.betSize}bb dans un pot de ${d.potSize}bb. Le villain a ${d.villainStackBehind}bb derrière. Si tu touches, tu peux espérer gagner ${d.impliedWinnings}bb supplémentaires en implied odds.`,
+    contextEn: `Expert mode — implied odds. You have ${d.drawType.en}, facing a ${d.betSize}bb bet into a ${d.potSize}bb pot. Villain has ${d.villainStackBehind}bb behind. If you hit, you can expect to win ${d.impliedWinnings}bb more in implied winnings.`,
+  };
+}
+
+export function buildImpliedOddsExplanation(
+  scenario: PotOddsScenario,
+  lang: 'fr' | 'en' = 'fr'
+): string {
+  const { potSize: pot, betSize: bet, heroEquity, outs, impliedWinnings = 0, street, drawType } = scenario;
+  const call = bet;
+  const mult = street === 'flop' ? 4 : 2;
+  const totalDirect = pot + bet + call;
+  const directReq = (call / totalDirect) * 100;
+  const totalImplied = totalDirect + impliedWinnings;
+  const impliedReq = (call / totalImplied) * 100;
+  const directOk = heroEquity >= directReq;
+  const impliedOk = heroEquity >= impliedReq;
+
+  const fmtPct = (n: number) => n.toFixed(1).replace(/\.0$/, '') + '%';
+
+  if (lang === 'en') {
+    return [
+      `**Your draw:** ${drawType.en} → equity by rule of 2&4: **${outs} × ${mult} = ${heroEquity}%**.`,
+      `**Direct pot odds threshold:** call (${call}) ÷ total pot (${pot}+${bet}+${call}=${totalDirect}) = **${fmtPct(directReq)}** → ${directOk ? `${heroEquity}% ≥ ${fmtPct(directReq)} ✅ call` : `${heroEquity}% < ${fmtPct(directReq)} ❌ fold on direct odds`}.`,
+      `**With implied odds (${impliedWinnings}bb extra if you hit):** threshold = ${call} ÷ (${totalDirect}+${impliedWinnings}=${totalImplied}) = **${fmtPct(impliedReq)}** → ${impliedOk ? `${heroEquity}% ≥ ${fmtPct(impliedReq)} ✅ **CALL** is profitable` : `${heroEquity}% < ${fmtPct(impliedReq)} ❌ **FOLD** — even implied odds aren't enough`}.`,
+      !directOk && impliedOk
+        ? `💡 The **implied odds flip the decision**: direct odds said fold, but the expected ${impliedWinnings}bb extra when you hit makes calling profitable.`
+        : directOk && impliedOk
+          ? `Both direct and implied odds justify calling — implied odds reinforce the decision.`
+          : `Even adding the ${impliedWinnings}bb implied winnings isn't enough to justify calling — the draw is simply too weak relative to the price.`,
+    ].join('\n\n');
+  }
+
+  return [
+    `**Ton tirage :** ${drawType.fr} → équité règle de 2&4 : **${outs} × ${mult} = ${heroEquity}%**.`,
+    `**Seuil cotes directes :** mise à payer (${call}) ÷ pot total (${pot}+${bet}+${call}=${totalDirect}) = **${fmtPct(directReq)}** → ${directOk ? `${heroEquity}% ≥ ${fmtPct(directReq)} ✅ call direct` : `${heroEquity}% < ${fmtPct(directReq)} ❌ fold sur cotes directes`}.`,
+    `**Avec implied odds (${impliedWinnings}bb supplémentaires si tu touches) :** seuil = ${call} ÷ (${totalDirect}+${impliedWinnings}=${totalImplied}) = **${fmtPct(impliedReq)}** → ${impliedOk ? `${heroEquity}% ≥ ${fmtPct(impliedReq)} ✅ **CALL** rentable` : `${heroEquity}% < ${fmtPct(impliedReq)} ❌ **FOLD** — même les implied odds ne suffisent pas`}.`,
+    !directOk && impliedOk
+      ? `💡 Les **implied odds renversent la décision** : les cotes directes disaient fold, mais les ${impliedWinnings}bb supplémentaires attendus quand tu touches rendent le call rentable.`
+      : directOk && impliedOk
+        ? `Les deux calculs (cotes directes et implied odds) justifient le call — les implied odds confirment la décision.`
+        : `Même en ajoutant les ${impliedWinnings}bb d'implied odds, le call n'est pas rentable — le tirage est trop faible par rapport au prix à payer.`,
+  ].join('\n\n');
 }
 
 export function buildThresholdExplanation(

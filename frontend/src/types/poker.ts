@@ -61,6 +61,11 @@ export interface PotOddsExercise {
   equityExplanationAdvanced: string;
   thresholdExplanation: string;
   thresholdExplanationAdvanced: string;
+  // Expert implied odds fields
+  impliedWinnings?: number;
+  villainStackBehind?: number;
+  impliedRequiredEquity?: number;
+  impliedExplanation?: string;
 }
 
 export interface EquityExercise {
