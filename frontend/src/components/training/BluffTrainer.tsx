@@ -442,7 +442,7 @@ export function BluffTrainer() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="flex flex-col gap-2.5 w-full max-w-sm"
+              className="grid grid-cols-2 gap-2.5 w-full"
             >
               {ALL_ACTIONS.map(action => (
                 <ActionButton
