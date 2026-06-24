@@ -22,8 +22,9 @@ export function getBBDefenseAction(notation: string): BBDefenseClass {
   // ── Pocket pairs ──────────────────────────────────────────────────────────
   if (notation.length === 2) {
     const r = RV[notation[0]];
-    if (r >= 10) return mk('3bet', '3bet', false, 'value3bet'); // TT+
-    return mk('call', 'call', false, 'call');                   // 22–99
+    if (r >= 12) return mk('3bet', '3bet', false, 'value3bet');  // QQ+
+    if (r === 11) return mk('3bet', 'call', true, 'value3bet'); // JJ: mixed, lean 3-bet
+    return mk('call', 'call', false, 'call');                    // TT–22
   }
 
   const hi = RV[notation[0]];
@@ -33,8 +34,9 @@ export function getBBDefenseAction(notation: string): BBDefenseClass {
 
   if (suited) {
     if (hi === 14) {                                   // Ax suited
-      if (lo >= 12) return mk('3bet', '3bet', false, 'value3bet'); // AKs, AQs
-      if (lo >= 6)  return mk('call', 'call', false, 'call');      // AJs–A6s
+      if (lo === 13) return mk('3bet', '3bet', false, 'value3bet'); // AKs
+      if (lo === 12) return mk('3bet', 'call', true, 'value3bet'); // AQs: mixed
+      if (lo >= 6)   return mk('call', 'call', false, 'call');     // AJs–A6s
       return mk('3bet', 'call', true, 'bluff3bet');               // A5s–A2s (bluff)
     }
     if (hi === 13) {                                   // Kx suited
