@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
+import { FeedbackButton } from '../ui/FeedbackButton';
 import { useThemeStore, BG_THEMES, TABLE_COLORS } from '../../store/themeStore';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -47,6 +48,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
         <Footer />
       </main>
+      <FeedbackButton />
     </div>
   );
 }

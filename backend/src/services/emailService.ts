@@ -36,6 +36,37 @@ export async function sendVerificationEmail(email: string, username: string, tok
   });
 }
 
+export async function sendFeedbackEmail(
+  message: string,
+  senderEmail: string,
+  senderName: string,
+): Promise<void> {
+  if (!resend) {
+    console.log(`\n[EMAIL DEV] Feedback from ${senderName} <${senderEmail}>:\n${message}\n`);
+    return;
+  }
+
+  await resend.emails.send({
+    from: FROM,
+    to: 'contact@pokerpeak.fr',
+    replyTo: senderEmail,
+    subject: `[Feedback] de ${senderName}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px">
+        <h2 style="color:#1a1a2e;margin-bottom:4px">Nouveau retour utilisateur</h2>
+        <p style="color:#888;font-size:13px;margin-top:0">Envoyé depuis PokerPeak</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px">
+          <tr><td style="padding:6px 0;color:#555;width:80px">Nom</td><td style="color:#222">${senderName}</td></tr>
+          <tr><td style="padding:6px 0;color:#555">Email</td><td style="color:#222">${senderEmail}</td></tr>
+        </table>
+        <div style="background:#f5f5f5;border-left:4px solid #2563eb;padding:16px;border-radius:4px;margin-top:16px">
+          <p style="color:#222;margin:0;white-space:pre-wrap;line-height:1.6">${message.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
+        </div>
+      </div>
+    `,
+  });
+}
+
 export async function sendPasswordResetEmail(email: string, username: string, token: string): Promise<void> {
   const url = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
 
