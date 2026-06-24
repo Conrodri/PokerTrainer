@@ -14,8 +14,8 @@ model User {
   password  String?
   googleId  String?  @unique
   avatarUrl String?
-  isPremium       Boolean  @default(false)
-  isPremiumExpert Boolean  @default(false)
+  isPremium       Boolean  @default(true)
+  isPremiumExpert Boolean  @default(true)
   premiumSince        DateTime?
   premiumUntil        DateTime?
   premiumExpertSince  DateTime?
