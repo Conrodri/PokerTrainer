@@ -44,10 +44,11 @@ type Phase = 'exercise' | 'result';
 export function EquityTrainer() {
   const t    = useT();
   const isEn = useLangStore(s => s.lang) === 'en';
-  const { equityExercise, isLoading, sessionStats, fetchEquityExercise, recordResult, setTrainerStarted } =
+  const { equityExercise, isLoading, error, sessionStats, fetchEquityExercise, recordResult, setTrainerStarted } =
     useTrainingStore(useShallow(s => ({
       equityExercise:    s.equityExercise,
       isLoading:         s.isLoading,
+      error:             s.error,
       sessionStats:      s.sessionStats,
       fetchEquityExercise: s.fetchEquityExercise,
       recordResult:      s.recordResult,
@@ -300,7 +301,16 @@ export function EquityTrainer() {
                   </div>
                 </SpoilableHint>
               </>
-            ) : null}
+            ) : (
+              <div className="flex flex-col items-center gap-4 py-10 text-center">
+                <p className="text-gray-400 text-sm">
+                  {error || (isEn ? 'Failed to load exercise' : 'Impossible de charger l\'exercice')}
+                </p>
+                <Button variant="secondary" onClick={fetchEquityExercise}>
+                  {isEn ? 'Retry' : 'Réessayer'}
+                </Button>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       )}
