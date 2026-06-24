@@ -48,7 +48,7 @@ export async function sendFeedbackEmail(
 
   await resend.emails.send({
     from: FROM,
-    to: 'contact@pokerpeak.fr',
+    to: 'constant.rodriguez@gmail.com',
     replyTo: senderEmail,
     subject: `[Feedback] de ${senderName}`,
     html: `
