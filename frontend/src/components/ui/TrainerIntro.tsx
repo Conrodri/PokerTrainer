@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { GraduationCap, Play, Zap, Check, Crown, Lock, Gift, Flame, ChevronDown, ChevronUp } from 'lucide-react';
+import { GraduationCap, Play, Zap, Check, Crown, Lock, Gift, Flame } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './Button';
 import { RichText } from './RichText';
@@ -47,19 +46,18 @@ export function TrainerIntro({
   const setMode = useModeStore(s => s.setMode);
   const isExpert = !!useAuthStore(s => s.user?.isPremiumExpert);
   const navigate = useNavigate();
-  const [showDetails, setShowDetails] = useState(false);
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-2 max-w-xl mx-auto"
+      className="flex flex-col gap-1.5 max-w-xl mx-auto"
     >
       {/* Header */}
-      <div className="flex flex-col items-center text-center gap-1">
-        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 flex items-center justify-center text-xl shadow-lg shadow-black/30">
+      <div className="flex flex-col items-center text-center gap-0.5">
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 flex items-center justify-center text-base shadow-lg shadow-black/30">
           {emoji}
         </div>
-        <h2 className="text-lg sm:text-xl font-black text-white">{title}</h2>
+        <h2 className="text-base sm:text-lg font-black text-white">{title}</h2>
         {locked && (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-600/40 text-yellow-400 text-[10px] font-bold uppercase tracking-wide">
             <Crown size={11} fill="currentColor" />
@@ -71,41 +69,29 @@ export function TrainerIntro({
         </div>
       </div>
 
-      {/* Info sections — collapsible; auto-collapsed outside beginner for a 0-scroll launcher */}
-      <div className="flex flex-col gap-1.5">
-        <button
-          type="button"
-          onClick={() => setShowDetails(v => !v)}
-          className="self-center flex items-center gap-2 px-4 py-2 rounded-xl border border-blue-800/50 bg-blue-900/20 text-sm font-semibold text-blue-200 hover:text-white hover:border-blue-600 hover:bg-blue-900/40 transition-colors"
-        >
-          <span className="text-base leading-none">📖</span>
-          {showDetails
-            ? (isEn ? 'Hide details' : 'Masquer les détails')
-            : (isEn ? 'What it is & how it works' : "C'est quoi & comment ça marche")}
-          {showDetails ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-        </button>
-        {showDetails && (<>
+      {/* Info sections — always visible, compact */}
+      <div className="flex flex-col gap-1">
         {/* What is X? */}
-        <section className="bg-gray-900/50 rounded-xl px-3 py-2 border border-gray-800">
-          <h3 className="text-gray-200 font-bold text-sm mb-1.5 flex items-center gap-2">
-            <span className="grid place-items-center w-5 h-5 rounded-md bg-blue-900/40 text-blue-300 text-[11px]">📖</span>
+        <section className="bg-gray-900/50 rounded-xl px-2.5 py-1.5 border border-gray-800">
+          <h3 className="text-gray-200 font-bold text-xs mb-1 flex items-center gap-1.5">
+            <span className="grid place-items-center w-4 h-4 rounded bg-blue-900/40 text-blue-300 text-[10px]">📖</span>
             {whatTitle}
           </h3>
           {whatContent}
         </section>
 
         {/* How it works */}
-        <section className="bg-gray-900/50 rounded-xl px-3 py-2 border border-gray-800">
-          <h3 className="text-gray-200 font-bold text-sm mb-1.5 flex items-center gap-2">
-            <span className="grid place-items-center w-5 h-5 rounded-md bg-gold-900/40 text-gold-300 text-[11px]">⚡</span>
+        <section className="bg-gray-900/50 rounded-xl px-2.5 py-1.5 border border-gray-800">
+          <h3 className="text-gray-200 font-bold text-xs mb-1 flex items-center gap-1.5">
+            <span className="grid place-items-center w-4 h-4 rounded bg-gold-900/40 text-gold-300 text-[10px]">⚡</span>
             {isEn ? 'How the exercises work' : 'Comment ça marche ?'}
           </h3>
-          <ul className="space-y-1 text-xs text-gray-400">
+          <ul className="space-y-0.5 text-xs text-gray-400">
             {steps.map((item, i) => {
               const spaceIdx = item.indexOf(' ');
               return (
-                <li key={i} className="flex items-start gap-2">
-                  <span className="grid place-items-center w-4 h-4 rounded bg-gray-800 text-[10px] shrink-0 mt-px">
+                <li key={i} className="flex items-start gap-1.5">
+                  <span className="grid place-items-center w-3.5 h-3.5 rounded bg-gray-800 text-[9px] shrink-0 mt-px">
                     {item.slice(0, spaceIdx)}
                   </span>
                   <div className="flex-1 leading-snug"><RichText text={item.slice(spaceIdx + 1)} /></div>
@@ -114,12 +100,11 @@ export function TrainerIntro({
             })}
           </ul>
         </section>
-        </>)}
       </div>
 
       {/* Mode selector — pushed to the footer (below the start/exam buttons) via order-last */}
-      <div className="flex flex-col items-center gap-1.5 order-last">
-        <div className="inline-flex p-1 rounded-2xl bg-gray-900/70 border border-gray-700 gap-1">
+      <div className="flex flex-col items-center gap-1 order-last">
+        <div className="inline-flex p-0.5 rounded-2xl bg-gray-900/70 border border-gray-700 gap-0.5">
           <button
             type="button"
             onClick={() => setMode('beginner')}
@@ -157,7 +142,7 @@ export function TrainerIntro({
         </div>
 
         {/* Modes explained — active one highlighted */}
-        <div className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900/40 px-3 py-1 flex flex-col gap-0.5 text-[11px] leading-snug">
+        <div className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900/40 px-2.5 py-1 flex flex-col gap-0.5 text-[10px] leading-snug">
           <div className={`flex items-start gap-1.5 transition-opacity ${mode === 'beginner' ? 'opacity-100' : 'opacity-50'}`}>
             <GraduationCap size={12} className="text-blue-400 mt-0.5 shrink-0" />
             <span className="text-gray-400">
@@ -246,7 +231,7 @@ export function TrainerIntro({
             </div>
           )}
           <div className="flex gap-2 w-full">
-            <Button size="lg" variant="gold" onClick={() => { analytics.moduleStarted(title); onStart(); }} className="flex-1">
+            <Button size="md" variant="gold" onClick={() => { analytics.moduleStarted(title); onStart(); }} className="flex-1">
               <Play size={16} className="inline mr-2" />
               {startLabel}
             </Button>
