@@ -117,10 +117,13 @@ function RangeSection({ matrix, mix, highlightNotation, position, isCustom, reso
         onClick={() => {
           setShowRange(v => {
             if (!v) {
-              // Opening: scroll to this section after a brief render delay
+              // Opening: scroll the section into view after animation starts
               setTimeout(() => {
-                sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 50);
+                const el = sectionRef.current;
+                if (!el) return;
+                const top = el.getBoundingClientRect().top + window.scrollY - 80;
+                window.scrollTo({ top, behavior: 'smooth' });
+              }, 80);
             }
             return !v;
           });
@@ -321,7 +324,7 @@ export function PreflopTrainer() {
   >(null);
   /** BB custom range: the resolved 5-category code (0-4) for the quizzed hand. */
   const [bbCustomCode,     setBbCustomCode]     = useState<number | null>(null);
-  const [showRange,        setShowRange]        = useState(true);
+  const [showRange,        setShowRange]        = useState(false);
   const [heroStack,        setHeroStack]        = useState<number>(() => Math.floor(Math.random() * 96) + 5);
   const [resolvedLabel,    setResolvedLabel]    = useState<string | null>(null);
 
