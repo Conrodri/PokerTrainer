@@ -118,7 +118,7 @@ export function TrainingPage() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className={`flex flex-col gap-6 ${trainerStarted ? 'pt-7' : ''}`}>
       {/* Module tabs — always wrap: one row when there's room, extra rows when the
           window is narrow (no unreliable horizontal scroll at any width). */}
       <div className={`flex flex-wrap justify-center gap-1.5 border-b border-gray-800 pb-2 transition-all duration-300 ${trainerStarted ? 'hidden' : ''}`}>
@@ -142,15 +142,28 @@ export function TrainingPage() {
         ))}
       </div>
 
-      {/* Back button — shown below the module tabs, hidden once an exercise starts */}
+      {/* Back button — shown below the module tabs on intro; fixed bar during exercise */}
       {!trainerStarted && (
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 w-fit px-4 py-2 rounded-xl text-sm font-semibold text-gray-300 hover:text-white bg-gray-800/60 hover:bg-gray-700/70 border border-gray-700/50 hover:border-gray-500/60 transition-all duration-150 group -mt-2"
         >
           <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
-          <span>Retour</span>
+          <span>{isEn ? 'Back' : 'Retour'}</span>
         </button>
+      )}
+      {trainerStarted && (
+        <div className="fixed top-14 left-0 right-0 z-30 bg-felt-dark/95 backdrop-blur-sm border-b border-felt-900/60">
+          <div className="max-w-7xl mx-auto px-4">
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('training:back'))}
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors py-1.5 group"
+            >
+              <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+              <span>{isEn ? 'Back' : 'Retour'}</span>
+            </button>
+          </div>
+        </div>
       )}
 
       {/* My Ranges panel — accessible from the preflop intro "Mes ranges" button */}
