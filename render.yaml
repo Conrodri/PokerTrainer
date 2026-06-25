@@ -25,3 +25,5 @@ services:
         value: https://pokertrainer.onrender.com/api/auth/google/callback
       - key: FRONTEND_URL
         sync: false          # set manually: your Vercel frontend URL
+      - key: RESEND_API_KEY
+        sync: false          # set manually: API key from resend.com (email sending)

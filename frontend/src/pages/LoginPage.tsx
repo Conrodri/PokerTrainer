@@ -158,6 +158,14 @@ export function LoginPage() {
             />
           </div>
 
+          {mode === 'login' && (
+            <div className="text-right -mt-1">
+              <Link to="/forgot-password" className="text-xs text-blue-400 hover:underline">
+                {isEn ? 'Forgot your password?' : 'Mot de passe oublié ?'}
+              </Link>
+            </div>
+          )}
+
           {(error || oauthError) && (
             <div className="bg-red-900/40 border border-red-700 text-red-300 rounded-xl px-4 py-3 text-sm">
               {error || (oauthError ? (GOOGLE_ERROR_MESSAGES[oauthError] ?? 'Erreur de connexion Google.') : '')}

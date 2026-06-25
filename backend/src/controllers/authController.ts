@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import prisma from '../config/database';
 import { ApiResponse, JwtPayload } from '../types';
 import { JWT_SECRET, JWT_EXPIRES } from '../config/secrets';
-import { sendVerificationEmail } from '../services/emailService';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService';
 
 function makeVerifyToken(): string {
   return crypto.randomBytes(32).toString('hex');
@@ -248,6 +248,85 @@ export async function resendVerification(req: Request, res: Response): Promise<v
     res.json({ success: true, data: { message: 'E-mail de vérification renvoyé.' } } as ApiResponse);
   } catch {
     res.status(500).json({ success: false, error: 'Failed to resend verification' } as ApiResponse);
+  }
+}
+
+export async function forgotPassword(req: Request, res: Response): Promise<void> {
+  try {
+    const { email } = req.body as { email?: string };
+    if (!email) {
+      res.status(400).json({ success: false, error: 'Email requis.' } as ApiResponse);
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    // Always 200 to avoid user enumeration
+    if (!user || !user.password) {
+      res.json({ success: true, data: { message: 'Si ce compte existe, un e-mail a été envoyé.' } } as ApiResponse);
+      return;
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1h
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetToken: token, passwordResetExpires: expires },
+    });
+
+    sendPasswordResetEmail(email, user.username, token).catch(err =>
+      console.error('[email] Failed to send password reset email:', err)
+    );
+
+    res.json({ success: true, data: { message: 'Si ce compte existe, un e-mail a été envoyé.' } } as ApiResponse);
+  } catch {
+    res.status(500).json({ success: false, error: 'Failed to process request' } as ApiResponse);
+  }
+}
+
+export async function resetPassword(req: Request, res: Response): Promise<void> {
+  try {
+    const { token, password } = req.body as { token?: string; password?: string };
+    if (!token || !password) {
+      res.status(400).json({ success: false, error: 'Token et mot de passe requis.' } as ApiResponse);
+      return;
+    }
+    if (password.length < 6) {
+      res.status(400).json({ success: false, error: 'Le mot de passe doit faire au moins 6 caractères.' } as ApiResponse);
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { passwordResetToken: token } });
+    if (!user) {
+      res.status(400).json({ success: false, error: 'Lien invalide ou déjà utilisé.' } as ApiResponse);
+      return;
+    }
+    if (!user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+      res.status(400).json({ success: false, error: 'Ce lien a expiré. Demande un nouveau.' } as ApiResponse);
+      return;
+    }
+
+    const hashed = await bcrypt.hash(password, 12);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashed, passwordResetToken: null, passwordResetExpires: null },
+    });
+
+    const jwt_token = jwt.sign(
+      { userId: user.id, username: user.username, isPremium: user.isPremium, isPremiumExpert: user.isPremiumExpert } as JwtPayload,
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        token: jwt_token,
+        user: { id: user.id, username: user.username, email: user.email, isPremium: user.isPremium, isPremiumExpert: user.isPremiumExpert },
+      },
+    } as ApiResponse);
+  } catch {
+    res.status(500).json({ success: false, error: 'Failed to reset password' } as ApiResponse);
   }
 }
 

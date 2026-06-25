@@ -28,7 +28,9 @@ const PremiumPage = lazy(() => import('./pages/PremiumPage').then(m => ({ defaul
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage').then(m => ({ default: m.AuthCallbackPage })));
 const CGUPage          = lazy(() => import('./pages/CGUPage').then(m => ({ default: m.CGUPage })));
 const PrivacyPage      = lazy(() => import('./pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
-const VerifyEmailPage  = lazy(() => import('./pages/VerifyEmailPage').then(m => ({ default: m.VerifyEmailPage })));
+const VerifyEmailPage      = lazy(() => import('./pages/VerifyEmailPage').then(m => ({ default: m.VerifyEmailPage })));
+const ForgotPasswordPage   = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage    = lazy(() => import('./pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 
 export default function App() {
   const fetchMe = useAuthStore(s => s.fetchMe);
@@ -70,7 +72,9 @@ export default function App() {
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/cgu"          element={<CGUPage />} />
               <Route path="/privacy"      element={<PrivacyPage />} />
-              <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/verify-email"    element={<VerifyEmailPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password"  element={<ResetPasswordPage />} />
             </Routes>
           </Suspense>
         </ErrorBoundary>
