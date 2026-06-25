@@ -346,18 +346,10 @@ export function BluffTrainer() {
     <div className="flex flex-col gap-5 max-w-2xl mx-auto">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-1">
-            {isEn ? 'Bluff Training' : 'Entraînement au Bluff'}
-          </h2>
-          <p className="text-gray-400 text-sm">
-            {isEn ? 'Decide whether to bluff, and how big' : 'Décidez s\'il faut bluffer, et de combien'}
-          </p>
-        </div>
+      <div className="flex items-end justify-end">
         <button
           onClick={backToIntro}
-          className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 mt-1"
+          className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1"
           title={isEn ? 'Module info' : 'Infos du module'}
         >
           <Info size={14} />

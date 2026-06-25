@@ -935,7 +935,7 @@ export function PreflopTrainer() {
     };
 
     return (
-      <div className="flex flex-col gap-5 max-w-2xl mx-auto">
+      <div className="flex flex-col gap-3 sm:gap-4 max-w-2xl mx-auto">
         <TrainerIntro
           emoji="🎯"
           title={isEn ? 'Pre-flop Trainer' : 'Entraîneur Pré-flop'}

@@ -115,7 +115,7 @@ export function PotOddsTrainer() {
 
   if (showIntro) {
     return (
-      <div className="flex flex-col gap-5 max-w-2xl mx-auto">
+      <div className="flex flex-col gap-3 sm:gap-4 max-w-2xl mx-auto">
         <TrainerIntro
           emoji="📐"
           title={isEn ? 'Pot Odds Trainer' : 'Entraîneur Pot Odds'}
@@ -179,14 +179,10 @@ export function PotOddsTrainer() {
       {examActive ? (
         <ExamHud onQuit={handleQuitExam} />
       ) : (
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-1">{t.training.potodds_title}</h2>
-            <p className="text-gray-400 text-sm">{t.training.potodds_subtitle}</p>
-          </div>
+        <div className="flex items-end justify-end">
           <button
             onClick={() => { setShowIntro(true); setTrainerStarted(false); }}
-            className="text-gray-500 hover:text-gray-300 transition-colors p-1 mt-1 shrink-0"
+            className="text-gray-500 hover:text-gray-300 transition-colors p-1 shrink-0"
             title={isEn ? 'Module info' : 'Infos du module'}
           >
             <Info size={14} />

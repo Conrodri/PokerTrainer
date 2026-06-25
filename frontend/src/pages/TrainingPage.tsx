@@ -166,14 +166,6 @@ export function TrainingPage() {
         )}
       </AnimatePresence>
 
-      {/* Active-mode reminder — shown once an exercise session is running (the
-          tabs are hidden then, so this tells the user which mode they're in). */}
-      {trainerStarted && (
-        <div className="flex justify-center -mb-2">
-          <ModeBadge />
-        </div>
-      )}
-
       <motion.div
         key={activeModule}
         initial={{ opacity: 0, y: 10 }}
@@ -197,6 +189,13 @@ export function TrainingPage() {
           </Suspense>
         </ErrorBoundary>
       </motion.div>
+
+      {/* Mode reminder — below the exercise content (decisions area) */}
+      {trainerStarted && (
+        <div className="flex justify-center">
+          <ModeBadge />
+        </div>
+      )}
     </div>
   );
 }

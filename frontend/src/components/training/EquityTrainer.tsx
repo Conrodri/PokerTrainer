@@ -118,7 +118,7 @@ export function EquityTrainer() {
   // ── Intro ──────────────────────────────────────────────────────────────────
   if (showIntro) {
     return (
-      <div className="flex flex-col gap-5 max-w-2xl mx-auto">
+      <div className="flex flex-col gap-3 sm:gap-4 max-w-2xl mx-auto">
         <TrainerIntro
           emoji="⚖️"
           title={isEn ? 'Required Equity Trainer' : 'Entraîneur Équité Requise'}
@@ -188,18 +188,10 @@ export function EquityTrainer() {
       {examActive ? (
         <ExamHud onQuit={handleQuitExam} />
       ) : (
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-1">
-              {isEn ? 'Required Equity' : 'Équité Requise'}
-            </h2>
-            <p className="text-gray-400 text-sm">
-              {isEn ? 'What % equity to call villain?' : 'Quelle % d\'équité pour call vilain ?'}
-            </p>
-          </div>
+        <div className="flex items-end justify-end">
           <button
             onClick={() => { setShowIntro(true); setTrainerStarted(false); }}
-            className="text-gray-500 hover:text-gray-300 transition-colors p-1 mt-1 shrink-0"
+            className="text-gray-500 hover:text-gray-300 transition-colors p-1 shrink-0"
             title={isEn ? 'Module info' : 'Infos du module'}
           >
             <Info size={14} />
