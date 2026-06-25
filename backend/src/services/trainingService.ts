@@ -186,12 +186,7 @@ function buildEquityCallOptions(correctInt: number): number[] {
     const v = Math.max(5, Math.min(50, correctInt + off));
     if (opts.every(o => Math.abs(o - v) >= 4)) opts.push(v);
   }
-  // Fisher-Yates shuffle
-  for (let i = opts.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [opts[i], opts[j]] = [opts[j], opts[i]];
-  }
-  return opts;
+  return opts.sort((a, b) => a - b);
 }
 
 export function generateEquityExercise(

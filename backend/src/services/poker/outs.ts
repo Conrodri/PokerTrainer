@@ -521,7 +521,7 @@ export function buildOutsOptions(correct: number, trap?: number): number[] {
   const pool = shuffled([2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 17]);
   for (const n of pool) { if (opts.size >= 4) break; opts.add(n); }
 
-  return shuffled([...opts]);
+  return [...opts].sort((a, b) => a - b);
 }
 
 export function buildOutsExplanation(scenario: OutsScenario, lang: 'fr' | 'en' = 'fr'): string {
