@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { FeedbackButton } from '../ui/FeedbackButton';
@@ -34,9 +34,9 @@ export function Layout({ children }: { children: ReactNode }) {
           <div className="max-w-7xl mx-auto px-4">
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors py-1.5 group"
+              className="flex items-center gap-2 w-fit px-4 py-2 rounded-xl text-sm font-semibold text-gray-300 hover:text-white bg-gray-800/60 hover:bg-gray-700/70 border border-gray-700/50 hover:border-gray-500/60 transition-all duration-150 group -mt-2 mb-1"
             >
-              <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+              <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
               <span>Retour</span>
             </button>
           </div>
