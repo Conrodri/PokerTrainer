@@ -108,7 +108,7 @@ export function TrainingPage() {
       const mod = (e as CustomEvent).detail as TrainingModule;
       if (mod) handleTabChange(mod);
     };
-    const onOpenRanges = () => setShowMyRanges(true);
+    const onOpenRanges = () => { setShowMyRanges(true); window.scrollTo({ top: 0, behavior: 'smooth' }); };
     window.addEventListener('training:module', onModule);
     window.addEventListener('training:open-ranges', onOpenRanges);
     return () => {
