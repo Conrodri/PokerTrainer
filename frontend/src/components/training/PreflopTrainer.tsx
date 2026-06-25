@@ -117,13 +117,8 @@ function RangeSection({ matrix, mix, highlightNotation, position, isCustom, reso
         onClick={() => {
           setShowRange(v => {
             if (!v) {
-              // Opening: scroll the section into view after animation starts
-              setTimeout(() => {
-                const el = sectionRef.current;
-                if (!el) return;
-                const top = el.getBoundingClientRect().top + window.scrollY - 80;
-                window.scrollTo({ top, behavior: 'smooth' });
-              }, 80);
+              // Opening: scroll to top of page so the range grid is visible
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             }
             return !v;
           });
