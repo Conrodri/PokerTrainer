@@ -154,12 +154,12 @@ export function TrainingPage() {
       )}
       {trainerStarted && (
         <div className="fixed top-14 left-0 right-0 z-30 bg-felt-dark/95 backdrop-blur-sm border-b border-felt-900/60">
-          <div className="max-w-7xl mx-auto px-4">
+          <div className="max-w-7xl mx-auto px-4 py-1.5">
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('training:back'))}
-              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors py-1.5 group"
+              className="flex items-center gap-2 w-fit px-4 py-2 rounded-xl text-sm font-semibold text-gray-300 hover:text-white bg-gray-800/60 hover:bg-gray-700/70 border border-gray-700/50 hover:border-gray-500/60 transition-all duration-150 group"
             >
-              <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+              <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
               <span>{isEn ? 'Back' : 'Retour'}</span>
             </button>
           </div>
