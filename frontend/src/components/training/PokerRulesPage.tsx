@@ -173,6 +173,7 @@ export function PokerRulesPage() {
     { id: 'postflop',  label: isEn ? '🃏 Post-flop' : '🃏 Post-flop',    color: 'bg-rose-800 hover:bg-rose-700 border-rose-600' },
     { id: 'betsizing', label: isEn ? '💰 Bet Sizing' : '💰 Bet Sizing',  color: 'bg-orange-800 hover:bg-orange-700 border-orange-600' },
     { id: 'fullhand',  label: isEn ? '🎰 Full Hand' : '🎰 Main complète', color: 'bg-indigo-800 hover:bg-indigo-700 border-indigo-600' },
+    { id: 'bluff',     label: isEn ? '🎭 Bluff' : '🎭 Bluff',            color: 'bg-pink-800 hover:bg-pink-700 border-pink-600' },
   ] as const;
 
   const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
