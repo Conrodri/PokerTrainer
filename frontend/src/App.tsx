@@ -31,6 +31,7 @@ const PrivacyPage      = lazy(() => import('./pages/PrivacyPage').then(m => ({ d
 const VerifyEmailPage      = lazy(() => import('./pages/VerifyEmailPage').then(m => ({ default: m.VerifyEmailPage })));
 const ForgotPasswordPage   = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage    = lazy(() => import('./pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
+const AchievementsPage     = lazy(() => import('./pages/AchievementsPage').then(m => ({ default: m.AchievementsPage })));
 
 export default function App() {
   const fetchMe = useAuthStore(s => s.fetchMe);
@@ -75,6 +76,7 @@ export default function App() {
               <Route path="/verify-email"    element={<VerifyEmailPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password"  element={<ResetPasswordPage />} />
+              <Route path="/achievements"   element={<AchievementsPage />} />
             </Routes>
           </Suspense>
         </ErrorBoundary>

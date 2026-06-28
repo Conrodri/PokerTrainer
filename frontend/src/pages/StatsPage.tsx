@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus, Target, Flame, Zap } from 'lucide-react';
-import { AchievementsGrid } from '../components/stats/AchievementsGrid';
 import { Achievement } from '../types/poker';
 import { DayDetailPanel } from '../components/stats/DayDetailPanel';
 import { useAuthStore } from '../store/authStore';
@@ -854,9 +853,25 @@ export function StatsPage() {
 
 
 
-      {/* ── Achievements ── */}
+      {/* ── Achievements shortcut ── */}
       {achievements.length > 0 && (
-        <AchievementsGrid achievements={achievements} />
+        <Link
+          to="/achievements"
+          className="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/50 hover:bg-gray-800 hover:border-gray-600 px-4 py-3 transition-colors group"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🏅</span>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-white">
+                {isEn ? 'Achievements & Rewards' : 'Succès & Récompenses'}
+              </span>
+              <span className="text-xs text-gray-400">
+                {achievements.filter(a => a.unlocked).length}/{achievements.length} {isEn ? 'unlocked' : 'débloqués'}
+              </span>
+            </div>
+          </div>
+          <span className="text-gray-500 group-hover:text-gray-300 transition-colors text-lg leading-none">›</span>
+        </Link>
       )}
 
       {/* ── No data CTA ── */}
