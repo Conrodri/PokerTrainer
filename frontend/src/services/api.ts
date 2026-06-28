@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Position } from '../types/poker';
+import { Position, Position8, TableFormat, GameType } from '../types/poker';
 
 // In dev, VITE_API_URL is undefined → proxy in vite.config.ts handles /api
 // In production, VITE_API_URL=https://your-backend.onrender.com
@@ -77,13 +77,13 @@ export const trainingApi = {
   startSession: (module: string) =>
     api.post('/training/session/start', { module }).then(r => r.data.data),
 
-  getPreflopExercise: (position?: Position) =>
-    api.get('/training/preflop/exercise', { params: { position } }).then(r => r.data.data),
+  getPreflopExercise: (position?: Position8, format: TableFormat = '6max', gameType: GameType = 'cashgame') =>
+    api.get('/training/preflop/exercise', { params: { position, format, gameType } }).then(r => r.data.data),
   checkPreflopAnswer: (payload: {
-    notation: string; position: Position; userAction: string; timeTaken: number; sessionId: string;
+    notation: string; position: Position8; userAction: string; timeTaken: number; sessionId: string; format?: TableFormat; gameType?: GameType;
   }) => api.post('/training/preflop/check', payload).then(r => r.data.data),
-  getRangeMatrix: (position: Position) =>
-    api.get(`/training/preflop/range/${position}`).then(r => r.data.data),
+  getRangeMatrix: (position: Position8, format: TableFormat = '6max', gameType: GameType = 'cashgame') =>
+    api.get(`/training/preflop/range/${position}`, { params: { format, gameType } }).then(r => r.data.data),
 
   getPotOddsExercise: (difficulty?: string) =>
     api.get('/training/potodds/exercise', { params: difficulty ? { difficulty } : {} }).then(r => r.data.data),

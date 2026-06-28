@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { X, Sliders, Layers, Plus, Check, Zap, Upload, Download, Target, Flame, Lock } from 'lucide-react';
-import { Position } from '../../types/poker';
+import { Position, TableFormat, GameType } from '../../types/poker';
 import { useAuthStore } from '../../store/authStore';
 import { RangeEditor } from './RangeEditor';
 import { RangeMatrix } from './RangeMatrix';
@@ -21,6 +21,46 @@ import {
   validateComplexImport,
   validateSimpleRangeImport,
 } from '../../utils/rangeImportValidator';
+
+// Storage keys are namespaced by format and game type.
+// Key structure: [mtt:]?[8max:|3max:|hu:]?POSITION
+const realPos     = (key: string): Position => {
+  const k = key.startsWith('mtt:') ? key.slice(4) : key;
+  if (k.startsWith('8max:')) return k.slice(5) as Position;
+  if (k.startsWith('3max:')) return k.slice(5) as Position;
+  if (k.startsWith('hu:'))   return k.slice(3) as Position;
+  return k as Position;
+};
+const fmtOf       = (key: string): TableFormat => {
+  const k = key.startsWith('mtt:') ? key.slice(4) : key;
+  if (k.startsWith('8max:')) return '8max';
+  if (k.startsWith('3max:')) return '3max';
+  if (k.startsWith('hu:'))   return 'hu';
+  return '6max';
+};
+const gameTypeOf  = (key: string): GameType => key.startsWith('mtt:') ? 'mtt' : 'cashgame';
+
+const POSITIONS_6MAX     = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+const POSITIONS_8MAX     = ['8max:UTG', '8max:UTG1', '8max:LJ', '8max:HJ', '8max:CO', '8max:BTN', '8max:SB', '8max:BB'];
+const POSITIONS_3MAX     = ['3max:BTN', '3max:SB', '3max:BB'];
+const POSITIONS_HU       = ['hu:BTN', 'hu:BB'];
+const POSITIONS_6MAX_MTT = ['mtt:UTG', 'mtt:HJ', 'mtt:CO', 'mtt:BTN', 'mtt:SB', 'mtt:BB'];
+const POSITIONS_8MAX_MTT = ['mtt:8max:UTG', 'mtt:8max:UTG1', 'mtt:8max:LJ', 'mtt:8max:HJ', 'mtt:8max:CO', 'mtt:8max:BTN', 'mtt:8max:SB', 'mtt:8max:BB'];
+const POSITIONS_3MAX_MTT = ['mtt:3max:BTN', 'mtt:3max:SB', 'mtt:3max:BB'];
+const POSITIONS_HU_MTT   = ['mtt:hu:BTN', 'mtt:hu:BB'];
+
+function getPositions(format: TableFormat, gameType: GameType): string[] {
+  if (gameType === 'mtt') {
+    if (format === '8max') return POSITIONS_8MAX_MTT;
+    if (format === '3max') return POSITIONS_3MAX_MTT;
+    if (format === 'hu')   return POSITIONS_HU_MTT;
+    return POSITIONS_6MAX_MTT;
+  }
+  if (format === '8max') return POSITIONS_8MAX;
+  if (format === '3max') return POSITIONS_3MAX;
+  if (format === 'hu')   return POSITIONS_HU;
+  return POSITIONS_6MAX;
+}
 
 function flatToMatrix(flat: number[]): number[][] {
   const m: number[][] = [];
@@ -180,10 +220,11 @@ function AddRangeForm({ isEn, onAdd, onCancel }: {
 
 // ─── Unified MyRangesPanel ────────────────────────────────────────────────────
 
-export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
+export function MyRangesPanel({ onClose, defaultFormat = '6max', defaultGameType = 'cashgame', defaultPosition, locked }: {
   onClose: () => void;
-  positions: Position[];
-  defaultPosition?: Position;
+  defaultFormat?: TableFormat;
+  defaultGameType?: GameType;
+  defaultPosition?: string;
   locked?: boolean;
 }) {
   const isEn = useLangStore(s => s.lang) === 'en';
@@ -196,6 +237,9 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
   const { preflopEnabled, togglePreflopEnabled } = useCustomRangeStore(
     useShallow(s => ({ preflopEnabled: s.preflopEnabled, togglePreflopEnabled: s.togglePreflopEnabled }))
   );
+  const [format, setFormat]     = useState<TableFormat>(defaultFormat);
+  const [gameType, setGameType] = useState<GameType>(defaultGameType);
+  const positions = getPositions(format, gameType);
   const [tab, setTab] = useState<'profiles' | 'simple'>('simple');
   // BB-defense legend + tooltip, stabilized (t is a stable per-language object)
   // so the memoized RangeMatrix isn't re-rendered on every parent update.
@@ -212,7 +256,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
   // Read-only GTO reference matrix (BB = 5-category defense grid, others = open-raise).
   const renderGtoRef = (matrix: number[][] | null | undefined, position: string) => {
     if (!matrix) return null;
-    if (position === 'BB') {
+    if (realPos(position) === 'BB') {
       return (
         <RangeMatrix
           matrix={matrix}
@@ -234,8 +278,9 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
 
   const [selProfileId, setSelProfileId] = useState<string | null>(null);
   const [selRangeId,   setSelRangeId]   = useState<string | null>(null);
-  const [profilePos,   setProfilePos]   = useState<Position>(
-    defaultPosition && positions.includes(defaultPosition) ? defaultPosition : positions[0]
+  const initPositions = getPositions(defaultFormat, defaultGameType);
+  const [profilePos,   setProfilePos]   = useState<string>(
+    defaultPosition && initPositions.includes(defaultPosition) ? defaultPosition : initPositions[0]
   );
   const [profileMatrix, setProfileMatrix] = useState<number[][] | null>(null);
   const [profileExpertMix, setProfileExpertMix] = useState<number[] | null>(null); // flat 169×4 for expert profiles
@@ -412,12 +457,12 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
   // BB is a defense spot → its reference is the 5-category defense grid, not an
   // open-raise frequency matrix (keeps profiles consistent with the rest of the app).
   useEffect(() => {
-    if (profilePos === 'BB') {
+    if (realPos(profilePos) === 'BB' && gameTypeOf(profilePos) === 'cashgame') {
       trainingApi.getBBDefenseRange()
         .then(d => { const g = (d as any)?.grid; setProfileGto(Array.isArray(g) ? g : null); })
         .catch(() => setProfileGto(null));
     } else {
-      trainingApi.getRangeMatrix(profilePos)
+      trainingApi.getRangeMatrix(realPos(profilePos), fmtOf(profilePos), gameTypeOf(profilePos))
         .then(d => { const m = (d as any)?.matrix ?? d; setProfileGto(Array.isArray(m) ? m : null); })
         .catch(() => setProfileGto(null));
     }
@@ -429,7 +474,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
     if (!selRange) { setProfileMatrix(isExp ? null : profileGto); setProfileExpertMix(null); return; }
     const flat = selRange.data[profilePos];
     if (isExp) {
-      setProfileExpertMix(flat && flat.length === 676 ? flat : gtoToExpertMix(profileGto, profilePos === 'BB'));
+      setProfileExpertMix(flat && flat.length === 676 ? flat : gtoToExpertMix(profileGto, realPos(profilePos) === 'BB'));
       setProfileMatrix(null);
     } else {
       setProfileMatrix(flat && flat.length === 169 ? flatToMatrix(flat) : (profileGto ?? null));
@@ -566,8 +611,8 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
   };
 
   // ══ SIMPLE RANGE TAB STATE ═══════════════════════════════════════════════════
-  const [simplePos,    setSimplePos]    = useState<Position>(
-    defaultPosition && positions.includes(defaultPosition) ? defaultPosition : positions[0]
+  const [simplePos,    setSimplePos]    = useState<string>(
+    defaultPosition && initPositions.includes(defaultPosition) ? defaultPosition : initPositions[0]
   );
   const [gtoCache,    setGtoCache]    = useState<Record<string, number[][]>>({});
   const [customCache, setCustomCache] = useState<Record<string, number[][] | null>>({});
@@ -576,32 +621,41 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
   const [savedS,      setSavedS]      = useState(false);
   const [lockedStackTier, setLockedStackTier] = useState(0);
 
+  // Reset selected positions and caches when format or game type changes.
   useEffect(() => {
+    const pos = getPositions(format, gameType);
+    setSimplePos(pos[0]);
+    setProfilePos(pos[0]);
+    setGtoCache({});
+    setCustomCache({});
+  }, [format, gameType]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const pos = getPositions(format, gameType);
     (async () => {
       setLoadingS(true);
-      const gtoResults = await Promise.all(positions.map(async pos => {
+      const gtoResults = await Promise.all(pos.map(async p => {
         try {
-          // BB is a defense spot: its reference range is the 5-category defense
-          // grid (codes 0-4), not an open-raise frequency matrix.
-          if (pos === 'BB') {
+          if (realPos(p) === 'BB' && gameTypeOf(p) === 'cashgame') {
             const data = await trainingApi.getBBDefenseRange();
             const g = (data as any)?.grid;
             return Array.isArray(g) ? (g as number[][]) : null;
           }
-          const data = await trainingApi.getRangeMatrix(pos);
+          const data = await trainingApi.getRangeMatrix(realPos(p), fmtOf(p), gameTypeOf(p));
           const m = (data as any)?.matrix ?? data;
           return Array.isArray(m) ? (m as number[][]) : null;
         } catch { return null; }
       }));
+      if (cancelled) return;
       const newGto: Record<string, number[][]> = {};
-      positions.forEach((pos, i) => { if (gtoResults[i]) newGto[pos] = gtoResults[i]!; });
+      pos.forEach((p, i) => { if (gtoResults[i]) newGto[p] = gtoResults[i]!; });
       setGtoCache(newGto);
 
-      // Skip custom range fetch when locked (no token → would 401)
       if (!locked) {
-        const customResults = await Promise.all(positions.map(async (pos, i) => {
+        const customResults = await Promise.all(pos.map(async (p, i) => {
           try {
-            const data = await rangesApi.get(pos);
+            const data = await rangesApi.get(p);
             if (data && Array.isArray(data)) {
               const m: number[][] = [];
               for (let r = 0; r < 13; r++) m.push((data as number[]).slice(r * 13, r * 13 + 13));
@@ -612,13 +666,15 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
             return gtoResults[i] ? gtoResults[i]!.map(r => [...r]) : null;
           }
         }));
+        if (cancelled) return;
         const newCustom: Record<string, number[][] | null> = {};
-        positions.forEach((pos, i) => { newCustom[pos] = customResults[i]; });
+        pos.forEach((p, i) => { newCustom[p] = customResults[i]; });
         setCustomCache(newCustom);
       }
       setLoadingS(false);
     })();
-  }, []);
+    return () => { cancelled = true; };
+  }, [format, gameType, locked]);
 
   const simpleMatrix = customCache[simplePos] ?? null;
   const simpleGto    = gtoCache[simplePos]    ?? null;
@@ -658,6 +714,50 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
         <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
           <X size={20} />
         </button>
+      </div>
+
+      {/* Format + game type toggles — une seule ligne */}
+      <div className="flex items-center gap-1.5 mb-4 flex-wrap">
+        <button
+          onClick={() => setGameType('cashgame')}
+          className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
+            gameType === 'cashgame'
+              ? 'bg-green-900/40 text-green-300 border-green-700'
+              : 'text-gray-400 border-gray-700 hover:text-white hover:bg-gray-800'
+          }`}
+        >
+          Cash Game
+        </button>
+        <button
+          onClick={() => setGameType('mtt')}
+          className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
+            gameType === 'mtt'
+              ? 'bg-amber-900/40 text-amber-300 border-amber-700'
+              : 'text-gray-400 border-gray-700 hover:text-white hover:bg-gray-800'
+          }`}
+        >
+          MTT
+        </button>
+        <div className="w-px h-4 bg-gray-700 mx-1 shrink-0" />
+        {([
+          { f: '6max' as TableFormat, label: '6-max', title: isEn ? '6-player table' : 'Table 6 joueurs' },
+          { f: '8max' as TableFormat, label: '8-max', title: isEn ? '8-player table' : 'Table 8 joueurs' },
+          { f: '3max' as TableFormat, label: '3-max', title: isEn ? '3-player table' : 'Table 3 joueurs' },
+          { f: 'hu'   as TableFormat, label: 'HU',    title: isEn ? 'Heads-up' : 'Têtes-à-tête' },
+        ] as const).map(({ f, label, title }) => (
+          <button
+            key={f}
+            onClick={() => setFormat(f)}
+            title={title}
+            className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
+              format === f
+                ? 'bg-felt-700/60 text-felt-300 border-felt-600'
+                : 'text-gray-400 border-gray-700 hover:text-white hover:bg-gray-800'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Locked notice */}
@@ -790,7 +890,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                         simplePos === pos
                           ? 'bg-felt-700 text-white border-felt-500'
                           : 'text-gray-400 border-gray-700 hover:text-white hover:bg-gray-800'
-                      }`}>{pos}</button>
+                      }`}>{realPos(pos)}</button>
                   ))}
                 </div>
 
@@ -804,11 +904,11 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                     <div className="flex flex-col gap-2 flex-1 items-start">
                       <p className="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
                         <Flame size={13} className="shrink-0" />
-                        {isEn ? `Your range — ${simplePos}` : `Ta range — ${simplePos}`}
+                        {isEn ? `Your range — ${realPos(simplePos)}` : `Ta range — ${realPos(simplePos)}`}
                       </p>
                       <div className="flex flex-col gap-1">
                       {simpleGto
-                        ? <ExpertGtoMatrix mix={gtoToExpertMix(simpleGto, simplePos === 'BB')} />
+                        ? <ExpertGtoMatrix mix={gtoToExpertMix(simpleGto, realPos(simplePos) === 'BB')} />
                         : <div className="h-48 bg-gray-800/50 rounded-xl" />}
                       <div className="flex gap-3 text-[11px] text-gray-500 flex-wrap justify-center">
                         {EXPERT_DISPLAY.map(a => (
@@ -826,7 +926,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                       <p className="text-xs font-semibold text-felt-300 flex items-center gap-1.5">
                         <Target size={13} className="shrink-0" />
                         {isEn ? 'GTO reference' : 'Range GTO (référence)'}
-                        <span className="text-gray-600">— {simplePos}</span>
+                        <span className="text-gray-600">— {realPos(simplePos)}</span>
                       </p>
                       {simpleGto
                         ? renderGtoRef(simpleGto, simplePos)
@@ -1054,7 +1154,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                               profilePos === pos
                                 ? 'bg-felt-700 text-white border-felt-500'
                                 : 'text-gray-400 border-gray-700 hover:text-white hover:bg-gray-800'
-                            }`}>{pos}</button>
+                            }`}>{realPos(pos)}</button>
                         ))}
                       </div>
 
@@ -1064,19 +1164,19 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                             mix={profileExpertMix}
                             onChange={isExpertMode ? setProfileExpertMix : () => {}}
                             onSave={isExpertMode ? handleSaveProfile : undefined}
-                            onReset={isExpertMode ? () => setProfileExpertMix(gtoToExpertMix(profileGto, profilePos === 'BB')) : undefined}
+                            onReset={isExpertMode ? () => setProfileExpertMix(gtoToExpertMix(profileGto, realPos(profilePos) === 'BB')) : undefined}
                             resetLabel="Reset GTO"
                             isSaving={savingP}
-                            title={`${isEn ? 'Your range' : 'Ta range'} — ${profilePos}`}
+                            title={`${isEn ? 'Your range' : 'Ta range'} — ${realPos(profilePos)}`}
                             gtoSlot={
                               <div className="flex flex-col items-start gap-2">
                                 <p className="text-xs font-semibold text-felt-300 flex items-center gap-1.5">
                                   <Target size={13} className="shrink-0" />
                                   {isEn ? 'GTO reference' : 'Range GTO (référence)'}
-                                  <span className="text-gray-600">— {profilePos}</span>
+                                  <span className="text-gray-600">— {realPos(profilePos)}</span>
                                 </p>
                                 {profileGto ? (
-                                  profilePos === 'BB'
+                                  realPos(profilePos) === 'BB'
                                     // BB is a defense spot → use the 5-category defense rendering.
                                     ? renderGtoRef(profileGto, 'BB')
                                     : (
@@ -1105,8 +1205,8 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                         <RangeEditor
                           matrix={profileMatrix}
                           onChange={isExpertMode ? setProfileMatrix : () => {}}
-                          position={profilePos}
-                          scheme={profilePos === 'BB' ? 'bb' : 'open'}
+                          position={realPos(profilePos)}
+                          scheme={realPos(profilePos) === 'BB' ? 'bb' : 'open'}
                           onSave={isExpertMode ? handleSaveProfile : undefined}
                           onReset={isExpertMode ? () => { if (profileGto) setProfileMatrix(profileGto.map(r => [...r])); } : undefined}
                           isSaving={savingP}
@@ -1178,7 +1278,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                   simplePos === pos
                     ? 'bg-felt-700 text-white border-felt-500'
                     : 'text-gray-400 border-gray-700 hover:text-white hover:bg-gray-800'
-                }`}>{pos}</button>
+                }`}>{realPos(pos)}</button>
             ))}
           </div>
 
@@ -1192,7 +1292,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
               <div className="flex flex-col gap-2 flex-1 items-start">
                 <p className="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
                   <Sliders size={13} className="shrink-0" />
-                  {isEn ? `Your range — ${simplePos}` : `Ta range — ${simplePos}`}
+                  {isEn ? `Your range — ${realPos(simplePos)}` : `Ta range — ${realPos(simplePos)}`}
                 </p>
                 {simpleGto
                   ? renderGtoRef(simpleGto, simplePos)
@@ -1202,7 +1302,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                 <p className="text-xs font-semibold text-felt-300 flex items-center gap-1.5">
                   <Target size={13} className="shrink-0" />
                   {isEn ? 'GTO reference' : 'Range GTO (référence)'}
-                  <span className="text-gray-600">— {simplePos}</span>
+                  <span className="text-gray-600">— {realPos(simplePos)}</span>
                 </p>
                 {simpleGto
                   ? renderGtoRef(simpleGto, simplePos)
@@ -1214,8 +1314,8 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
               <RangeEditor
                 matrix={simpleMatrix}
                 onChange={updateSimple}
-                position={simplePos}
-                scheme={simplePos === 'BB' ? 'bb' : 'open'}
+                position={realPos(simplePos)}
+                scheme={realPos(simplePos) === 'BB' ? 'bb' : 'open'}
                 onSave={handleSaveSimple}
                 onReset={() => { if (simpleGto) updateSimple(simpleGto.map(r => [...r])); }}
                 isSaving={savingS}
@@ -1225,7 +1325,7 @@ export function MyRangesPanel({ onClose, positions, defaultPosition, locked }: {
                 <p className="text-xs font-semibold text-felt-300 flex items-center gap-1.5">
                   <Target size={13} className="shrink-0" />
                   {isEn ? 'GTO reference' : 'Range GTO (référence)'}
-                  <span className="text-gray-600">— {simplePos}</span>
+                  <span className="text-gray-600">— {realPos(simplePos)}</span>
                 </p>
                 {simpleGto
                   ? renderGtoRef(simpleGto, simplePos)

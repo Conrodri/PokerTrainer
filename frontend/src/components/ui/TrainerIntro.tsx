@@ -35,12 +35,14 @@ interface TrainerIntroProps {
   examSlot?: React.ReactNode;
   /** Optional tertiary action shown below the start+exam row (e.g. "Mes ranges"). */
   bottomSlot?: React.ReactNode;
+  /** Optional slot rendered between the info sections and the start button. */
+  aboveActionsSlot?: React.ReactNode;
 }
 
 export function TrainerIntro({
   emoji, title, description, whatTitle, whatContent,
   steps, beginnerHint, advancedHint, expertHint, startLabel, onStart, mode,
-  locked = false, lockedVariant = 'premium', freeInfo, examSlot, bottomSlot,
+  locked = false, lockedVariant = 'premium', freeInfo, examSlot, bottomSlot, aboveActionsSlot,
 }: TrainerIntroProps) {
   const isEn = useLangStore(s => s.lang) === 'en';
   const setMode = useModeStore(s => s.setMode);
@@ -165,6 +167,8 @@ export function TrainerIntro({
           )}
         </div>
       </div>
+
+      {aboveActionsSlot}
 
       {/* Start button — or Premium / login / quota upsell when locked */}
       {locked ? (

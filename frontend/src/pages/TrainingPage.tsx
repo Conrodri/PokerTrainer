@@ -6,7 +6,7 @@ import { Lock } from 'lucide-react';
 import { useTrainingStore } from '../store/trainingStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '../store/authStore';
-import { TrainingModule, Position } from '../types/poker';
+import { TrainingModule, Position, TableFormat, GameType } from '../types/poker';
 import { Spinner } from '../components/ui/Spinner';
 import { ModeBadge } from '../components/ui/ModeBadge';
 import { ErrorBoundary } from '../components/ui/ErrorBoundary';
@@ -27,7 +27,6 @@ const FullHandTrainer = lazy(() => import('../components/training/FullHandTraine
 const BetSizingTrainer = lazy(() => import('../components/training/BetSizingTrainer').then(m => ({ default: m.BetSizingTrainer })));
 const BluffTrainer = lazy(() => import('../components/training/BluffTrainer').then(m => ({ default: m.BluffTrainer })));
 
-const PREFLOP_POSITIONS: Position[] = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
 
 export function TrainingPage() {
   const t = useT();
@@ -47,6 +46,9 @@ export function TrainingPage() {
     (searchParams.get('module') as TrainingModule) || 'preflop'
   );
   const [showMyRanges, setShowMyRanges] = useState(false);
+  // Format + game type of the ranges panel — set from the 'training:open-ranges' event detail.
+  const [rangesFormat, setRangesFormat]     = useState<TableFormat>('6max');
+  const [rangesGameType, setRangesGameType] = useState<GameType>('cashgame');
 
   // Auto-close panels when an exercise starts
   useEffect(() => {
@@ -108,7 +110,15 @@ export function TrainingPage() {
       const mod = (e as CustomEvent).detail as TrainingModule;
       if (mod) handleTabChange(mod);
     };
-    const onOpenRanges = () => { setShowMyRanges(true); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    const onOpenRanges = (e: Event) => {
+      const detail = (e as CustomEvent).detail ?? {};
+      const fmt = (detail.format as TableFormat) ?? '6max';
+      const gt  = (detail.gameType as GameType) ?? 'cashgame';
+      setRangesFormat(fmt);
+      setRangesGameType(gt);
+      setShowMyRanges(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
     window.addEventListener('training:module', onModule);
     window.addEventListener('training:open-ranges', onOpenRanges);
     return () => {
@@ -159,8 +169,14 @@ export function TrainingPage() {
         {isRangeModule && showMyRanges && (
           <MyRangesPanel
             onClose={() => setShowMyRanges(false)}
-            positions={PREFLOP_POSITIONS}
-            defaultPosition={currentPosition ?? undefined}
+            defaultFormat={rangesFormat}
+            defaultGameType={rangesGameType}
+            defaultPosition={(() => {
+              if (!currentPosition) return undefined;
+              const mttPrefix  = rangesGameType === 'mtt' ? 'mtt:' : '';
+              const fmtPrefix  = rangesFormat === '8max' ? '8max:' : '';
+              return `${mttPrefix}${fmtPrefix}${currentPosition}`;
+            })()}
             locked={!isPremium}
           />
         )}

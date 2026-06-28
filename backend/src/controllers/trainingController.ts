@@ -6,7 +6,7 @@ import { generateBluffExercise } from '../services/poker/bluffService';
 import { calculatePotOdds } from '../services/poker/potOdds';
 import { getRangeMatrix, getRangeFrequency, getRangePercentage, getCorrectAction } from '../services/poker/ranges';
 import { buildBBDefenseGrid } from '../services/poker/bbDefense';
-import { Position, ApiResponse } from '../types';
+import { Position, Position8, TableFormat, GameType, ApiResponse } from '../types';
 import prisma from '../config/database';
 
 const PREGEN_FILE = path.resolve(__dirname, '../../data/pregenerated.json');
@@ -82,13 +82,22 @@ function getLang(req: Request): Lang {
   return q === 'en' ? 'en' : 'fr';
 }
 
+function parseFormat(f: unknown): TableFormat {
+  if (f === '8max') return '8max';
+  if (f === '3max') return '3max';
+  if (f === 'hu')   return 'hu';
+  return '6max';
+}
+
 export async function getPreflopExercise(req: Request, res: Response): Promise<void> {
   try {
-    const position = req.query.position as Position | undefined;
+    const position = req.query.position as Position8 | undefined;
+    const format: TableFormat = parseFormat(req.query.format);
+    const gameType: GameType = req.query.gameType === 'mtt' ? 'mtt' : 'cashgame';
     const lang = getLang(req);
 
-    // Serve from pool when position is not constrained (random mode)
-    if (!position) {
+    // Serve from the prebuilt pool only for CG 6-max random mode. Other combos are generated on demand.
+    if (!position && format === '6max' && gameType === 'cashgame') {
       const pool = lang === 'en' ? preflopPoolEn : preflopPoolFr;
       if (pool.length > 0) {
         const data = pool.shift()!;
@@ -98,7 +107,7 @@ export async function getPreflopExercise(req: Request, res: Response): Promise<v
       }
     }
 
-    const exercise = generatePreflopExercise(position, lang);
+    const exercise = generatePreflopExercise(position, lang, format, gameType);
     res.json({ success: true, data: exercise } as ApiResponse);
   } catch {
     res.status(500).json({ success: false, error: 'Failed to generate exercise' } as ApiResponse);
@@ -107,7 +116,7 @@ export async function getPreflopExercise(req: Request, res: Response): Promise<v
 
 export async function checkPreflopAnswer(req: Request, res: Response): Promise<void> {
   try {
-    const { notation, position, userAction, timeTaken, sessionId } = req.body;
+    const { notation, position, userAction, timeTaken, sessionId, format, gameType: gt } = req.body;
     const lang = getLang(req);
 
     if (!notation || !position || !userAction) {
@@ -115,7 +124,9 @@ export async function checkPreflopAnswer(req: Request, res: Response): Promise<v
       return;
     }
 
-    const { action: correctAction, frequency } = getCorrectAction(position as Position, notation);
+    const fmt: TableFormat = parseFormat(format);
+    const gType: GameType = gt === 'mtt' ? 'mtt' : 'cashgame';
+    const { action: correctAction, frequency } = getCorrectAction(position as Position8, notation, fmt, gType);
     const isCorrect = userAction === correctAction;
     const xpEarned = calculateExerciseXP(isCorrect, timeTaken || 10000, false);
 
@@ -229,8 +240,10 @@ export async function getBluffExercise(_req: Request, res: Response): Promise<vo
 export async function getRangeData(req: Request, res: Response): Promise<void> {
   try {
     const { position } = req.params;
-    const matrix = getRangeMatrix(position as Position);
-    const percentage = getRangePercentage(position as Position);
+    const format: TableFormat = parseFormat(req.query.format);
+    const gameType: GameType = req.query.gameType === 'mtt' ? 'mtt' : 'cashgame';
+    const matrix = getRangeMatrix(position as Position8, format, gameType);
+    const percentage = getRangePercentage(position as Position8, format, gameType);
     res.json({ success: true, data: { matrix, percentage, position } } as ApiResponse);
   } catch {
     res.status(500).json({ success: false, error: 'Failed to get range data' } as ApiResponse);

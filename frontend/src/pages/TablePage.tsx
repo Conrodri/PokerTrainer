@@ -75,7 +75,7 @@ export function TablePage() {
       >
         <PokerTable
           heroPosition={activePos}
-          onPositionChange={setActivePos}
+          onPositionChange={(p) => setActivePos(p as Position)}
           interactive
           className="max-w-full"
         />

@@ -5,6 +5,13 @@ export type Card = `${Rank}${Suit}`;
 // 6-max positions only: UTG, HJ, CO, BTN, SB, BB.
 // UTG1 does not exist in 6-max (it's a 9-max concept).
 export type Position = 'UTG' | 'HJ' | 'CO' | 'BTN' | 'SB' | 'BB';
+// 8-max adds the two earliest seats (UTG+1, LJ) before the 6-max core.
+// Full 8-max action order: UTG → UTG1 → LJ → HJ → CO → BTN → SB → BB.
+export type Position8 = Position | 'UTG1' | 'LJ';
+// Table format selector — drives which open-raise range table is used.
+export type TableFormat = '6max' | '8max' | '3max' | 'hu';
+// Game type — cash game (no antes, pure chip EV) vs tournament (antes, ICM).
+export type GameType = 'cashgame' | 'mtt';
 export type Action = 'fold' | 'call' | 'raise' | 'check' | '3bet' | '4bet';
 export type TrainingModule = 'preflop' | 'potodds' | 'equity' | 'postflop';
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
@@ -18,12 +25,12 @@ export interface HandNotation {
 
 export interface PreflopExercise {
   hand: [Card, Card];
-  position: Position;
+  position: Position8;
   heroStack: number;   // in big blinds
   potSize: number;     // in big blinds
   facing: 'none' | 'limp' | 'raise' | '3bet' | '4bet';
   raiseSize?: number;  // in big blinds, if facing raise
-  tableType: '6max' | 'fullring' | 'heads_up';
+  tableType: '6max' | '8max' | '3max' | 'hu' | 'fullring' | 'heads_up';
   correctAction: Action;
   correctFrequency: number; // 0-1, for mixed strategies
   explanation: string;

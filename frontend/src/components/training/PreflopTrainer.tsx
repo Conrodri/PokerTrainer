@@ -20,7 +20,7 @@ import { useTrainingStore } from '../../store/trainingStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useExamRunner } from '../../hooks/useExamRunner';
 import { ExamLauncher, ExamHud, ExamResult } from './ExamMode';
-import { Position, ExerciseResult, BBDefenseExercise } from '../../types/poker';
+import { Position, Position8, TableFormat, ExerciseResult, BBDefenseExercise } from '../../types/poker';
 import { trainingApi } from '../../services/api';
 import { RangeMatrix } from '../poker/RangeMatrix';
 import { ExpertRangeGrid, EXPERT_ACTIONS, EXPERT_DISPLAY } from '../poker/ExpertRangeEditor';
@@ -288,6 +288,21 @@ function AdvancedRangePicker({
 export function PreflopTrainer() {
   const t = useT();
   const isMobile = useIsMobile();
+  // Table format and game type chosen inside the module.
+  const [format, setFormat] = useState<TableFormat>('6max');
+  const [gameType, setGameType] = useState<import('../../types/poker').GameType>('cashgame');
+  const is8    = format === '8max';
+  const is3max = format === '3max';
+  const isHU   = format === 'hu';
+  const isMTT  = gameType === 'mtt';
+  // Custom-range storage key — namespaced by format and game type.
+  const rangeKey = (pos: string) => {
+    const prefix = isMTT ? 'mtt:' : '';
+    if (is8)    return `${prefix}8max:${pos}`;
+    if (is3max) return `${prefix}3max:${pos}`;
+    if (isHU)   return `${prefix}hu:${pos}`;
+    return `${prefix}${pos}`;
+  };
   const {
     preflopExercise, lastResult, sessionStats, isLoading, storeError,
     fetchPreflopExercise, checkPreflopAnswer, recordResult,
@@ -300,7 +315,7 @@ export function PreflopTrainer() {
 
   const [showIntro,        setShowIntro]        = useState(true);
   const [phase,            setPhase]            = useState<Phase>('select_position');
-  const [selectedPosition, setSelectedPosition] = useState<Position>('BTN');
+  const [selectedPosition, setSelectedPosition] = useState<Position8>('BTN');
   const [lockPosition,     setLockPosition]     = useState(false);
   const [randomMode,       setRandomMode]       = useState(false);
   const [rangeMatrix,      setRangeMatrix]      = useState<number[][] | null>(null);
@@ -394,7 +409,7 @@ export function PreflopTrainer() {
         return;
       }
       try {
-        const resolved = await profilesApi.resolve(position, heroStack);
+        const resolved = await profilesApi.resolve(rangeKey(position), heroStack);
         if (cancelled) return;
         if (resolved?.cells && resolved.cells.length === 676) {
           const [row, col] = getMatrixIndices(notation);
@@ -443,7 +458,7 @@ export function PreflopTrainer() {
         return;
       }
       try {
-        const resolved = await profilesApi.resolve(preflopExercise.position, heroStack, true);
+        const resolved = await profilesApi.resolve(rangeKey(preflopExercise.position), heroStack, true);
         const play = resolved?.cells ? toPlayFrequencies(resolved.cells) : null;
         if (cancelled) return;
         if (!play) { setOpenCustomAction(null); return; }
@@ -466,8 +481,16 @@ export function PreflopTrainer() {
     return () => window.removeEventListener('training:back', onBack);
   }, []);
 
-  // Exam mode (advanced/expert): random-position loop until 3 errors; score = correct.
-  const { examActive, examFinished, startRun, quitRun, recordAnswer } = useExamRunner('preflop');
+  // Exam (sprint) mode: random-position loop until 3 errors; score = correct.
+  // Each of the 4 combos (CG/MTT × 6-max/8-max) has its own exam record.
+  const examModule = isHU
+    ? (isMTT ? 'preflop-mtt-hu'   : 'preflop-hu')
+    : is3max
+    ? (isMTT ? 'preflop-mtt-3max' : 'preflop-3max')
+    : is8
+    ? (isMTT ? 'preflop8-mtt'     : 'preflop8')
+    : (isMTT ? 'preflop-mtt'      : 'preflop');
+  const { examActive, examFinished, startRun, quitRun, recordAnswer } = useExamRunner(examModule);
 
   // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -492,9 +515,15 @@ export function PreflopTrainer() {
 
   // ─── pickAndStart — shared routing logic for a given position ─────────────────
 
-  const ALL_POSITIONS: Position[] = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+  const ALL_POSITIONS: Position8[] = isHU
+    ? ['BTN', 'BB']
+    : is3max
+    ? ['BTN', 'SB', 'BB']
+    : is8
+    ? ['UTG', 'UTG1', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB']
+    : ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
 
-  const pickAndStart = async (pos: Position) => {
+  const pickAndStart = async (pos: Position8) => {
     setSelectedPosition(pos);
     if (pos === 'BB') {
       setIsBBSession(true);
@@ -508,13 +537,13 @@ export function PreflopTrainer() {
     } else {
       setIsBBSession(false);
       setBBExercise(null);
-      await fetchPreflopExercise(pos);
+      await fetchPreflopExercise(pos, format, gameType);
     }
   };
 
   // ─── handleStart ──────────────────────────────────────────────────────────────
 
-  const handleStart = async (pos?: Position) => {
+  const handleStart = async (pos?: Position8) => {
     quitRun();              // clear any leftover exam state — normal mode never shows the lives HUD / auto-advance
     resetExerciseState();
     setPhase('exercise');
@@ -577,7 +606,7 @@ export function PreflopTrainer() {
       let rangeLabel: string | undefined;
 
       try {
-        const resolved = await profilesApi.resolve(preflopExercise.position, heroStack, mode !== 'expert');
+        const resolved = await profilesApi.resolve(rangeKey(preflopExercise.position), heroStack, mode !== 'expert');
         const play = resolved?.cells ? toPlayFrequencies(resolved.cells) : null;
         if (play) {
           flat = play;
@@ -612,18 +641,18 @@ export function PreflopTrainer() {
         });
         await recordResult(isCorrect, xp, 'preflop', timeTaken);
       } else {
-        const r = await checkPreflopAnswer(action, timeTaken);
+        const r = await checkPreflopAnswer(action, timeTaken, format, gameType);
         openCorrect = r.isCorrect;
         try {
-          const data = await trainingApi.getRangeMatrix(preflopExercise.position);
+          const data = await trainingApi.getRangeMatrix(preflopExercise.position, format, gameType);
           setRangeMatrix(data.matrix);
         } catch { /* ignore */ }
       }
     } else {
-      const r = await checkPreflopAnswer(action, timeTaken);
+      const r = await checkPreflopAnswer(action, timeTaken, format, gameType);
       openCorrect = r.isCorrect;
       try {
-        const data = await trainingApi.getRangeMatrix(preflopExercise.position);
+        const data = await trainingApi.getRangeMatrix(preflopExercise.position, format, gameType);
         setRangeMatrix(data.matrix);
       } catch { /* ignore */ }
     }
@@ -689,7 +718,7 @@ export function PreflopTrainer() {
       let label: string | null = null;
 
       try {
-        const resolved = await profilesApi.resolve('BB', heroStack, mode !== 'expert');
+        const resolved = await profilesApi.resolve(rangeKey('BB'), heroStack, mode !== 'expert');
         const play = resolved?.cells ? toPlayFrequencies(resolved.cells) : null;
         if (play) {
           flat = play;
@@ -795,7 +824,7 @@ export function PreflopTrainer() {
       } catch { /* ignore */ }
       setBBIsLoading(false);
     } else {
-      await fetchPreflopExercise(lockPosition ? selectedPosition : undefined);
+      await fetchPreflopExercise(lockPosition ? selectedPosition : undefined, format, gameType);
     }
   };
 
@@ -924,9 +953,73 @@ export function PreflopTrainer() {
     </motion.div>
   );
 
+  // Deux pills côte à côte : type de jeu | nombre de joueurs.
+  const renderFormatToggle = () => (
+    <div className="flex items-center gap-2 flex-wrap justify-center">
+      {/* Pill 1 — Type de jeu */}
+      <div className="flex items-center gap-1 p-1 rounded-xl border border-gray-700 bg-gray-900/60">
+        <button
+          title={isEn ? 'Cash game — no antes, pure chip EV, 100bb effective' : 'Cash game — sans antes, EV chips pure, 100bb effectifs'}
+          onClick={() => setGameType('cashgame')}
+          className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${
+            gameType === 'cashgame'
+              ? 'bg-felt-700 text-white shadow-glow-green border border-felt-500'
+              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+          }`}
+        >
+          Cash Game
+        </button>
+        <button
+          title={isEn ? 'Tournament — antes ~12.5%, ICM pressure, wider ranges' : 'Tournoi — antes ~12.5%, pression ICM, ranges plus larges'}
+          onClick={() => setGameType('mtt')}
+          className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${
+            gameType === 'mtt'
+              ? 'bg-amber-700 text-white shadow border border-amber-600'
+              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+          }`}
+        >
+          MTT
+        </button>
+      </div>
+      {/* Pill 2 — Nombre de joueurs */}
+      <div className="flex items-center gap-1 p-1 rounded-xl border border-gray-700 bg-gray-900/60">
+        {([
+          { f: '6max' as TableFormat, label: '6-max', title: isEn ? '6 players at the table' : '6 joueurs à la table' },
+          { f: '8max' as TableFormat, label: '8-max', title: isEn ? '8 players — full-ring (UTG, UTG+1, LJ added)' : '8 joueurs — full-ring (UTG, UTG+1, LJ ajoutés)' },
+          { f: '3max' as TableFormat, label: '3-max', title: isEn ? '3 players — BTN, SB, BB only' : '3 joueurs — BTN, SB, BB uniquement' },
+          { f: 'hu'   as TableFormat, label: 'HU',    title: isEn ? 'Heads-up — BTN vs BB' : 'Têtes-à-têtes — BTN vs BB' },
+        ] as const).map(({ f, label, title }) => (
+          <button
+            key={f}
+            title={title}
+            onClick={() => {
+              setFormat(f);
+              // Ensure selected position exists in the new format
+              const validPositions: Record<TableFormat, string[]> = {
+                '6max': ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+                '8max': ['UTG', 'UTG1', 'LJ', 'HJ', 'CO', 'BTN', 'SB'],
+                '3max': ['BTN', 'SB', 'BB'],
+                'hu':   ['BTN', 'BB'],
+              };
+              if (!validPositions[f].includes(selectedPosition)) setSelectedPosition('BTN');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
+              format === f
+                ? 'bg-felt-700 text-white shadow-glow-green border border-felt-500'
+                : 'text-gray-400 hover:text-white hover:bg-gray-800'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   if (showIntro) {
     const startTraining = () => { setShowIntro(false); setTrainerStarted(true); };
     const handleStartClick = () => {
+      // Advanced + premium: pick GTO vs custom ranges before starting (both formats).
       if (mode === 'advanced' && isPremium) {
         setRangePickerOpen(true);
       } else {
@@ -938,10 +1031,27 @@ export function PreflopTrainer() {
       <div className="flex flex-col gap-3 sm:gap-4 max-w-2xl mx-auto">
         <TrainerIntro
           emoji="🎯"
-          title={isEn ? 'Pre-flop Trainer' : 'Entraîneur Pré-flop'}
-          description={isEn
-            ? "Master opening decisions and BB defense based on your position and GTO 6-max ranges."
-            : "Maîtrisez les décisions d'ouverture et la défense BB selon votre position et les ranges GTO 6-max."}
+          title={(() => {
+            const gt = isMTT ? 'MTT' : 'Cash Game';
+            const fmt = isHU ? 'HU' : is3max ? '3-max' : is8 ? '8-max' : '6-max';
+            return isEn
+              ? `Pre-flop Trainer — GTO ${gt} ${fmt}`
+              : `Entraîneur Pré-flop — GTO ${gt} ${fmt}`;
+          })()}
+          description={(() => {
+            if (isHU)   return isEn
+              ? `Master heads-up opening decisions based on GTO ${isMTT ? 'MTT' : 'Cash Game'} HU ranges (100bb${isMTT ? ', antes' : ', no antes'}).`
+              : `Maîtrisez les décisions d'ouverture en tête-à-tête selon les ranges GTO ${isMTT ? 'MTT' : 'Cash Game'} HU (100bb${isMTT ? ', antes' : ', sans antes'}).`;
+            if (is3max) return isEn
+              ? `Master opening decisions in 3-handed play based on GTO ${isMTT ? 'MTT' : 'Cash Game'} 3-max ranges (100bb${isMTT ? ', antes' : ', no antes'}).`
+              : `Maîtrisez les décisions d'ouverture en jeu 3-max selon les ranges GTO ${isMTT ? 'MTT' : 'Cash Game'} 3-max (100bb${isMTT ? ', antes' : ', sans antes'}).`;
+            if (is8)    return isEn
+              ? `Master opening decisions for an 8-handed table (UTG, UTG+1, LJ added) based on GTO Wizard ${isMTT ? 'MTT' : 'Cash Game'} 8-max ranges (100bb${isMTT ? ', antes' : ', no antes'}).`
+              : `Maîtrisez les décisions d'ouverture sur une table 8 joueurs (UTG, UTG+1, LJ ajoutés) selon les ranges GTO Wizard ${isMTT ? 'MTT' : 'Cash Game'} 8-max (100bb${isMTT ? ', antes' : ', sans antes'}).`;
+            return isEn
+              ? `Master opening decisions and BB defense based on GTO Wizard ${isMTT ? 'MTT' : 'Cash Game'} 6-max ranges (100bb${isMTT ? ', antes ~12.5%' : ', no antes'}).`
+              : `Maîtrisez les décisions d'ouverture et la défense BB selon les ranges GTO Wizard ${isMTT ? 'MTT' : 'Cash Game'} 6-max (100bb${isMTT ? ', antes ~12.5%' : ', sans antes'}).`;
+          })()}
           whatTitle={isEn ? "What is pre-flop play?" : "Qu'est-ce que le jeu pré-flop ?"}
           whatContent={
             <>
@@ -966,29 +1076,66 @@ export function PreflopTrainer() {
               </div>
             </>
           }
-          steps={isEn ? [
-            '🎯 Choose your position on the interactive poker table',
-            '🃏 Receive 2 random hole cards',
-            '♠️ Open positions: Raise or Fold according to GTO 6-max ranges',
-            '🛡️ BB position: Fold, Call or 3-Bet facing a raise',
-            '📊 The range matrix shows the correct hands for each position',
-          ] : [
-            '🎯 Choisissez votre position sur la table de poker interactive',
-            '🃏 Recevez 2 cartes en main aléatoires',
-            '♠️ Positions ouvertes : Raise ou Fold selon les ranges GTO 6-max',
-            '🛡️ Position BB : Fold, Call ou 3-Bet face à une relance',
-            '📊 La matrice de ranges vous montre les bonnes mains pour chaque position',
-          ]}
+          steps={(() => {
+            const gt = isMTT ? 'MTT' : 'Cash Game';
+            if (isHU)   return isEn ? [
+              '🎯 Choose BTN or BB in heads-up',
+              '🃏 Receive 2 random hole cards',
+              `♠️ Raise or Fold according to GTO ${gt} HU ranges`,
+              '📊 The range matrix shows the correct hands',
+            ] : [
+              '🎯 Choisissez BTN ou BB en têtes-à-têtes',
+              '🃏 Recevez 2 cartes en main aléatoires',
+              `♠️ Raise ou Fold selon les ranges GTO ${gt} HU`,
+              '📊 La matrice de ranges vous montre les bonnes mains',
+            ];
+            if (is3max) return isEn ? [
+              '🎯 Choose your seat on the 3-handed table (BTN, SB, BB)',
+              '🃏 Receive 2 random hole cards',
+              `♠️ Raise or Fold according to GTO ${gt} 3-max ranges`,
+              '📊 The range matrix shows the correct hands for each position',
+            ] : [
+              '🎯 Choisissez votre place sur la table 3-max (BTN, SB, BB)',
+              '🃏 Recevez 2 cartes en main aléatoires',
+              `♠️ Raise ou Fold selon les ranges GTO ${gt} 3-max`,
+              '📊 La matrice de ranges vous montre les bonnes mains pour chaque position',
+            ];
+            if (is8)    return isEn ? [
+              '🎯 Choose your seat on the 8-handed table (UTG → BB)',
+              '🃏 Receive 2 random hole cards',
+              `♠️ Raise or Fold according to GTO Wizard ${gt} 8-max ranges`,
+              '📊 The range matrix shows the correct hands for each position',
+            ] : [
+              '🎯 Choisissez votre place sur la table 8 joueurs (UTG → BB)',
+              '🃏 Recevez 2 cartes en main aléatoires',
+              `♠️ Raise ou Fold selon les ranges GTO Wizard ${gt} 8-max`,
+              '📊 La matrice de ranges vous montre les bonnes mains pour chaque position',
+            ];
+            return isEn ? [
+              '🎯 Choose your position on the interactive poker table',
+              '🃏 Receive 2 random hole cards',
+              `♠️ Open positions: Raise or Fold according to GTO Wizard ${gt} 6-max ranges`,
+              '🛡️ BB position: Fold, Call or 3-Bet facing a raise',
+              '📊 The range matrix shows the correct hands for each position',
+            ] : [
+              '🎯 Choisissez votre position sur la table de poker interactive',
+              '🃏 Recevez 2 cartes en main aléatoires',
+              `♠️ Positions ouvertes : Raise ou Fold selon les ranges GTO Wizard ${gt} 6-max`,
+              '🛡️ Position BB : Fold, Call ou 3-Bet face à une relance',
+              '📊 La matrice de ranges vous montre les bonnes mains pour chaque position',
+            ];
+          })()}
           beginnerHint={isEn ? "Shows range frequency & hand context" : "Affiche la fréquence de range & contexte"}
           advancedHint={isEn ? "No hints — play by intuition & memory" : "Sans indices — jouez à l'intuition & mémoire"}
           expertHint={isEn ? "Premium Expert — quizzed on your own ranges (Fold/Call/Raise/All-in mix)" : "Premium Expert — interrogé sur tes propres ranges (mix Fold/Call/Raise/All-in)"}
           startLabel={isEn ? 'Start Training' : "Commencer l'entraînement"}
           onStart={handleStartClick}
           mode={mode}
-          examSlot={mode !== 'beginner' ? <ExamLauncher module="preflop" onStart={requestExam} /> : undefined}
+          aboveActionsSlot={renderFormatToggle()}
+          examSlot={mode !== 'beginner' ? <ExamLauncher module={examModule} onStart={requestExam} /> : undefined}
           bottomSlot={
             <button
-              onClick={() => window.dispatchEvent(new CustomEvent('training:open-ranges'))}
+              onClick={() => window.dispatchEvent(new CustomEvent('training:open-ranges', { detail: { format, gameType } }))}
               className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl border border-purple-800/50 bg-purple-950/20 hover:bg-purple-900/30 text-purple-300 hover:text-purple-200 font-semibold text-sm transition-colors"
             >
               <BookOpen size={15} className="text-purple-400 shrink-0" />
@@ -1002,7 +1149,7 @@ export function PreflopTrainer() {
             isEn={isEn}
             onPick={startExamWithProfile}
             onClose={() => setExamPickerOpen(false)}
-            onCreate={() => { setExamPickerOpen(false); window.dispatchEvent(new CustomEvent('training:open-ranges')); }}
+            onCreate={() => { setExamPickerOpen(false); window.dispatchEvent(new CustomEvent('training:open-ranges', { detail: { format, gameType } })); }}
           />
         )}
         {rangePickerOpen && (
@@ -1023,7 +1170,7 @@ export function PreflopTrainer() {
   if (examFinished) {
     return (
       <div className="flex flex-col gap-6 max-w-2xl mx-auto pt-4">
-        <ExamResult module="preflop" onRetry={handleStartExam} onQuit={handleQuitExam} />
+        <ExamResult module={examModule} onRetry={handleStartExam} onQuit={handleQuitExam} />
       </div>
     );
   }
@@ -1047,11 +1194,15 @@ export function PreflopTrainer() {
           className="flex flex-col items-center gap-4 sm:gap-6"
         >
 
+          {/* 6-max / 8-max selector */}
+          {renderFormatToggle()}
+
           {/* Interactive poker table — compact on mobile */}
           <div className="w-full max-w-xs sm:max-w-xl">
             <PokerTable
               heroPosition={selectedPosition}
-              onPositionChange={pos => setSelectedPosition(pos)}
+              format={format}
+              onPositionChange={pos => { if (is8 && pos === 'BB') return; setSelectedPosition(pos); }}
               interactive
               compact={isMobile}
             />
@@ -1066,7 +1217,7 @@ export function PreflopTrainer() {
           >
             <span className="text-gray-400 text-sm">{t.training.position_lbl}</span>
             <span className="text-white font-bold text-lg">{selectedPosition}</span>
-            <PositionInfo position={selectedPosition} />
+            <PositionInfo position={selectedPosition} format={format} />
           </motion.div>
 
           {/* BB hint */}
@@ -1180,7 +1331,7 @@ export function PreflopTrainer() {
                     <Hand cards={bbExercise.hand as CardStr[]} size="sm" gap="gap-3" animate={false} />
                     <div className="flex items-center gap-2 flex-wrap justify-center">
                       <span className="text-gray-400 text-sm">BB</span>
-                      <PositionInfo position="BB" />
+                      <PositionInfo position="BB" format={format} />
                       <span className="text-gold-400 font-mono font-bold text-lg">
                         {handToDisplay(bbExercise.notation)}
                       </span>
@@ -1262,7 +1413,7 @@ export function PreflopTrainer() {
               ) : !preflopExercise ? (
                 <div className="flex flex-col items-center gap-4 py-8 text-center">
                   <p className="text-red-400 text-sm">{storeError ?? (isEn ? 'Failed to load exercise' : 'Impossible de charger l\'exercice')}</p>
-                  <Button variant="secondary" onClick={() => fetchPreflopExercise(selectedPosition)}>
+                  <Button variant="secondary" onClick={() => fetchPreflopExercise(selectedPosition, format)}>
                     {isEn ? 'Retry' : 'Réessayer'}
                   </Button>
                 </div>
@@ -1271,6 +1422,7 @@ export function PreflopTrainer() {
                   <div className="w-full max-w-[260px] sm:max-w-sm mx-auto">
                     <PokerTable
                       heroPosition={preflopExercise.position}
+                      format={format}
                       interactive={false}
                       heroCards={preflopExercise.hand as string[]}
                       boardCardSize="md"
@@ -1290,7 +1442,7 @@ export function PreflopTrainer() {
                     <div className="flex items-center gap-2 flex-wrap justify-center">
                       <span className="text-gray-400 text-sm">{t.training.position_lbl}</span>
                       <span className="font-bold text-white text-lg">{preflopExercise.position}</span>
-                      <PositionInfo position={preflopExercise.position} />
+                      <PositionInfo position={preflopExercise.position} format={format} />
                       <span className="text-gold-400 font-mono font-bold text-lg">
                         {handToDisplay(preflopExercise.notation)}
                       </span>
@@ -1564,6 +1716,7 @@ export function PreflopTrainer() {
                 <div className="w-full max-w-[280px] shrink-0">
                   <PokerTable
                     heroPosition={preflopExercise.position}
+                    format={format}
                     compact
                     heroCards={preflopExercise.hand as string[]}
                     seatInfos={preflopEnabled && resolvedLabel
@@ -1748,15 +1901,19 @@ function ExpertExamProfilePicker({ profiles, isEn, onPick, onClose, onCreate }: 
 }
 
 // ─── Position info badge ───────────────────────────────────────────────────────
-function PositionInfo({ position }: { position: Position }) {
+function PositionInfo({ position, format = '6max' }: { position: Position8; format?: TableFormat }) {
   const isEn = useLangStore(s => s.lang) === 'en';
-  const ranges: Record<Position, string> = {
-    UTG: '~15%', HJ: '~20%', CO: '~26%',
-    BTN: '~45%', SB: '~35%', BB: isEn ? 'Defend' : 'Défend',
+  const def = isEn ? 'Defend' : 'Défend';
+  const ranges: Record<string, Partial<Record<Position8, string>>> = {
+    '6max': { UTG: '~12%', HJ: '~20%', CO: '~26%', BTN: '~45%', SB: '~35%', BB: def },
+    '8max': { UTG: '~11%', UTG1: '~13%', LJ: '~16%', HJ: '~18%', CO: '~26%', BTN: '~45%', SB: '~35%', BB: def },
+    '3max': { BTN: '~75%', SB: '~58%', BB: def },
+    'hu':   { BTN: '~83%', BB: def },
   };
+  const label = ranges[format]?.[position] ?? '';
   return (
     <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">
-      {ranges[position]}
+      {label}
     </span>
   );
 }

@@ -91,7 +91,15 @@ export async function getLeaderboard(req: Request, res: Response): Promise<void>
           ? { fr: bestTitleFr.title, en: bestTitleEn!.title, tier: bestTitleFr.tier, icon: bestTitleFr.icon }
           : null,
         modules: {
-          preflop:  { accuracy: acc(l.preflopCorrect,  l.preflopTotal),  total: l.preflopTotal,  ...sb(l.userId, 'preflop')  },
+          preflop:             { accuracy: acc(l.preflopCorrect,  l.preflopTotal),  total: l.preflopTotal,  ...sb(l.userId, 'preflop')  },
+          // Variants share preflop accuracy; only their sprint records differ.
+          preflop8:            { accuracy: null, total: 0, ...sb(l.userId, 'preflop8')         },
+          'preflop-mtt':       { accuracy: null, total: 0, ...sb(l.userId, 'preflop-mtt')      },
+          'preflop8-mtt':      { accuracy: null, total: 0, ...sb(l.userId, 'preflop8-mtt')     },
+          'preflop-3max':      { accuracy: null, total: 0, ...sb(l.userId, 'preflop-3max')     },
+          'preflop-mtt-3max':  { accuracy: null, total: 0, ...sb(l.userId, 'preflop-mtt-3max') },
+          'preflop-hu':        { accuracy: null, total: 0, ...sb(l.userId, 'preflop-hu')       },
+          'preflop-mtt-hu':    { accuracy: null, total: 0, ...sb(l.userId, 'preflop-mtt-hu')   },
           potodds:  { accuracy: acc(l.potoddsCorrect,  l.potoddsTotal),  total: l.potoddsTotal,  ...sb(l.userId, 'potodds')  },
           equity:   { accuracy: acc(l.equityCorrect,   l.equityTotal),   total: l.equityTotal,   ...sb(l.userId, 'equity')   },
           outs:     { accuracy: acc(l.outsCorrect,     l.outsTotal),     total: l.outsTotal,     ...sb(l.userId, 'outs')     },

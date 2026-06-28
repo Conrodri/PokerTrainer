@@ -310,6 +310,22 @@ export function StatsPage() {
     expertBest:   examRecords[m.key]?.expert   ?? 0,
   }));
 
+  // Sprint records for all preflop format/gameType variants (only those with at least one record).
+  const preflopSprintVariants = [
+    { key: 'preflop',          fr: '6-max CG',    en: '6-max CG'    },
+    { key: 'preflop-mtt',      fr: '6-max MTT',   en: '6-max MTT'   },
+    { key: 'preflop8',         fr: '8-max CG',    en: '8-max CG'    },
+    { key: 'preflop8-mtt',     fr: '8-max MTT',   en: '8-max MTT'   },
+    { key: 'preflop-3max',     fr: '3-max CG',    en: '3-max CG'    },
+    { key: 'preflop-mtt-3max', fr: '3-max MTT',   en: '3-max MTT'   },
+    { key: 'preflop-hu',       fr: 'HU CG',       en: 'HU CG'       },
+    { key: 'preflop-mtt-hu',   fr: 'HU MTT',      en: 'HU MTT'      },
+  ].map(v => ({
+    ...v,
+    advanced: examRecords[v.key]?.advanced ?? 0,
+    expert:   examRecords[v.key]?.expert   ?? 0,
+  })).filter(v => v.advanced > 0 || v.expert > 0);
+
   const positionData = [
     { key: 'UTG', label: 'UTG', correct: playerStats?.utgCorrect       || 0, total: playerStats?.utgTotal       || 0 },
     { key: 'HJ',  label: 'HJ',  correct: playerStats?.hjCorrect        || 0, total: playerStats?.hjTotal        || 0 },
@@ -685,8 +701,34 @@ export function StatsPage() {
                     {m.correct}/{m.total}
                   </span>
                 </div>
-                {/* Sprint records per mode */}
-                {(m.advancedBest > 0 || m.expertBest > 0) && (
+                {/* Sprint records — preflop: breakdown by format/gameType; others: single best */}
+                {m.key === 'preflop' ? (
+                  preflopSprintVariants.length > 0 && (
+                    <div className="mt-1.5 ml-1 pl-2.5 border-l-2 border-gray-700/50 space-y-0.5">
+                      {preflopSprintVariants.map(v => (
+                        <div key={v.key} className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-semibold text-gray-600 w-16 shrink-0">
+                            {isEn ? v.en : v.fr}
+                          </span>
+                          {v.advanced > 0 && (
+                            <span className="flex items-center gap-1 text-[10px] text-gray-500">
+                              <Zap size={9} className="text-gold-400 shrink-0" />
+                              <span className="text-gold-400 font-bold">{v.advanced}</span>
+                              &nbsp;{isEn ? 'adv.' : 'avancé'}
+                            </span>
+                          )}
+                          {v.expert > 0 && (
+                            <span className="flex items-center gap-1 text-[10px] text-gray-500">
+                              <Flame size={9} className="text-purple-400 shrink-0" />
+                              <span className="text-purple-400 font-bold">{v.expert}</span>
+                              &nbsp;{isEn ? 'exp.' : 'expert'}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : (m.advancedBest > 0 || m.expertBest > 0) && (
                   <div className="mt-0.5 ml-1 flex items-center gap-3 flex-wrap">
                     {m.advancedBest > 0 && (
                       <span className="flex items-center gap-1 text-[10px] text-gray-500">

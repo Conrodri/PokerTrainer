@@ -1,11 +1,17 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Position } from '../../types/poker';
+import { Position, Position8, TableFormat } from '../../types/poker';
 import { useLangStore } from '../../store/langStore';
 import { useThemeStore, SUIT_COLORS } from '../../store/themeStore';
 
 // Clockwise game order (BTN deals, then SB left of BTN, then BB, etc.)
 export const CLOCKWISE: Position[] = ['BTN', 'SB', 'BB', 'UTG', 'HJ', 'CO'];
+// 8-max clockwise order: BTN, SB, BB, then the early seats up to CO.
+export const CLOCKWISE_8: Position8[] = ['BTN', 'SB', 'BB', 'UTG', 'UTG1', 'LJ', 'HJ', 'CO'];
+// 3-max clockwise order: BTN, SB, BB.
+export const CLOCKWISE_3: Position[] = ['BTN', 'SB', 'BB'];
+// HU clockwise order: BTN (= SB), BB.
+export const CLOCKWISE_HU: Position[] = ['BTN', 'BB'];
 
 // ─── Seat layout: hero always at S0 (bottom center) ───────────────────────
 // cx/cy  = blind-token / dealer-chip position.
@@ -25,9 +31,34 @@ const SEAT_LAYOUT = [
   { sx: 83, sy: 63, cx: 71, cy: 67, side: 'right',  cardX:   96, cardY:   76 },  // S5: bottom-right
 ] as const;
 
-export const POSITION_COLORS: Record<Position, string> = {
+// 3-seat layout (hero at S0 bottom-center), used when format === '3max'.
+const SEAT_LAYOUT_3 = [
+  { sx: 50, sy: 80, cx: 50, cy: 73, side: 'bottom', cardX: null, cardY: null },  // S0: hero
+  { sx: 22, sy: 18, cx: 34, cy: 26, side: 'left',   cardX:    5, cardY:   28 },  // S1: top-left
+  { sx: 78, sy: 18, cx: 66, cy: 26, side: 'right',  cardX:   95, cardY:   28 },  // S2: top-right
+] as const;
+
+// HU layout (hero at S0 bottom-center, villain at S1 top-center).
+const SEAT_LAYOUT_HU = [
+  { sx: 50, sy: 80, cx: 50, cy: 73, side: 'bottom', cardX: null, cardY: null },  // S0: hero
+  { sx: 50, sy: 8,  cx: 50, cy: 19, side: 'top',    cardX:   50, cardY:    5 },  // S1: villain top
+] as const;
+
+// 8-seat layout (hero at S0 bottom-center), used when format === '8max'.
+const SEAT_LAYOUT_8 = [
+  { sx: 50, sy: 80, cx: 50, cy: 73, side: 'bottom', cardX: null, cardY: null },  // S0: hero
+  { sx: 19, sy: 70, cx: 31, cy: 66, side: 'left',   cardX:    4, cardY:   80 },  // S1: bottom-left
+  { sx: 9,  sy: 44, cx: 23, cy: 44, side: 'left',   cardX:    3, cardY:   52 },  // S2: mid-left
+  { sx: 19, sy: 15, cx: 30, cy: 23, side: 'left',   cardX:    6, cardY:   22 },  // S3: upper-left
+  { sx: 50, sy: 8,  cx: 50, cy: 19, side: 'top',    cardX:   50, cardY:    5 },  // S4: top
+  { sx: 81, sy: 15, cx: 70, cy: 23, side: 'right',  cardX:   94, cardY:   22 },  // S5: upper-right
+  { sx: 91, sy: 44, cx: 77, cy: 44, side: 'right',  cardX:   97, cardY:   52 },  // S6: mid-right
+  { sx: 81, sy: 70, cx: 69, cy: 66, side: 'right',  cardX:   96, cardY:   80 },  // S7: bottom-right
+] as const;
+
+export const POSITION_COLORS: Record<Position8, string> = {
   BTN: '#16a34a', SB: '#2563eb', BB: '#dc2626',
-  UTG: '#b45309', HJ: '#7c3aed', CO: '#0891b2',
+  UTG: '#b45309', UTG1: '#d97706', LJ: '#a16207', HJ: '#7c3aed', CO: '#0891b2',
 };
 
 // ─── Face-down card back (villain hole cards on the felt) ────────────────────
@@ -123,13 +154,15 @@ export interface SeatInfo {
 }
 
 export interface PokerTableProps {
-  heroPosition: Position;
-  onPositionChange?: (pos: Position) => void;
+  heroPosition: Position8;
+  onPositionChange?: (pos: Position8) => void;
+  /** Table format — '8max' renders 8 seats (UTG/UTG1/LJ added). Default '6max'. */
+  format?: TableFormat;
   interactive?: boolean;
   className?: string;
   compact?: boolean;
   /** Only these positions are shown as active — others are dimmed (folded) */
-  activePlayers?: Position[];
+  activePlayers?: Position8[];
   /** Text displayed in the pot area in the center of the table */
   potDisplay?: string;
   /** Hero's 2 hole cards shown at the bottom of the table */
@@ -137,7 +170,7 @@ export interface PokerTableProps {
   /** Community cards (flop/turn/river) shown in the center of the felt */
   boardCards?: string[];
   /** Per-position stack / bet overlay rendered directly on the felt */
-  seatInfos?: Partial<Record<Position, SeatInfo>>;
+  seatInfos?: Partial<Record<Position8, SeatInfo>>;
   /** Override the size of the board cards (defaults to 'md' on full table, 'sm' on compact) */
   boardCardSize?: 'sm' | 'md' | 'lg';
   /** Also show the hero's stack badge (off by default — trainers hide it to avoid overlapping hole cards) */
@@ -149,7 +182,7 @@ export interface PokerTableProps {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function PokerTable({
-  heroPosition, onPositionChange, interactive = true, className = '', compact = false,
+  heroPosition, onPositionChange, format = '6max', interactive = true, className = '', compact = false,
   activePlayers, potDisplay, heroCards, boardCards, seatInfos, boardCardSize,
   showHeroStack = false, showVillainCards = false,
 }: PokerTableProps) {
@@ -157,10 +190,15 @@ export function PokerTable({
   const bCardSize = boardCardSize ?? (compact ? 'sm' : 'md');
   const isEn = useLangStore(s => s.lang) === 'en';
 
-  const seatPositions = useMemo<Position[]>(() => {
-    const heroIdx = CLOCKWISE.indexOf(heroPosition);
-    return SEAT_LAYOUT.map((_, i) => CLOCKWISE[(heroIdx + i) % 6]);
-  }, [heroPosition]);
+  // Seat geometry + clockwise order depend on the table format.
+  const layout = format === '8max' ? SEAT_LAYOUT_8 : format === '3max' ? SEAT_LAYOUT_3 : format === 'hu' ? SEAT_LAYOUT_HU : SEAT_LAYOUT;
+  const clockwise = format === '8max' ? CLOCKWISE_8 : format === '3max' ? CLOCKWISE_3 : format === 'hu' ? CLOCKWISE_HU : CLOCKWISE;
+
+  const seatPositions = useMemo<Position8[]>(() => {
+    const heroIdx = clockwise.indexOf(heroPosition);
+    const start = heroIdx < 0 ? 0 : heroIdx;
+    return layout.map((_, i) => clockwise[(start + i) % clockwise.length]);
+  }, [heroPosition, format]);
 
   const btnSeat = seatPositions.indexOf('BTN');
   const sbSeat  = seatPositions.indexOf('SB');
@@ -253,7 +291,7 @@ export function PokerTable({
         </div>
 
         {/* ── Seats ── */}
-        {SEAT_LAYOUT.map((seat, idx) => {
+        {layout.map((seat, idx) => {
           const pos = seatPositions[idx];
           const isHero = idx === 0;
           const isClickable = interactive && !isHero && !!onPositionChange;
@@ -287,8 +325,8 @@ export function PokerTable({
         <AnimatePresence mode="wait">
           <TokenChip
             key={`D-${btnSeat}`}
-            x={btnSeat === 0 ? 64 : SEAT_LAYOUT[btnSeat].cx}
-            y={btnSeat === 0 ? 70 : SEAT_LAYOUT[btnSeat].cy}
+            x={btnSeat === 0 ? 64 : layout[btnSeat].cx}
+            y={btnSeat === 0 ? 70 : layout[btnSeat].cy}
             label="D"
             bg="#dde4ee"
             fg="#1a202c"
@@ -301,8 +339,8 @@ export function PokerTable({
         <AnimatePresence mode="wait">
           <TokenChip
             key={`SB-${sbSeat}`}
-            x={sbSeat === 0 ? 36 : SEAT_LAYOUT[sbSeat].cx}
-            y={sbSeat === 0 ? 70 : SEAT_LAYOUT[sbSeat].cy}
+            x={sbSeat === 0 ? 36 : layout[sbSeat].cx}
+            y={sbSeat === 0 ? 70 : layout[sbSeat].cy}
             label="SB"
             bg="#2563eb"
             fg="#fff"
@@ -315,8 +353,8 @@ export function PokerTable({
         <AnimatePresence mode="wait">
           <TokenChip
             key={`BB-${bbSeat}`}
-            x={bbSeat === 0 ? 64 : SEAT_LAYOUT[bbSeat].cx}
-            y={bbSeat === 0 ? 70 : SEAT_LAYOUT[bbSeat].cy}
+            x={bbSeat === 0 ? 64 : layout[bbSeat].cx}
+            y={bbSeat === 0 ? 70 : layout[bbSeat].cy}
             label="BB"
             bg="#dc2626"
             fg="#fff"
@@ -342,7 +380,7 @@ export function PokerTable({
       </div>{/* end 10% margin wrapper */}
 
       {/* ── Villain face-down hole cards — outside the oval ── */}
-      {showVillainCards && SEAT_LAYOUT.map((seat, idx) => {
+      {showVillainCards && layout.map((seat, idx) => {
         if (seat.cardX === null) return null;
         const pos = seatPositions[idx];
         const isActive = !activePlayers || activePlayers.includes(pos);
@@ -369,9 +407,15 @@ export function PokerTable({
 
 // ─── Seat node ───────────────────────────────────────────────────────────────
 
+/** Structural seat geometry shared by the 6-seat and 8-seat layouts. */
+type SeatGeom = {
+  sx: number; sy: number; cx: number; cy: number;
+  side: string; cardX: number | null; cardY: number | null;
+};
+
 interface SeatNodeProps {
-  seat: typeof SEAT_LAYOUT[number];
-  position: Position;
+  seat: SeatGeom;
+  position: Position8;
   color: string;
   isHero: boolean;
   isClickable: boolean;

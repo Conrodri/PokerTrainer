@@ -41,8 +41,12 @@ export async function saveCustomRange(req: Request, res: Response): Promise<void
       res.status(400).json({ success: false, error: 'cells must be a 169-element array' });
       return;
     }
-    if (!cells.every(c => typeof c === 'number' && Number.isFinite(c) && c >= 0 && c <= 1)) {
-      res.status(400).json({ success: false, error: 'each cell must be a number in [0, 1]' });
+    // BB is a defense spot: its cells are action CODES (0-4), not raise
+    // frequencies. Open positions stay constrained to a [0,1] frequency.
+    const isBB = position === 'BB' || position.endsWith(':BB');
+    const max  = isBB ? 4 : 1;
+    if (!cells.every(c => typeof c === 'number' && Number.isFinite(c) && c >= 0 && c <= max)) {
+      res.status(400).json({ success: false, error: `each cell must be a number in [0, ${max}]` });
       return;
     }
     await prisma.customRange.upsert({

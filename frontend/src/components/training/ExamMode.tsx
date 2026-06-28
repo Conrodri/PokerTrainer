@@ -17,7 +17,14 @@ import { Button } from '../ui/Button';
 
 // Per-module "Sprint" name shown on the launcher / result (replaces "exam").
 const SPRINT_NAMES: Record<string, { fr: string; en: string }> = {
-  preflop:   { fr: 'Sprint de Préflop',      en: 'Preflop Sprint' },
+  preflop:          { fr: 'Sprint Préflop 6-max',       en: 'Preflop 6-max Sprint' },
+  'preflop-mtt':    { fr: 'Sprint Préflop 6-max MTT',   en: 'Preflop 6-max MTT Sprint' },
+  preflop8:         { fr: 'Sprint Préflop 8-max',       en: 'Preflop 8-max Sprint' },
+  'preflop8-mtt':   { fr: 'Sprint Préflop 8-max MTT',   en: 'Preflop 8-max MTT Sprint' },
+  'preflop-3max':   { fr: 'Sprint Préflop 3-max',       en: 'Preflop 3-max Sprint' },
+  'preflop-mtt-3max': { fr: 'Sprint Préflop 3-max MTT', en: 'Preflop 3-max MTT Sprint' },
+  'preflop-hu':     { fr: 'Sprint Préflop HU',          en: 'Preflop HU Sprint' },
+  'preflop-mtt-hu': { fr: 'Sprint Préflop HU MTT',      en: 'Preflop HU MTT Sprint' },
   outs:      { fr: "Sprint d'Outs",          en: 'Outs Sprint' },
   equity:    { fr: "Sprint d'Équité",        en: 'Equity Sprint' },
   potodds:   { fr: 'Sprint de Pot Odds',     en: 'Pot Odds Sprint' },

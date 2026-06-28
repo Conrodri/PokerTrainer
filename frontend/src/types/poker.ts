@@ -4,6 +4,13 @@ export type CardStr = `${Rank}${Suit}`;
 
 // 6-max positions only. UTG1 does not exist in 6-max (9-max concept).
 export type Position = 'UTG' | 'HJ' | 'CO' | 'BTN' | 'SB' | 'BB';
+// 8-max adds the two earliest seats (UTG+1, LJ). Full order:
+// UTG → UTG1 → LJ → HJ → CO → BTN → SB → BB.
+export type Position8 = Position | 'UTG1' | 'LJ';
+// Table format selector — drives positions, ranges and the table layout.
+export type TableFormat = '6max' | '8max' | '3max' | 'hu';
+// Game type — cash game (no antes) vs tournament (antes, ICM).
+export type GameType = 'cashgame' | 'mtt';
 export type Action = 'fold' | 'call' | 'raise' | 'check' | '3bet' | '4bet';
 export type TrainingModule = 'preflop' | 'potodds' | 'equity' | 'outs' | 'bbdefense' | 'postflop' | 'fullhand' | 'rules' | 'betsizing' | 'bluff';
 
@@ -15,17 +22,19 @@ export const SUIT_COLOR: Record<Suit, string> = {
   h: 'text-red-500', d: 'text-red-500', c: 'text-gray-900', s: 'text-gray-900',
 };
 
-export const POSITION_LABELS: Record<Position, string> = {
-  UTG: 'Under the Gun', HJ: 'Hijack',
+export const POSITION_LABELS: Record<Position8, string> = {
+  UTG: 'Under the Gun', UTG1: 'UTG +1', LJ: 'Lojack', HJ: 'Hijack',
   CO: 'Cutoff', BTN: 'Button', SB: 'Small Blind', BB: 'Big Blind',
 };
 
-export const POSITION_SHORT: Record<Position, string> = {
-  UTG: 'UTG', HJ: 'HJ', CO: 'CO', BTN: 'BTN', SB: 'SB', BB: 'BB',
+export const POSITION_SHORT: Record<Position8, string> = {
+  UTG: 'UTG', UTG1: 'UTG+1', LJ: 'LJ', HJ: 'HJ', CO: 'CO', BTN: 'BTN', SB: 'SB', BB: 'BB',
 };
 
-export const POSITION_DESCRIPTIONS: Record<Position, string> = {
+export const POSITION_DESCRIPTIONS: Record<Position8, string> = {
   UTG: 'Premier à parler — range la plus serrée',
+  UTG1: 'Early — range très serrée',
+  LJ: 'Early/intermédiaire — range serrée',
   HJ: 'Position intermédiaire — range modérée',
   CO: 'Bonne position — range assez large',
   BTN: 'Meilleure position — range très large',
@@ -36,7 +45,7 @@ export const POSITION_DESCRIPTIONS: Record<Position, string> = {
 export interface PreflopExercise {
   hand: [CardStr, CardStr];
   notation: string;
-  position: Position;
+  position: Position8;
   correctAction: 'raise' | 'fold';
   correctFrequency: number;
   explanation: string;
@@ -215,11 +224,18 @@ export interface LeaderboardEntry {
   accuracy: number;
   title?: LeaderboardTitle | null;
   modules?: {
-    preflop:  LeaderboardModuleStat;
-    potodds:  LeaderboardModuleStat;
-    equity:   LeaderboardModuleStat;
-    outs:     LeaderboardModuleStat;
-    postflop: LeaderboardModuleStat;
-    fullhand: LeaderboardModuleStat;
+    preflop:             LeaderboardModuleStat;
+    preflop8:            LeaderboardModuleStat;
+    'preflop-mtt':       LeaderboardModuleStat;
+    'preflop8-mtt':      LeaderboardModuleStat;
+    'preflop-3max':      LeaderboardModuleStat;
+    'preflop-mtt-3max':  LeaderboardModuleStat;
+    'preflop-hu':        LeaderboardModuleStat;
+    'preflop-mtt-hu':    LeaderboardModuleStat;
+    potodds:             LeaderboardModuleStat;
+    equity:              LeaderboardModuleStat;
+    outs:                LeaderboardModuleStat;
+    postflop:            LeaderboardModuleStat;
+    fullhand:            LeaderboardModuleStat;
   };
 }

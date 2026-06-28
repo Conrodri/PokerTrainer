@@ -22,7 +22,11 @@ const MAX_STR_NAME     = 80;
 const MAX_STR_LABEL    = 60;
 const MAX_STACK_BB     = 5_000;                       // absurd upper bound in big blinds
 
-const VALID_POSITIONS  = new Set(['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB']);
+const VALID_POSITIONS  = new Set([
+  'UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB',
+  // 8-max custom-range storage keys (format-namespaced, independent from 6-max).
+  '8max:UTG', '8max:UTG1', '8max:LJ', '8max:HJ', '8max:CO', '8max:BTN', '8max:SB',
+]);
 const RESERVED_KEYS    = new Set(['__proto__', 'constructor', 'prototype']);
 
 // ─── Exported validated shapes ────────────────────────────────────────────────

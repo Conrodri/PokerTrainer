@@ -391,7 +391,7 @@ export function PokerRulesPage() {
         <div className="mb-4">
           <PokerTable
             heroPosition={activePos}
-            onPositionChange={setActivePos}
+            onPositionChange={(p) => setActivePos(p as Position)}
             interactive
           />
         </div>

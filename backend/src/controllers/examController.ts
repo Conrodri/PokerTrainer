@@ -1,7 +1,13 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 
-const MODULES = ['preflop', 'potodds', 'equity', 'outs', 'postflop', 'fullhand', 'betsizing'];
+const MODULES = [
+  'preflop', 'preflop-mtt',
+  'preflop8', 'preflop8-mtt',
+  'preflop-3max', 'preflop-mtt-3max',
+  'preflop-hu', 'preflop-mtt-hu',
+  'potodds', 'equity', 'outs', 'postflop', 'fullhand', 'betsizing',
+];
 const MODES   = ['beginner', 'advanced', 'expert'];
 
 function uid(req: Request): string {

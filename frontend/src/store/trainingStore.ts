@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { TrainingModule, Position, PreflopExercise, PotOddsExercise, EquityExercise, OutsExercise, BBDefenseExercise, BluffExercise, ExerciseResult } from '../types/poker';
+import { TrainingModule, Position8, TableFormat, GameType, PreflopExercise, PotOddsExercise, EquityExercise, OutsExercise, BBDefenseExercise, BluffExercise, ExerciseResult } from '../types/poker';
 import { trainingApi } from '../services/api';
 import { useModeStore } from './modeStore';
 
@@ -40,8 +40,8 @@ interface TrainingState {
   setTrainerStarted: (v: boolean) => void;
 
   /** The position currently selected or active in the Preflop trainer (used to pre-select the right tab in MyRangesPanel). */
-  currentPosition: Position | null;
-  setCurrentPosition: (pos: Position | null) => void;
+  currentPosition: Position8 | null;
+  setCurrentPosition: (pos: Position8 | null) => void;
 
   /** Set when the user revealed a hint ("spoil") on the current exercise: the
    *  next recorded answer won't count toward the streak (and the streak was
@@ -54,8 +54,8 @@ interface TrainingState {
   // Actions
   setModule: (module: TrainingModule) => void;
   startSession: (module: TrainingModule) => Promise<void>;
-  fetchPreflopExercise: (position?: Position) => Promise<void>;
-  checkPreflopAnswer: (action: string, timeTaken: number) => Promise<ExerciseResult>;
+  fetchPreflopExercise: (position?: Position8, format?: TableFormat, gameType?: GameType) => Promise<void>;
+  checkPreflopAnswer: (action: string, timeTaken: number, format?: TableFormat, gameType?: GameType) => Promise<ExerciseResult>;
   fetchPotOddsExercise: () => Promise<void>;
   checkPotOddsAnswer: (action: string, timeTaken: number) => Promise<ExerciseResult>;
   fetchEquityExercise: () => Promise<void>;
@@ -106,17 +106,17 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
     }
   },
 
-  fetchPreflopExercise: async (position) => {
+  fetchPreflopExercise: async (position, format = '6max', gameType = 'cashgame') => {
     set({ isLoading: true, error: null, lastResult: null });
     try {
-      const exercise = await trainingApi.getPreflopExercise(position);
+      const exercise = await trainingApi.getPreflopExercise(position, format, gameType);
       set({ preflopExercise: exercise, isLoading: false });
     } catch {
       set({ error: 'Impossible de charger l\'exercice', isLoading: false });
     }
   },
 
-  checkPreflopAnswer: async (userAction, timeTaken) => {
+  checkPreflopAnswer: async (userAction, timeTaken, format = '6max', gameType = 'cashgame') => {
     const { preflopExercise, sessionId, sessionStats } = get();
     if (!preflopExercise) throw new Error('No exercise loaded');
 
@@ -126,6 +126,8 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
       userAction,
       timeTaken,
       sessionId: sessionId || `guest_${Date.now()}`,
+      format,
+      gameType,
     });
 
     const exerciseResult: ExerciseResult = {

@@ -1,4 +1,4 @@
-import { Position, PreflopExercise, EquityExercise } from '../types';
+import { Position, Position8, TableFormat, GameType, PreflopExercise, EquityExercise } from '../types';
 import { dealHand, toHandNotation } from './poker/cards';
 import { getCorrectAction } from './poker/ranges';
 import { getRandomScenario, generateClosePotOddsScenario, generateImpliedOddsScenario, calculatePotOdds, buildEquityExplanation, buildThresholdExplanation, buildImpliedOddsExplanation } from './poker/potOdds';
@@ -6,21 +6,30 @@ import { getRandomOutsScenario, buildOutsOptions, buildOutsExplanation, estimate
 import { getBBDefenseAction, buildBBDefenseExplanation } from './poker/bbDefense';
 
 const PLAYABLE_POSITIONS: Position[] = ['UTG', 'HJ', 'CO', 'BTN', 'SB'];
+const PLAYABLE_POSITIONS_8: Position8[] = ['UTG', 'UTG1', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+const PLAYABLE_POSITIONS_3MAX: Position8[] = ['BTN', 'SB'];
+const PLAYABLE_POSITIONS_HU: Position8[] = ['BTN'];
 
-export function generatePreflopExercise(position?: Position, lang: 'fr' | 'en' = 'fr'): PreflopExercise & { notation: string } {
-  const pos = position || PLAYABLE_POSITIONS[Math.floor(Math.random() * PLAYABLE_POSITIONS.length)];
+export function generatePreflopExercise(
+  position?: Position8,
+  lang: 'fr' | 'en' = 'fr',
+  format: TableFormat = '6max',
+  gameType: GameType = 'cashgame',
+): PreflopExercise & { notation: string } {
+  const playable = format === 'hu' ? PLAYABLE_POSITIONS_HU : format === '3max' ? PLAYABLE_POSITIONS_3MAX : format === '8max' ? PLAYABLE_POSITIONS_8 : PLAYABLE_POSITIONS;
+  const pos = position || playable[Math.floor(Math.random() * playable.length)];
 
   // 80 % of the time force an in-range (raise) hand so fold drills are ~1 in 5.
   const wantInRange = Math.random() < 0.80;
   let [card1, card2] = dealHand();
   if (wantInRange) {
-    for (let attempt = 0; attempt < 8 && getCorrectAction(pos, toHandNotation(card1, card2)).action === 'fold'; attempt++) {
+    for (let attempt = 0; attempt < 8 && getCorrectAction(pos, toHandNotation(card1, card2), format, gameType).action === 'fold'; attempt++) {
       [card1, card2] = dealHand();
     }
   }
 
   const notation = toHandNotation(card1, card2);
-  const { action, frequency, isMixed } = getCorrectAction(pos, notation);
+  const { action, frequency, isMixed } = getCorrectAction(pos, notation, format, gameType);
   const explanation = buildPreflopExplanation(notation, pos, action, frequency, isMixed, lang);
 
   return {
@@ -30,7 +39,7 @@ export function generatePreflopExercise(position?: Position, lang: 'fr' | 'en' =
     heroStack: 100,
     potSize: pos === 'SB' ? 1.5 : 0,
     facing: 'none',
-    tableType: '6max',
+    tableType: format,
     correctAction: action,
     correctFrequency: frequency,
     explanation,
@@ -39,7 +48,7 @@ export function generatePreflopExercise(position?: Position, lang: 'fr' | 'en' =
 
 function buildPreflopExplanation(
   notation: string,
-  position: Position,
+  position: Position8,
   action: 'raise' | 'call' | 'fold',
   frequency: number,
   isMixed: boolean,
@@ -49,9 +58,11 @@ function buildPreflopExplanation(
   return buildPreflopExplanationFr(notation, position, action, frequency, isMixed);
 }
 
-function buildPreflopExplanationFr(notation: string, position: Position, action: 'raise' | 'call' | 'fold', frequency: number, isMixed: boolean): string {
-  const posDesc: Record<Position, string> = {
-    UTG: 'Under the Gun (UTG) — premier à parler, range la plus serrée',
+function buildPreflopExplanationFr(notation: string, position: Position8, action: 'raise' | 'call' | 'fold', frequency: number, isMixed: boolean): string {
+  const posDesc: Record<Position8, string> = {
+    UTG:  'Under the Gun (UTG) — premier à parler, range la plus serrée',
+    UTG1: 'UTG+1 — early position, range très serrée',
+    LJ:   'Lojack (LJ) — early/intermédiaire, range serrée',
     HJ:  'Hijack (HJ) — position intermédiaire, range modérée',
     CO:  'Cutoff (CO) — bonne position, range assez large',
     BTN: 'Button (BTN) — meilleure position, range la plus large',
@@ -85,9 +96,11 @@ function buildPreflopExplanationFr(notation: string, position: Position, action:
   return `${handDesc} → COUCHER depuis ${position}.\n\n${posDesc[position]}.\n\nCette main n'est pas suffisamment forte pour ouvrir de cette position. Attends de meilleures opportunités.`;
 }
 
-function buildPreflopExplanationEn(notation: string, position: Position, action: 'raise' | 'call' | 'fold', frequency: number, isMixed: boolean): string {
-  const posDesc: Record<Position, string> = {
-    UTG: 'Under the Gun (UTG) — first to act, tightest position',
+function buildPreflopExplanationEn(notation: string, position: Position8, action: 'raise' | 'call' | 'fold', frequency: number, isMixed: boolean): string {
+  const posDesc: Record<Position8, string> = {
+    UTG:  'Under the Gun (UTG) — first to act, tightest position',
+    UTG1: 'UTG+1 — early position, very tight range',
+    LJ:   'Lojack (LJ) — early/middle position, tight range',
     HJ:  'Hijack (HJ) — middle position, moderate range',
     CO:  'Cutoff (CO) — good position, fairly wide range',
     BTN: 'Button (BTN) — best position, widest range',

@@ -12,6 +12,7 @@ import { useLangStore } from '../store/langStore';
 
 // ─── Module definitions ───────────────────────────────────────────────────────
 
+// Main accuracy modules (shown as cards with accuracy bars).
 const MODULES: {
   key: keyof NonNullable<LeaderboardEntry['modules']>;
   icon: string;
@@ -24,6 +25,22 @@ const MODULES: {
   { key: 'potodds',  icon: '📊', labelFr: 'Pot Odds',      labelEn: 'Pot Odds'   },
   { key: 'postflop', icon: '🃏', labelFr: 'Post-flop',     labelEn: 'Post-flop'  },
   { key: 'fullhand', icon: '🎰', labelFr: 'Main complète', labelEn: 'Full Hand'  },
+];
+
+// All preflop format/gameType variants — shown as a sprint sub-section.
+const PREFLOP_VARIANTS: {
+  key: keyof NonNullable<LeaderboardEntry['modules']>;
+  labelFr: string;
+  labelEn: string;
+}[] = [
+  { key: 'preflop',          labelFr: '6-max CG',    labelEn: '6-max CG'    },
+  { key: 'preflop-mtt',      labelFr: '6-max MTT',   labelEn: '6-max MTT'   },
+  { key: 'preflop8',         labelFr: '8-max CG',    labelEn: '8-max CG'    },
+  { key: 'preflop8-mtt',     labelFr: '8-max MTT',   labelEn: '8-max MTT'   },
+  { key: 'preflop-3max',     labelFr: '3-max CG',    labelEn: '3-max CG'    },
+  { key: 'preflop-mtt-3max', labelFr: '3-max MTT',   labelEn: '3-max MTT'   },
+  { key: 'preflop-hu',       labelFr: 'HU CG',       labelEn: 'HU CG'       },
+  { key: 'preflop-mtt-hu',   labelFr: 'HU MTT',      labelEn: 'HU MTT'      },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -65,6 +82,11 @@ function ModuleGrid({ modules, isEn }: {
   modules: NonNullable<LeaderboardEntry['modules']>;
   isEn: boolean;
 }) {
+  const preflopVariantsWithData = PREFLOP_VARIANTS.filter(v => {
+    const s = modules[v.key];
+    return (s?.advanced ?? 0) > 0 || (s?.expert ?? 0) > 0;
+  });
+
   return (
     <motion.div
       initial={{ height: 0, opacity: 0 }}
@@ -73,6 +95,7 @@ function ModuleGrid({ modules, isEn }: {
       transition={{ duration: 0.2 }}
       className="overflow-hidden"
     >
+      {/* ── Accuracy cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-3 pb-1 border-t border-gray-800/70 mt-3">
         {MODULES.map(mod => {
           const stat: LeaderboardModuleStat = modules[mod.key];
@@ -131,6 +154,35 @@ function ModuleGrid({ modules, isEn }: {
           );
         })}
       </div>
+
+      {/* ── Pre-flop sprint variants sub-section ── */}
+      {preflopVariantsWithData.length > 0 && (
+        <div className="mt-3 pt-2.5 border-t border-gray-800/50">
+          <p className="text-[10px] font-semibold text-gray-500 mb-2 flex items-center gap-1">
+            🎯 {isEn ? 'Pre-flop sprints by format' : 'Sprints pré-flop par format'}
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {preflopVariantsWithData.map(v => {
+              const s = modules[v.key];
+              return (
+                <div key={v.key} className="flex items-center gap-1.5 text-[10px]">
+                  <span className="text-gray-500 font-semibold">{isEn ? v.labelEn : v.labelFr}</span>
+                  {(s?.advanced ?? 0) > 0 && (
+                    <span className="flex items-center gap-0.5 text-gold-400 font-bold">
+                      <Zap size={8} />{s!.advanced}
+                    </span>
+                  )}
+                  {(s?.expert ?? 0) > 0 && (
+                    <span className="flex items-center gap-0.5 text-purple-400 font-bold">
+                      <Flame size={8} />{s!.expert}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
