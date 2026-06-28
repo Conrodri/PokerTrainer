@@ -186,17 +186,17 @@ export function Navbar() {
               </AnimatePresence>
             </div>
 
+            {/* Achievements */}
+            {user && (
+              <Link to="/achievements" className={linkCls(location.pathname.startsWith('/achievements'))} title={isEn ? 'Achievements' : 'Succès'}>
+                <Medal size={16} /><span className="hidden 2xl:block">{isEn ? 'Achievements' : 'Succès'}</span>
+              </Link>
+            )}
+
             {/* Stats */}
             <Link to="/stats" className={linkCls(location.pathname.startsWith('/stats'))} title={t.nav.stats}>
               <BarChart2 size={16} /><span className="hidden 2xl:block">{t.nav.stats}</span>
             </Link>
-
-            {/* Achievements */}
-            {user && (
-              <Link to="/achievements" className={linkCls(location.pathname.startsWith('/achievements'))} title={isEn ? 'Achievements' : 'Succès'}>
-                <Medal size={16} /><span className="hidden 2xl:block">{isEn ? 'Succès' : 'Succès'}</span>
-              </Link>
-            )}
 
             {/* Leaderboard */}
             <Link to="/leaderboard" className={linkCls(location.pathname.startsWith('/leaderboard'))} title={t.nav.leaderboard}>
@@ -274,10 +274,10 @@ export function Navbar() {
                   >
                     {/* Main nav links */}
                     <MobileNavLink to="/" icon={<Home size={15} />} label={t.nav.home} active={location.pathname === '/'} />
-                    <MobileNavLink to="/stats" icon={<BarChart2 size={15} />} label={t.nav.stats} active={location.pathname.startsWith('/stats')} />
                     {user && (
                       <MobileNavLink to="/achievements" icon={<Medal size={15} />} label={isEn ? 'Achievements' : 'Succès'} active={location.pathname.startsWith('/achievements')} />
                     )}
+                    <MobileNavLink to="/stats" icon={<BarChart2 size={15} />} label={t.nav.stats} active={location.pathname.startsWith('/stats')} />
                     <MobileNavLink to="/leaderboard" icon={<Trophy size={15} />} label={t.nav.leaderboard} active={location.pathname.startsWith('/leaderboard')} />
 
                     {/* Rules section */}
