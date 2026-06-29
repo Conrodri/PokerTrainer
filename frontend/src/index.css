@@ -21,10 +21,8 @@
     overflow-x: hidden;   /* prevent horizontal scroll on narrow viewports */
   }
 
-  /* Prevent overflow on the root */
   #root {
     min-height: 100vh;
-    overflow-x: hidden;
   }
 
   ::-webkit-scrollbar {

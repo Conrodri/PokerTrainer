@@ -335,19 +335,21 @@ export function PokerTable({
           />
         </AnimatePresence>
 
-        {/* ── SB chip ── */}
-        <AnimatePresence mode="wait">
-          <TokenChip
-            key={`SB-${sbSeat}`}
-            x={sbSeat === 0 ? 36 : layout[sbSeat].cx}
-            y={sbSeat === 0 ? 70 : layout[sbSeat].cy}
-            label="SB"
-            bg="#2563eb"
-            fg="#fff"
-            compact={compact}
-            size={compact ? 12 : 17}
-          />
-        </AnimatePresence>
+        {/* ── SB chip (absent in HU — BTN = SB) ── */}
+        {sbSeat >= 0 && (
+          <AnimatePresence mode="wait">
+            <TokenChip
+              key={`SB-${sbSeat}`}
+              x={sbSeat === 0 ? 36 : layout[sbSeat].cx}
+              y={sbSeat === 0 ? 70 : layout[sbSeat].cy}
+              label="SB"
+              bg="#2563eb"
+              fg="#fff"
+              compact={compact}
+              size={compact ? 12 : 17}
+            />
+          </AnimatePresence>
+        )}
 
         {/* ── BB chip ── */}
         <AnimatePresence mode="wait">

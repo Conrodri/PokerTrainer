@@ -139,27 +139,45 @@ export function TrainingPage() {
 
   return (
     <div className="flex flex-col gap-2.5">
-      {/* Module tabs — always wrap: one row when there's room, extra rows when the
-          window is narrow (no unreliable horizontal scroll at any width). */}
-      <div className="flex flex-wrap justify-center gap-1.5 border-b border-gray-800 pb-2">
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => handleTabChange(tab.id)}
-            className={`
-              flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 transition-all relative
-              ${activeModule === tab.id
-                ? 'bg-felt-700 text-white shadow-glow-green border border-felt-500'
-                : 'text-gray-400 hover:text-white hover:bg-gray-800'}
-            `}
-          >
-            <span className="text-sm leading-none">{tab.icon}</span>
-            <span>{tab.label}</span>
-            {tab.premium && !isPremium && (
-              <Lock size={10} className="text-yellow-400 shrink-0 ml-0.5" />
-            )}
-          </button>
-        ))}
+      {/* Module tabs — 2 explicit rows: free / premium */}
+      <div className="flex flex-col gap-1 border-b border-gray-800 pb-2">
+        {/* Row 1 — Free */}
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {TABS.filter(t => !t.premium).map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`
+                flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 transition-all
+                ${activeModule === tab.id
+                  ? 'bg-felt-700 text-white shadow-glow-green border border-felt-500'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'}
+              `}
+            >
+              <span className="text-sm leading-none">{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+        {/* Row 2 — Premium */}
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {TABS.filter(t => t.premium).map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`
+                flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 transition-all
+                ${activeModule === tab.id
+                  ? 'bg-yellow-700/60 text-yellow-200 border border-yellow-600/50'
+                  : 'text-yellow-700 hover:text-yellow-400 hover:bg-yellow-900/20'}
+              `}
+            >
+              <span className="text-sm leading-none">{tab.icon}</span>
+              <span>{tab.label}</span>
+              {!isPremium && <Lock size={10} className="text-yellow-600 shrink-0 ml-0.5" />}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Back button — always below the module tabs */}

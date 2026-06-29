@@ -4,10 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useLangStore } from '../../store/langStore';
 import { Hand } from '../poker/Card';
-import { PokerTable, CLOCKWISE, POSITION_COLORS } from '../poker/PokerTable';
-import { Position } from '../../types/poker';
+import { PokerTable, CLOCKWISE, CLOCKWISE_8, CLOCKWISE_3, CLOCKWISE_HU, POSITION_COLORS } from '../poker/PokerTable';
+import { Position, Position8, TableFormat } from '../../types/poker';
 import { PokerTerm } from '../ui/PokerTerm';
 import { TutorialHand } from '../tutorial/HandTutorialModal';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 
@@ -32,7 +33,7 @@ type Tab = typeof TABS[number]['id'];
 
 // ─── Interactive table constants ─────────────────────────────────────────────
 
-const POSITION_TIPS: Record<Position, { fr: string; en: string }> = {
+const POSITION_TIPS: Record<Position8, { fr: string; en: string }> = {
   BTN: {
     fr: 'La meilleure position. Tu agis en DERNIER post-flop — tu vois toutes les actions avant de décider. Range la plus large (~45%). Le jeton D tourne à chaque main.',
     en: 'The best position. You act LAST post-flop — you see all actions before deciding. Widest range (~45%). The D token rotates each hand.',
@@ -49,6 +50,14 @@ const POSITION_TIPS: Record<Position, { fr: string; en: string }> = {
     fr: "La pire position. Tu agis en PREMIER sans aucune information sur les autres joueurs. Joue uniquement tes meilleures mains (~15%). Chaque adversaire est encore à parler.",
     en: 'The worst position. You act FIRST with no information on other players. Only play your best hands (~15%). Every opponent still has to act after you.',
   },
+  UTG1: {
+    fr: "Position très serrée, juste après UTG. Joue des mains solides (~17%). 6 joueurs actent encore après toi — tu n'as presque aucune information.",
+    en: 'Very tight position, right after UTG. Play solid hands (~17%). 6 players still act after you — you have almost no information.',
+  },
+  LJ: {
+    fr: "Position intermédiaire (Lojack). Tu peux élargir légèrement ta range (~19%) mais reste discipliné. 5 joueurs actent encore après toi.",
+    en: 'Middle position (Lojack). You can widen your range slightly (~19%) but stay disciplined. 5 players still act after you.',
+  },
   HJ: {
     fr: "Position intermédiaire, légèrement meilleure qu'UTG. Tu peux jouer quelques mains de plus (~20%) mais reste relativement serré. 3 joueurs actent encore après toi.",
     en: 'Middle position, slightly better than UTG. You can play a few more hands (~20%) but stay relatively tight. 3 players still act after you.',
@@ -59,18 +68,77 @@ const POSITION_TIPS: Record<Position, { fr: string; en: string }> = {
   },
 };
 
+const FORMAT_POSITIONS: Record<TableFormat, Position8[]> = {
+  '6max': CLOCKWISE as Position8[],
+  '8max': CLOCKWISE_8 as Position8[],
+  '3max': CLOCKWISE_3 as Position8[],
+  'hu':   CLOCKWISE_HU as Position8[],
+};
+
+const FORMAT_RANGE_PCT: Record<TableFormat, Partial<Record<Position8, string>>> = {
+  '6max': { BTN: '~45%', SB: '~35%', BB: 'Défend', UTG: '~15%', HJ: '~20%', CO: '~26%' },
+  '8max': { BTN: '~45%', SB: '~35%', BB: 'Défend', UTG: '~13%', UTG1: '~17%', LJ: '~19%', HJ: '~22%', CO: '~27%' },
+  '3max': { BTN: '~50%', SB: '~40%', BB: 'Défend' },
+  'hu':   { BTN: '~65%', BB: 'Défend' },
+};
+
+const FORMAT_RANGE_PCT_EN: Record<TableFormat, Partial<Record<Position8, string>>> = {
+  '6max': { BTN: '~45%', SB: '~35%', BB: 'Defend', UTG: '~15%', HJ: '~20%', CO: '~26%' },
+  '8max': { BTN: '~45%', SB: '~35%', BB: 'Defend', UTG: '~13%', UTG1: '~17%', LJ: '~19%', HJ: '~22%', CO: '~27%' },
+  '3max': { BTN: '~50%', SB: '~40%', BB: 'Defend' },
+  'hu':   { BTN: '~65%', BB: 'Defend' },
+};
+
+const TABLE_FORMATS: { id: TableFormat; label: string; players: number }[] = [
+  { id: '6max', label: '6-Max', players: 6 },
+  { id: '8max', label: '8-Max', players: 8 },
+  { id: '3max', label: '3-Max', players: 3 },
+  { id: 'hu',   label: 'HU',    players: 2 },
+];
+
+type PosGroupDef = { key: string; colorClass: string; dotClass: string; descFr: string; descEn: string };
+
+const FORMAT_GROUPS: Record<TableFormat, PosGroupDef[]> = {
+  '6max': [
+    { key: 'BTN',       colorClass: 'border-green-700/50 bg-green-900/20 text-green-300',   dotClass: 'bg-green-500',  descFr: 'La meilleure — tu parles en dernier',    descEn: 'The best — you act last' },
+    { key: 'CO/HJ',     colorClass: 'border-yellow-700/50 bg-yellow-900/20 text-yellow-300', dotClass: 'bg-yellow-500', descFr: 'Bonnes — tu parles vers la fin',           descEn: 'Good — you act near the end' },
+    { key: 'UTG/SB',    colorClass: 'border-red-700/50 bg-red-900/20 text-red-300',          dotClass: 'bg-red-500',    descFr: 'Les moins bonnes — tu parles en premier', descEn: 'The worst — you act first' },
+  ],
+  '8max': [
+    { key: 'BTN',          colorClass: 'border-green-700/50 bg-green-900/20 text-green-300',    dotClass: 'bg-green-500',  descFr: 'La meilleure — tu parles en dernier',    descEn: 'The best — you act last' },
+    { key: 'CO/HJ',        colorClass: 'border-yellow-700/50 bg-yellow-900/20 text-yellow-300', dotClass: 'bg-yellow-500', descFr: 'Bonnes — tu parles vers la fin',           descEn: 'Good — you act near the end' },
+    { key: 'LJ/UTG1/UTG',  colorClass: 'border-orange-700/50 bg-orange-900/20 text-orange-300', dotClass: 'bg-orange-500', descFr: 'Early — range la plus serrée',            descEn: 'Early — tightest range' },
+    { key: 'SB',           colorClass: 'border-red-700/50 bg-red-900/20 text-red-300',          dotClass: 'bg-red-500',    descFr: 'Délicate — hors position post-flop',     descEn: 'Tricky — out of position post-flop' },
+  ],
+  '3max': [
+    { key: 'BTN', colorClass: 'border-green-700/50 bg-green-900/20 text-green-300',   dotClass: 'bg-green-500',  descFr: 'La meilleure — tu parles en dernier',       descEn: 'The best — you act last' },
+    { key: 'SB',  colorClass: 'border-yellow-700/50 bg-yellow-900/20 text-yellow-300', dotClass: 'bg-yellow-500', descFr: 'Délicate — hors position post-flop',         descEn: 'Tricky — out of position post-flop' },
+    { key: 'BB',  colorClass: 'border-red-700/50 bg-red-900/20 text-red-300',          dotClass: 'bg-red-500',    descFr: 'Défend — poste 1 BB obligatoire',            descEn: 'Defend — posts 1 BB forced' },
+  ],
+  'hu': [
+    { key: 'BTN', colorClass: 'border-green-700/50 bg-green-900/20 text-green-300', dotClass: 'bg-green-500', descFr: 'La meilleure — BTN = SB, tu parles en dernier post-flop', descEn: 'The best — BTN = SB, you act last post-flop' },
+    { key: 'BB',  colorClass: 'border-red-700/50 bg-red-900/20 text-red-300',       dotClass: 'bg-red-500',   descFr: 'Défend — poste 1 BB, tu agis en premier post-flop',     descEn: 'Defend — posts 1 BB, you act first post-flop' },
+  ],
+};
+
 // ─── PokerRulesPage ───────────────────────────────────────────────────────────
 
 export function PokerRulesPage() {
   const isEn = useLangStore(s => s.lang) === 'en';
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const [activePos, setActivePos] = useState<Position>('BTN');
+  const [activePos, setActivePos] = useState<Position8>('BTN');
   const [tab, setTab] = useState<Tab>('jeu');
+  const [tableFormat, setTableFormat] = useState<TableFormat>('6max');
 
-  const rangePct: Record<Position, string> = {
-    BTN: '~45%', SB: '~35%', BB: isEn ? 'Defend' : 'Défend',
-    UTG: '~15%', HJ: '~20%', CO: '~26%',
-  };
+  const formatPositions = FORMAT_POSITIONS[tableFormat];
+  const rangePct = isEn ? FORMAT_RANGE_PCT_EN[tableFormat] : FORMAT_RANGE_PCT[tableFormat];
+
+  function handleFormatChange(fmt: TableFormat) {
+    setTableFormat(fmt);
+    const pos = FORMAT_POSITIONS[fmt];
+    if (!pos.includes(activePos as Position8)) setActivePos(pos[0]);
+  }
 
   const hands = [
     { emoji: '📋', fr: 'Carte haute',        en: 'High card',       descFr: 'La carte la plus haute gagne',           descEn: 'The highest card wins',              cards: ['As', 'Kd'] },
@@ -91,12 +159,6 @@ export function PokerRulesPage() {
     { num: 3, color: 'bg-yellow-500', label: 'Turn',      descFr: 'Une 4ème carte est posée au milieu. Nouveau tour de mises.', descEn: 'A 4th card is placed in the middle. Another betting round.' },
     { num: 4, color: 'bg-red-500',    label: 'River',     descFr: 'La 5ème et dernière carte. Dernier tour de mises.', descEn: 'The 5th and last card. Final betting round.' },
     { num: 5, color: 'bg-yellow-400', label: 'Showdown',  descFr: 'Les joueurs restants montrent leurs cartes. La meilleure combinaison gagne !', descEn: 'Remaining players show their cards. The best hand wins!' },
-  ] as const;
-
-  const positions = [
-    { label: 'BTN (Button)', colorClass: 'border-green-700/50 bg-green-900/20 text-green-300',   dotClass: 'bg-green-500',  descFr: 'La meilleure — tu parles en dernier',       descEn: 'The best — you act last' },
-    { label: 'CO, HJ',       colorClass: 'border-yellow-700/50 bg-yellow-900/20 text-yellow-300', dotClass: 'bg-yellow-500', descFr: 'Bonnes positions — tu parles vers la fin',   descEn: 'Good positions — you act near the end' },
-    { label: 'UTG, SB',      colorClass: 'border-red-700/50 bg-red-900/20 text-red-300',          dotClass: 'bg-red-500',    descFr: 'Les moins bonnes — tu parles en premier',    descEn: 'The worst — you act first' },
   ] as const;
 
   const modules = [
@@ -265,22 +327,43 @@ export function PokerRulesPage() {
 
           {/* ══ LA TABLE ══ */}
           {tab === 'table' && <>
+            {/* Format selector */}
+            <div className="flex gap-1.5">
+              {TABLE_FORMATS.map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => handleFormatChange(f.id)}
+                  className={`flex-1 flex flex-col items-center py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                    tableFormat === f.id
+                      ? 'bg-yellow-600 border-yellow-500 text-white'
+                      : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+                  }`}
+                >
+                  <span className="font-bold">{f.label}</span>
+                  <span className="text-[10px] opacity-70">{f.players} {isEn ? 'players' : 'joueurs'}</span>
+                </button>
+              ))}
+            </div>
+
             <Section title={`📍 ${isEn ? 'Positions' : 'Les positions'}`}>
               <p className="text-[11px] text-gray-400 mb-2">
                 {isEn ? 'Your seat at the table matters a lot!' : 'Ta place à la table est très importante au poker !'}
               </p>
               <div className="flex flex-col gap-1.5 mb-2">
-                {positions.map(pos => {
+                {FORMAT_GROUPS[tableFormat].map(grp => {
                   const POS_LABEL: Record<string, ReactNode> = {
-                    'BTN (Button)': <><PokerTerm id="btn">BTN</PokerTerm> (Button)</>,
-                    'CO, HJ': <><PokerTerm id="co">CO</PokerTerm>, <PokerTerm id="hj">HJ</PokerTerm></>,
-                    'UTG, SB': <><PokerTerm id="utg">UTG</PokerTerm>, <PokerTerm id="sb">SB</PokerTerm></>,
+                    'BTN':        <><PokerTerm id="btn">BTN</PokerTerm> (Button)</>,
+                    'CO/HJ':      <><PokerTerm id="co">CO</PokerTerm> / <PokerTerm id="hj">HJ</PokerTerm></>,
+                    'UTG/SB':     <><PokerTerm id="utg">UTG</PokerTerm> / <PokerTerm id="sb">SB</PokerTerm></>,
+                    'LJ/UTG1/UTG':<>LJ / UTG1 / <PokerTerm id="utg">UTG</PokerTerm></>,
+                    'SB':         <><PokerTerm id="sb">SB</PokerTerm></>,
+                    'BB':         <><PokerTerm id="bb">BB</PokerTerm></>,
                   };
                   return (
-                    <div key={pos.label} className={`rounded-lg p-2 border ${pos.colorClass} flex items-center gap-2`}>
-                      <div className={`${pos.dotClass} rounded-full w-2 h-2 shrink-0`} />
-                      <span className="font-bold text-xs">{POS_LABEL[pos.label] ?? pos.label}</span>
-                      <span className="text-[11px] opacity-70">— {isEn ? pos.descEn : pos.descFr}</span>
+                    <div key={grp.key} className={`rounded-lg p-2 border ${grp.colorClass} flex items-center gap-2`}>
+                      <div className={`${grp.dotClass} rounded-full w-2 h-2 shrink-0`} />
+                      <span className="font-bold text-xs">{POS_LABEL[grp.key] ?? grp.key}</span>
+                      <span className="text-[11px] opacity-70">— {isEn ? grp.descEn : grp.descFr}</span>
                     </div>
                   );
                 })}
@@ -301,14 +384,16 @@ export function PokerRulesPage() {
 
               <div className="mb-2">
                 <PokerTable
-                  heroPosition={activePos}
-                  onPositionChange={(p) => setActivePos(p as Position)}
+                  heroPosition={activePos as Position}
+                  onPositionChange={(p) => setActivePos(p as Position8)}
                   interactive
+                  format={tableFormat}
+                  compact={isMobile}
                 />
               </div>
 
               <motion.div
-                key={activePos}
+                key={`${tableFormat}-${activePos}`}
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.12 }}
@@ -337,8 +422,8 @@ export function PokerRulesPage() {
                 </p>
               </motion.div>
 
-              <div className="grid grid-cols-3 gap-1.5 mb-2">
-                {CLOCKWISE.map(pos => (
+              <div className={`grid gap-1.5 mb-2 ${formatPositions.length <= 3 ? 'grid-cols-3' : formatPositions.length <= 6 ? 'grid-cols-3' : 'grid-cols-4'}`}>
+                {formatPositions.map(pos => (
                   <button
                     key={pos}
                     onClick={() => setActivePos(pos)}
@@ -349,18 +434,18 @@ export function PokerRulesPage() {
                     }`}
                   >
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ background: POSITION_COLORS[pos] }} />
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-white text-[11px] font-bold leading-none">{pos}</p>
                       <p className="text-gray-500 text-[10px] mt-0.5">{rangePct[pos]}</p>
                     </div>
-                    {activePos === pos && <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: POSITION_COLORS[pos] }} />}
+                    {activePos === pos && <div className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ background: POSITION_COLORS[pos] }} />}
                   </button>
                 ))}
               </div>
 
-              <Link to="/training?module=preflop">
+              <Link to={`/training?module=preflop&tableFormat=${tableFormat}`}>
                 <button className="w-full py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
-                  {isEn ? `Train from ${activePos} →` : `S'entraîner depuis ${activePos} →`}
+                  {isEn ? `Train from ${activePos} (${TABLE_FORMATS.find(f => f.id === tableFormat)?.label}) →` : `S'entraîner depuis ${activePos} (${TABLE_FORMATS.find(f => f.id === tableFormat)?.label}) →`}
                   <ArrowRight size={13} />
                 </button>
               </Link>

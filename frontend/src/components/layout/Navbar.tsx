@@ -252,7 +252,8 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0,  scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full right-0 mt-2 w-64 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl z-50 overflow-hidden py-2"
+                    className="absolute top-full right-0 mt-2 w-64 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl z-50 overflow-y-auto py-2"
+                    style={{ maxHeight: 'calc(100dvh - 4rem)' }}
                   >
                     {/* Main nav links */}
                     <MobileNavLink to="/" icon={<Home size={15} />} label={t.nav.home} active={location.pathname === '/'} />

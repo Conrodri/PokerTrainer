@@ -429,23 +429,43 @@ export function HomePage() {
       <section>
         <h2 className="text-sm font-bold text-white mb-2 text-center">{t.home.modules_title}</h2>
 
-        {/* Tab bar */}
-        <div className="flex flex-wrap gap-1.5 justify-center mb-2.5">
-          {MODULES.map(m => (
-            <button
-              key={m.id}
-              onClick={() => setSelectedId(m.id)}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                selectedId === m.id
-                  ? 'bg-felt-700 border-felt-500 text-white shadow-glow-green'
-                  : 'bg-gray-900/60 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
-              }`}
-            >
-              <span>{m.icon}</span>
-              <span>{isEn ? m.title.en : m.title.fr}</span>
-              {m.premium && <span className="text-gold-400 text-[10px] leading-none">👑</span>}
-            </button>
-          ))}
+        {/* Tab bar — 2 rows: free / premium */}
+        <div className="flex flex-col gap-1 mb-2.5">
+          {/* Row 1 — Free */}
+          <div className="flex flex-wrap gap-1.5 justify-center">
+            {MODULES.filter(m => !m.premium).map(m => (
+              <button
+                key={m.id}
+                onClick={() => setSelectedId(m.id)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                  selectedId === m.id
+                    ? 'bg-felt-700 border-felt-500 text-white shadow-glow-green'
+                    : 'bg-gray-900/60 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                <span>{m.icon}</span>
+                <span>{isEn ? m.title.en : m.title.fr}</span>
+              </button>
+            ))}
+          </div>
+          {/* Row 2 — Premium */}
+          <div className="flex flex-wrap gap-1.5 justify-center">
+            {MODULES.filter(m => m.premium).map(m => (
+              <button
+                key={m.id}
+                onClick={() => setSelectedId(m.id)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                  selectedId === m.id
+                    ? 'bg-yellow-700/60 border-yellow-600/50 text-yellow-200'
+                    : 'bg-gray-900/60 border-yellow-900/50 text-yellow-700 hover:text-yellow-400 hover:border-yellow-700/50'
+                }`}
+              >
+                <span>{m.icon}</span>
+                <span>{isEn ? m.title.en : m.title.fr}</span>
+                <span className="text-gold-400 text-[10px] leading-none">👑</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Detail panel */}

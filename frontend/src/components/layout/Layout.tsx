@@ -27,7 +27,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const showBack = pathname !== '/' && pathname !== '/training';
 
   return (
-    <div className="min-h-screen text-white overflow-x-hidden" style={{ backgroundColor: BG_THEMES[bgTheme].bg }}>
+    <div className="min-h-screen text-white" style={{ backgroundColor: BG_THEMES[bgTheme].bg }}>
       <Navbar />
       <main className="pt-14">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
