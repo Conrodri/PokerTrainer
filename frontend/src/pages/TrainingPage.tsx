@@ -41,6 +41,7 @@ export function TrainingPage() {
   );
   // Beginner trains on GTO only → no custom-range toolbar.
   const trainMode = useModeStore(s => s.mode);
+  const setMode = useModeStore(s => s.setMode);
   const isBeginnerMode = trainMode === 'beginner';
   const [activeModule, setActiveModule] = useState<TrainingModule>(
     (searchParams.get('module') as TrainingModule) || 'preflop'
@@ -94,6 +95,15 @@ export function TrainingPage() {
       setShowMyRanges(false);
     }
   }, [searchParams]);
+
+  // Read ?mode= param from URL (set by homepage mode buttons) on mount only
+  useEffect(() => {
+    const modeParam = searchParams.get('mode');
+    if (modeParam === 'beginner' || modeParam === 'advanced' || modeParam === 'expert') {
+      setMode(modeParam);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => { startSession(activeModule); }, [activeModule]);
 

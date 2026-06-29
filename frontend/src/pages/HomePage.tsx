@@ -1,203 +1,418 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Calculator, BarChart2, Layers, ArrowRight, Star, GraduationCap, Zap, Flame } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, GraduationCap, Zap, Flame, Star, Calculator, BarChart2, Layers } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useT } from '../i18n';
+import type { TrainingMode } from '../store/modeStore';
 
-// ─── Tier row helpers ──────────────────────────────────────────────────────────
+// ─── Data ─────────────────────────────────────────────────────────────────────
 
-type Tier = { icon: React.ReactNode; label: string; desc: string; color: string };
+type ModeDetail = {
+  mode: TrainingMode;
+  icon: React.ReactNode;
+  label: { fr: string; en: string };
+  color: { border: string; bg: string; text: string; btn: string };
+  desc: { fr: string; en: string };
+};
 
-function TierRow({ tier }: { tier: Tier }) {
-  return (
-    <div className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${tier.color}`}>
-      <span className="shrink-0 flex items-center mt-px">{tier.icon}</span>
-      <span className="font-semibold shrink-0">{tier.label}</span>
-      <span className="text-gray-400 leading-snug">{tier.desc}</span>
-    </div>
-  );
-}
+type ModuleEntry = {
+  id: string;
+  icon: string;
+  title: { fr: string; en: string };
+  subtitle: { fr: string; en: string };
+  badge: { fr: string; en: string };
+  badgeColor: string;
+  href: string;
+  premium?: boolean;
+  modes: ModeDetail[];
+};
+
+const BEGINNER_STYLE = {
+  border: 'border-blue-700/50',
+  bg: 'bg-blue-950/30',
+  text: 'text-blue-300',
+  btn: 'bg-blue-700 hover:bg-blue-600 text-white',
+};
+const ADVANCED_STYLE = {
+  border: 'border-amber-700/40',
+  bg: 'bg-amber-950/20',
+  text: 'text-amber-300',
+  btn: 'bg-amber-700 hover:bg-amber-600 text-white',
+};
+const EXPERT_STYLE = {
+  border: 'border-purple-700/40',
+  bg: 'bg-purple-950/20',
+  text: 'text-purple-300',
+  btn: 'bg-purple-700 hover:bg-purple-600 text-white',
+};
+
+const MODULES: ModuleEntry[] = [
+  {
+    id: 'preflop',
+    icon: '🎯',
+    title: { fr: 'Pré-flop', en: 'Pre-flop' },
+    subtitle: { fr: 'Ranges & Positions', en: 'Ranges & Positions' },
+    badge: { fr: 'Fondamental', en: 'Fundamental' },
+    badgeColor: 'bg-green-900 text-green-300',
+    href: '/training?module=preflop',
+    modes: [
+      {
+        mode: 'beginner',
+        icon: <GraduationCap size={13} />,
+        label: { fr: 'Débutant', en: 'Beginner' },
+        color: BEGINNER_STYLE,
+        desc: {
+          fr: 'Les ranges GTO sont affichées visuellement sur la matrice 13×13. Tu vois quelles mains jouer (ou coucher) selon ta position, avec une explication complète à chaque réponse. Idéal pour mémoriser les patterns de base et comprendre pourquoi chaque main est jouée ou non.',
+          en: 'GTO ranges are shown visually on the 13×13 matrix. You see which hands to play (or fold) by position, with a full explanation on each answer. Perfect for memorising the basic patterns and understanding why each hand is played.',
+        },
+      },
+      {
+        mode: 'advanced',
+        icon: <Zap size={13} />,
+        label: { fr: 'Avancé', en: 'Advanced' },
+        color: ADVANCED_STYLE,
+        desc: {
+          fr: 'Les indices sont cachés — tu réponds sans support visuel. Tu peux configurer tes propres ranges (169 mains) et les sauvegarder en profils réutilisables. Le mode sprint te chronomètre à 10 secondes par décision. 4 formats de table (6-max, 8-max, 3-max, HU) × Cash-game et MTT.',
+          en: 'Hints are hidden — you answer without visual support. Configure your own ranges (169 hands) and save them as reusable profiles. Sprint mode times you at 10 seconds per decision. 4 table formats (6-max, 8-max, 3-max, HU) × Cash-game and MTT.',
+        },
+      },
+      {
+        mode: 'expert',
+        icon: <Flame size={13} />,
+        label: { fr: 'Expert', en: 'Expert' },
+        color: EXPERT_STYLE,
+        desc: {
+          fr: 'Fréquences multi-actions pour chaque main : Fold / Call / Raise / All-in en pourcentages exacts. Ranges personnalisées avancées avec mélanges de stratégies. Sprint à 5 secondes, 3 erreurs = fin de run. Le niveau le plus exigeant, proche du jeu en ligne compétitif.',
+          en: 'Multi-action frequencies per hand: Fold / Call / Raise / All-in in exact percentages. Advanced custom ranges with strategy mixes. Sprint at 5 seconds, 3 errors = run over. The most demanding level, close to competitive online play.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'outs',
+    icon: '🎲',
+    title: { fr: 'Outs', en: 'Outs' },
+    subtitle: { fr: 'Cartes qui améliorent', en: 'Cards that improve' },
+    badge: { fr: 'Mathématiques', en: 'Mathematics' },
+    badgeColor: 'bg-amber-900 text-amber-300',
+    href: '/training?module=outs',
+    modes: [
+      {
+        mode: 'beginner',
+        icon: <GraduationCap size={13} />,
+        label: { fr: 'Débutant', en: 'Beginner' },
+        color: BEGINNER_STYLE,
+        desc: {
+          fr: 'Les tirages possibles sont listés visuellement. Tu comptes tes outs avec l\'aide de l\'interface, puis tu appliques la règle de 2 & 4 guidée pas à pas. Une explication complète te rappelle pourquoi chaque carte compte comme out.',
+          en: 'Possible draws are listed visually. You count your outs with interface help, then apply the 2 & 4 rule step by step. A full explanation reminds you why each card counts as an out.',
+        },
+      },
+      {
+        mode: 'advanced',
+        icon: <Zap size={13} />,
+        label: { fr: 'Avancé', en: 'Advanced' },
+        color: ADVANCED_STYLE,
+        desc: {
+          fr: 'Les outs sont masqués après ton estimation. Tu dois évaluer l\'équité de tête, sans support visuel. Révéler l\'indice réinitialise ton streak. Les scénarios incluent des tirages combinés (flush draw + straight draw).',
+          en: 'Outs are hidden after your estimate. You must assess equity mentally without visual support. Revealing the hint resets your streak. Scenarios include combined draws (flush draw + straight draw).',
+        },
+      },
+      {
+        mode: 'expert',
+        icon: <Flame size={13} />,
+        label: { fr: 'Expert', en: 'Expert' },
+        color: EXPERT_STYLE,
+        desc: {
+          fr: 'Tu sautes directement au % d\'équité sans étape intermédiaire. Les scénarios sont plus complexes (outs pollués, tirages adverses à déduire). La règle de 2 & 4 doit être appliquée mentalement en 5 secondes.',
+          en: 'You jump straight to the equity % without intermediate steps. Scenarios are more complex (dirty outs, opponent draws to factor in). The 2 & 4 rule must be applied mentally in 5 seconds.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'equity',
+    icon: '⚖️',
+    title: { fr: 'Équité', en: 'Equity' },
+    subtitle: { fr: 'Comparaison de mains', en: 'Hand comparison' },
+    badge: { fr: 'Intermédiaire', en: 'Intermediate' },
+    badgeColor: 'bg-purple-900 text-purple-300',
+    href: '/training?module=equity',
+    modes: [
+      {
+        mode: 'beginner',
+        icon: <GraduationCap size={13} />,
+        label: { fr: 'Débutant', en: 'Beginner' },
+        color: BEGINNER_STYLE,
+        desc: {
+          fr: 'L\'équité minimum pour appeler est calculée étape par étape avec la formule affichée. Tu valides chaque étape avant d\'avancer. Parfait pour comprendre la logique mathématique derrière chaque call.',
+          en: 'The minimum equity to call is calculated step by step with the formula shown. You validate each step before moving forward. Perfect for understanding the mathematical logic behind every call.',
+        },
+      },
+      {
+        mode: 'advanced',
+        icon: <Zap size={13} />,
+        label: { fr: 'Avancé', en: 'Advanced' },
+        color: ADVANCED_STYLE,
+        desc: {
+          fr: 'Les indices sont masqués. Tu dois calculer les cotes du pot mentalement et estimer ton équité avant de décider. Révéler l\'indice casse la série. Les affrontements sont variés (suited connectors, paires contre surpaires).',
+          en: 'Hints are hidden. You must mentally calculate pot odds and estimate your equity before deciding. Revealing the hint breaks the streak. Matchups are varied (suited connectors, pairs vs overpairs).',
+        },
+      },
+      {
+        mode: 'expert',
+        icon: <Flame size={13} />,
+        label: { fr: 'Expert', en: 'Expert' },
+        color: EXPERT_STYLE,
+        desc: {
+          fr: 'Calculs de bounty tournoi : l\'équité effective prend en compte la prime du villain. Tu dois intégrer la valeur ICM pour évaluer si un call est rentable en contexte MTT. Le niveau le plus proche du jeu tournoi réel.',
+          en: 'Tournament bounty calculations: effective equity accounts for the villain\'s bounty. You must factor in ICM value to assess call profitability in MTT context. The closest level to real tournament play.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'potodds',
+    icon: '📐',
+    title: { fr: 'Pot Odds', en: 'Pot Odds' },
+    subtitle: { fr: 'Calcul de rentabilité', en: 'Profitability calculation' },
+    badge: { fr: 'Mathématiques', en: 'Mathematics' },
+    badgeColor: 'bg-blue-900 text-blue-300',
+    href: '/training?module=potodds',
+    modes: [
+      {
+        mode: 'beginner',
+        icon: <GraduationCap size={13} />,
+        label: { fr: 'Débutant', en: 'Beginner' },
+        color: BEGINNER_STYLE,
+        desc: {
+          fr: 'La cote du pot est calculée visuellement. Tu vois le ratio call/pot, l\'équité requise, et si le call est EV+ ou EV−. L\'app décompose chaque étape pour que tu comprennes la logique avant de répondre.',
+          en: 'Pot odds are calculated visually. You see the call/pot ratio, required equity, and whether the call is EV+ or EV−. The app breaks down each step so you understand the logic before answering.',
+        },
+      },
+      {
+        mode: 'advanced',
+        icon: <Zap size={13} />,
+        label: { fr: 'Avancé', en: 'Advanced' },
+        color: ADVANCED_STYLE,
+        desc: {
+          fr: 'L\'EV est affiché mais l\'indice de calcul est caché. Tu dois estimer les pot odds mentalement. Révéler l\'indice remet ton streak à zéro. Les scénarios incluent des tailles de mise variées (33 %, 67 %, pot, overbet).',
+          en: 'EV is shown but the calculation hint is hidden. You must estimate pot odds mentally. Revealing the hint resets your streak. Scenarios include varied bet sizes (33%, 67%, pot, overbet).',
+        },
+      },
+      {
+        mode: 'expert',
+        icon: <Flame size={13} />,
+        label: { fr: 'Expert', en: 'Expert' },
+        color: EXPERT_STYLE,
+        desc: {
+          fr: 'L\'équité est masquée. Tu pars des tailles brutes pour calculer les pot odds de zéro, puis décides. La décomposition EV complète (EV call vs fold, fréquences) t\'est révélée seulement après ta réponse.',
+          en: 'Equity is hidden. You start from raw bet sizes to calculate pot odds from scratch, then decide. The full EV breakdown (EV call vs fold, frequencies) is revealed only after your answer.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'postflop',
+    icon: '🃏',
+    title: { fr: 'Post-flop', en: 'Post-flop' },
+    subtitle: { fr: 'Jeu après le flop', en: 'Play after the flop' },
+    badge: { fr: 'Premium', en: 'Premium' },
+    badgeColor: 'bg-gold-900/70 text-gold-300 border border-gold-700/40',
+    href: '/training?module=postflop',
+    premium: true,
+    modes: [
+      {
+        mode: 'beginner',
+        icon: <GraduationCap size={13} />,
+        label: { fr: 'Débutant', en: 'Beginner' },
+        color: BEGINNER_STYLE,
+        desc: {
+          fr: 'La main, l\'équité, la texture du board et l\'indice de continuation bet sont toujours visibles. Tu t\'habitues à lire les boards secs, humides et à tirages. Une explication te guide après chaque décision.',
+          en: 'Your hand, equity, board texture and c-bet hint are always visible. You get used to reading dry, wet, and draw-heavy boards. An explanation guides you after each decision.',
+        },
+      },
+      {
+        mode: 'advanced',
+        icon: <Zap size={13} />,
+        label: { fr: 'Avancé', en: 'Advanced' },
+        color: ADVANCED_STYLE,
+        desc: {
+          fr: 'L\'indice est caché. Tu dois analyser la texture du board et la range adverse pour décider seul de bet ou check. Révéler l\'indice casse la série. Les scénarios incluent des boards à double tirage et des situations multi-way.',
+          en: 'The hint is hidden. You must analyse board texture and villain range to decide alone whether to bet or check. Revealing the hint breaks the streak. Scenarios include double-draw boards and multi-way situations.',
+        },
+      },
+      {
+        mode: 'expert',
+        icon: <Flame size={13} />,
+        label: { fr: 'Expert', en: 'Expert' },
+        color: EXPERT_STYLE,
+        desc: {
+          fr: 'En plus de la décision bet/check, tu choisis la taille de mise optimale parmi 33 %, 67 % ou 100 % du pot. La lecture de main adverse est indispensable. Les spots incluent des turn et river avec action multi-rue.',
+          en: 'Beyond the bet/check decision, you choose the optimal bet size from 33%, 67% or 100% of the pot. Reading the villain\'s hand is essential. Spots include turn and river with multi-street action.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'fullhand',
+    icon: '🎰',
+    title: { fr: 'Main complète', en: 'Full Hand' },
+    subtitle: { fr: 'Du pré-flop à la river', en: 'Pre-flop to river' },
+    badge: { fr: 'Premium', en: 'Premium' },
+    badgeColor: 'bg-gold-900/70 text-gold-300 border border-gold-700/40',
+    href: '/training?module=fullhand',
+    premium: true,
+    modes: [
+      {
+        mode: 'beginner',
+        icon: <GraduationCap size={13} />,
+        label: { fr: 'Débutant', en: 'Beginner' },
+        color: BEGINNER_STYLE,
+        desc: {
+          fr: 'Tu joues une main complète face à un villain IA, guidé à chaque rue avec des indices contextuels. Pré-flop → Flop → Turn → River. Chaque décision est commentée pour que tu comprennes la stratégie globale.',
+          en: 'You play a full hand against an AI villain, guided at each street with contextual hints. Pre-flop → Flop → Turn → River. Each decision is commented so you understand the overall strategy.',
+        },
+      },
+      {
+        mode: 'advanced',
+        icon: <Zap size={13} />,
+        label: { fr: 'Avancé', en: 'Advanced' },
+        color: ADVANCED_STYLE,
+        desc: {
+          fr: 'Aucun indice pendant la main. Toutes tes décisions (pré-flop → river) sont jugées globalement au showdown. L\'analyse post-main te montre où tu as perdu de l\'EV et comment corriger.',
+          en: 'No hints during the hand. All your decisions (pre-flop → river) are judged globally at showdown. The post-hand analysis shows where you lost EV and how to correct it.',
+        },
+      },
+      {
+        mode: 'expert',
+        icon: <Flame size={13} />,
+        label: { fr: 'Expert', en: 'Expert' },
+        color: EXPERT_STYLE,
+        desc: {
+          fr: 'Les pot odds et outs sont dévoilés après chaque rue — jamais pendant le jeu. Le standard de précision est maximal : chaque décision est évaluée individuellement avec une décomposition EV complète.',
+          en: 'Pot odds and outs are revealed after each street — never during play. Precision standard is maximum: each decision is evaluated individually with a full EV breakdown.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'betsizing',
+    icon: '📏',
+    title: { fr: 'Bet Sizing', en: 'Bet Sizing' },
+    subtitle: { fr: 'Taille de mise optimale', en: 'Optimal bet size' },
+    badge: { fr: 'Premium', en: 'Premium' },
+    badgeColor: 'bg-gold-900/70 text-gold-300 border border-gold-700/40',
+    href: '/training?module=betsizing',
+    premium: true,
+    modes: [
+      {
+        mode: 'beginner',
+        icon: <GraduationCap size={13} />,
+        label: { fr: 'Débutant', en: 'Beginner' },
+        color: BEGINNER_STYLE,
+        desc: {
+          fr: 'La taille optimale est affichée avec une explication complète : pourquoi ce sizing sur ce board, avec cette main, dans cette position. Tu comprends les objectifs (valeur, protection, bluff) avant de jouer.',
+          en: 'The optimal size is shown with a full explanation: why this sizing on this board, with this hand, in this position. You understand the goals (value, protection, bluff) before playing.',
+        },
+      },
+      {
+        mode: 'advanced',
+        icon: <Zap size={13} />,
+        label: { fr: 'Avancé', en: 'Advanced' },
+        color: ADVANCED_STYLE,
+        desc: {
+          fr: 'Tu choisis la bonne taille parmi plusieurs options (33 %, 67 %, pot, overbet) sans aide. L\'explication arrive après ta réponse. Les spots couvrent pré-flop, flop, turn et river.',
+          en: 'You choose the right size from several options (33%, 67%, pot, overbet) without help. The explanation arrives after your answer. Spots cover pre-flop, flop, turn and river.',
+        },
+      },
+      {
+        mode: 'expert',
+        icon: <Flame size={13} />,
+        label: { fr: 'Expert', en: 'Expert' },
+        color: EXPERT_STYLE,
+        desc: {
+          fr: 'Pool pondéré de spots difficiles : pots 3-bet, décisions river avec polarisation de range, spots OOP (hors position). Les marges d\'erreur sont plus serrées — le bon sizing est précis.',
+          en: 'Weighted pool of hard spots: 3-bet pots, river decisions with range polarisation, OOP plays. Error margins are tighter — the right sizing is precise.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'bluff',
+    icon: '🎭',
+    title: { fr: 'Bluff', en: 'Bluff' },
+    subtitle: { fr: 'Fréquence & sélection', en: 'Frequency & selection' },
+    badge: { fr: 'Premium', en: 'Premium' },
+    badgeColor: 'bg-gold-900/70 text-gold-300 border border-gold-700/40',
+    href: '/training?module=bluff',
+    premium: true,
+    modes: [
+      {
+        mode: 'beginner',
+        icon: <GraduationCap size={13} />,
+        label: { fr: 'Débutant', en: 'Beginner' },
+        color: BEGINNER_STYLE,
+        desc: {
+          fr: 'La grille de facteurs favorables au bluff (position, texture du board, range adverse, historique de la main) est toujours affichée. Une explication détaillée accompagne chaque réponse. Idéal pour apprendre à identifier les bonnes situations.',
+          en: 'The grid of bluff-favourable factors (position, board texture, villain range, hand history) is always shown. A detailed explanation accompanies each answer. Ideal for learning to spot the right situations.',
+        },
+      },
+      {
+        mode: 'advanced',
+        icon: <Zap size={13} />,
+        label: { fr: 'Avancé', en: 'Advanced' },
+        color: ADVANCED_STYLE,
+        desc: {
+          fr: 'Les facteurs et l\'explication sont révélés seulement après ta réponse. Tu dois te forger une intuition sur la fréquence de bluff non-exploitable et la sélection des mains candidates.',
+          en: 'Factors and explanation are revealed only after your answer. You must build intuition on unexploitable bluff frequency and candidate hand selection.',
+        },
+      },
+      {
+        mode: 'expert',
+        icon: <Flame size={13} />,
+        label: { fr: 'Expert', en: 'Expert' },
+        color: EXPERT_STYLE,
+        desc: {
+          fr: 'Aucun indice. Lecture pure : position, dynamique de la range sur plusieurs rues, texture du board, fréquence de fold adverse estimée. Les scénarios sont plus ambigus et les bonnes réponses moins évidentes.',
+          en: 'No hints. Pure read: position, multi-street range dynamics, board texture, estimated villain fold frequency. Scenarios are more ambiguous and correct answers less obvious.',
+        },
+      },
+    ],
+  },
+];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function HomePage() {
   const t = useT();
   const isEn = t.nav.home === 'Home';
+  const [selectedId, setSelectedId] = useState<string>('preflop');
 
-  // Shared tier definitions
-  const T_FREE = (desc: string): Tier => ({
-    icon: <GraduationCap size={11} />,
-    label: isEn ? 'Free' : 'Gratuit',
-    desc,
-    color: 'border-blue-800/50 bg-blue-950/30 text-blue-300',
-  });
-  const T_ADV = (desc: string): Tier => ({
-    icon: <Zap size={11} />,
-    label: isEn ? 'Advanced' : 'Avancé',
-    desc,
-    color: 'border-gold-700/40 bg-gold-950/20 text-gold-300',
-  });
-  const T_EXP = (desc: string): Tier => ({
-    icon: <Flame size={11} />,
-    label: 'Expert',
-    desc,
-    color: 'border-purple-700/40 bg-purple-950/20 text-purple-300',
-  });
-  const T_EXP_SOON: Tier = {
-    icon: <Flame size={11} />,
-    label: 'Expert',
-    desc: isEn ? '— coming soon' : '— à venir',
-    color: 'border-purple-700/40 bg-purple-950/20 text-purple-300',
-  };
-
-  const FREE_MODULES = [
-    {
-      id: 'preflop',
-      title: t.home.preflop_title,
-      subtitle: t.home.preflop_sub,
-      icon: '🎯',
-      color: 'from-green-900/50 to-felt-900/50 border-green-700',
-      badge: t.home.badge_core,
-      badgeColor: 'bg-green-900 text-green-300',
-      href: '/training?module=preflop',
-      tiers: [
-        T_FREE(isEn ? 'GTO ranges — fold / raise by position' : 'Ranges GTO — fold / raise par position'),
-        T_ADV(isEn ? 'Custom simple ranges (169 hands, saveable profiles)' : 'Ranges simples perso (169 mains, profils sauvegardables)'),
-        T_EXP(isEn ? 'Multi-action frequency mixes (Fold / Call / Raise / All-in)' : 'Fréquences multi-actions (Fold / Call / Raise / All-in)'),
-      ] as Tier[],
-    },
-    {
-      id: 'outs',
-      title: t.home.outs_title,
-      subtitle: t.home.outs_sub,
-      icon: '🎲',
-      color: 'from-amber-900/50 to-felt-900/50 border-amber-700',
-      badge: t.home.badge_math,
-      badgeColor: 'bg-amber-900 text-amber-300',
-      href: '/training?module=outs',
-      tiers: [
-        T_FREE(isEn ? 'Count outs — draws shown + rule of 2 & 4' : 'Compte les outs — tirages affichés + règle de 2 & 4'),
-        T_ADV(isEn ? 'Hints hidden — estimate equity from your outs' : 'Indice caché — estime l\'équité depuis tes outs'),
-        T_EXP(isEn ? 'Skip outs — pick the equity % directly (harder scenarios, rule of 2 & 4 in your head)' : 'Skip outs — choisis l\'équité % directement (scénarios durs, règle 2 & 4 de tête)'),
-      ] as Tier[],
-    },
-    {
-      id: 'equity',
-      title: t.home.equity_title,
-      subtitle: t.home.equity_sub,
-      icon: '⚖️',
-      color: 'from-purple-900/50 to-felt-900/50 border-purple-700',
-      badge: t.home.badge_mid,
-      badgeColor: 'bg-purple-900 text-purple-300',
-      href: '/training?module=equity',
-      tiers: [
-        T_FREE(isEn ? 'Min equity to call — formula shown step by step' : 'Équité min pour call — formule guidée étape par étape'),
-        T_ADV(isEn ? 'Hidden hints — calculate pot odds mentally' : 'Indice caché — calcule les cotes du pot de tête'),
-        T_EXP(isEn ? 'Tournament bounty — adjusted equity calculation' : 'Bounty tournoi — calcul d\'équité ajusté'),
-      ] as Tier[],
-    },
-    {
-      id: 'potodds',
-      title: t.home.potodds_title,
-      subtitle: t.home.potodds_sub,
-      icon: '📐',
-      color: 'from-blue-900/50 to-felt-900/50 border-blue-700',
-      badge: t.home.badge_math,
-      badgeColor: 'bg-blue-900 text-blue-300',
-      href: '/training?module=potodds',
-      tiers: [
-        T_FREE(isEn ? 'Pot odds + call/fold decision with guidance' : 'Cote du pot + décision call/fold guidée'),
-        T_ADV(isEn ? 'EV shown, hints hidden — reveal resets streak' : 'EV affiché, indice caché — révéler remet la série à 0'),
-        T_EXP(isEn ? 'Equity hidden — compute pot odds from scratch, full EV breakdown on result' : 'Équité masquée — calcule les pot odds de zéro, décomposition EV complète au résultat'),
-      ] as Tier[],
-    },
-  ];
-
-  const PREMIUM_MODULES = [
-    {
-      id: 'postflop',
-      title: t.home.postflop_title,
-      subtitle: t.home.postflop_sub,
-      icon: '🃏',
-      badge: t.home.badge_adv,
-      href: '/training?module=postflop',
-      tiers: [
-        T_FREE(isEn ? 'Hand, equity, texture & hint always visible' : 'Main, équité, texture et indice toujours visibles'),
-        T_ADV(isEn ? 'Hint hidden — reveal breaks your streak' : 'Indice caché — révéler casse la série'),
-        T_EXP(isEn ? 'Choose bet size (33 / 67 / 100% pot) — hand-reading required' : 'Choix de la taille de mise (33 / 67 / 100% pot) — lecture de main requise'),
-      ] as Tier[],
-    },
-    {
-      id: 'fullhand',
-      title: t.home.fullhand_title,
-      subtitle: t.home.fullhand_sub,
-      icon: '🎰',
-      badge: isEn ? 'Full game' : 'Jeu complet',
-      href: '/training?module=fullhand',
-      tiers: [
-        T_FREE(isEn ? 'Guided at each street with hints' : 'Guidé à chaque rue avec indices'),
-        T_ADV(isEn ? 'No hints — decisions judged globally at showdown' : 'Sans indice — décisions jugées au showdown'),
-        T_EXP(isEn ? 'Pot odds & outs breakdown revealed after each street — no hints during play' : 'Pot odds & outs dévoilés après chaque rue — aucun indice pendant le jeu'),
-      ] as Tier[],
-    },
-    {
-      id: 'betsize',
-      title: t.home.betsize_title,
-      subtitle: t.home.betsize_sub,
-      icon: '📏',
-      badge: isEn ? 'Sizing' : 'Sizing',
-      href: '/training?module=betsizing',
-      tiers: [
-        T_FREE(isEn ? 'Optimal size shown with justification' : 'Taille optimale affichée avec justification'),
-        T_ADV(isEn ? 'Choose the right size without help' : 'Choisir la bonne taille sans aide'),
-        T_EXP(isEn ? 'Weighted pool of hard spots — 3-bet pots, river decisions, OOP plays' : 'Pool pondéré de spots difficiles — pots 3-bet, décisions river, spots OOP'),
-      ] as Tier[],
-    },
-    {
-      id: 'bluff',
-      title: t.home.bluff_title,
-      subtitle: t.home.bluff_sub,
-      icon: '🎭',
-      badge: isEn ? 'Psychology' : 'Psychologie',
-      href: '/training?module=bluff',
-      tiers: [
-        T_FREE(isEn ? 'Factor grid + detailed explanation always shown' : 'Grille de facteurs + explication détaillée toujours affichée'),
-        T_ADV(isEn ? 'Factors & explanation revealed after answering' : 'Facteurs & explication révélés après la réponse'),
-        T_EXP(isEn ? 'No hints — pure read on position, range and board dynamics' : 'Aucun indice — lecture pure de la position, range et dynamique du board'),
-      ] as Tier[],
-    },
-  ];
+  const selected = MODULES.find(m => m.id === selectedId) ?? MODULES[0];
 
   const FEATURES = [
-    { icon: <Star size={14} />, text: t.home.feature1 },
-    { icon: <Calculator size={14} />, text: t.home.feature2 },
-    { icon: <BarChart2 size={14} />, text: t.home.feature3 },
-    { icon: <Layers size={14} />, text: t.home.feature4 },
+    { Icon: Star, text: t.home.feature1 },
+    { Icon: Calculator, text: t.home.feature2 },
+    { Icon: BarChart2, text: t.home.feature3 },
+    { Icon: Layers, text: t.home.feature4 },
   ];
 
   return (
     <div className="flex flex-col gap-2.5 max-w-xl mx-auto">
+
       {/* Hero */}
       <motion.section
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center pt-2"
       >
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
-          className="text-3xl mb-1"
-        >
-          🃏
-        </motion.div>
+        <div className="text-3xl mb-1">🃏</div>
         <h1 className="text-xl font-bold mb-1 font-serif">
           <span className="text-gold-400">Poker</span>
           <span className="text-white">Peak</span>
         </h1>
-        <p className="text-xs text-gray-400 mb-2">
-          {t.home.subtitle}
-        </p>
+        <p className="text-xs text-gray-400 mb-2">{t.home.subtitle}</p>
         <div className="flex gap-2 justify-center flex-wrap">
           <Link to="/training?module=preflop">
             <Button size="sm" variant="gold">
@@ -205,116 +420,89 @@ export function HomePage() {
             </Button>
           </Link>
           <Link to="/stats">
-            <Button size="sm" variant="ghost">
-              {t.home.stats_btn}
-            </Button>
+            <Button size="sm" variant="ghost">{t.home.stats_btn}</Button>
           </Link>
         </div>
       </motion.section>
 
-      {/* Free modules */}
+      {/* Module selector */}
       <section>
         <h2 className="text-sm font-bold text-white mb-2 text-center">{t.home.modules_title}</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {FREE_MODULES.map((module, i) => (
-            <motion.div
-              key={module.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.08 }}
-            >
-              <Link to={module.href} className="block group h-full">
-                <div className={`bg-gradient-to-br ${module.color} border rounded-xl p-2.5 h-full transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-xl flex flex-col`}>
-                  <ModuleCard
-                    icon={module.icon}
-                    title={module.title}
-                    subtitle={module.subtitle}
-                    badge={module.badge}
-                    badgeColor={module.badgeColor}
-                    tiers={module.tiers}
-                    startArrow={t.home.start_arrow}
-                  />
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-      </section>
 
-      {/* Premium modules */}
-      <section>
-        <div className="flex items-center gap-2 mb-2">
-          <div className="flex-1 h-px bg-gold-700/30" />
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-900/30 border border-gold-700/50">
-            <span className="text-sm leading-none">👑</span>
-            <span className="text-gold-300 font-bold text-xs">
-              {isEn ? 'Premium modules' : 'Modules Premium'}
-            </span>
-          </div>
-          <div className="flex-1 h-px bg-gold-700/30" />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {PREMIUM_MODULES.map((module, i) => (
-            <motion.div
-              key={module.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35 + i * 0.08 }}
+        {/* Tab bar */}
+        <div className="flex flex-wrap gap-1.5 justify-center mb-2.5">
+          {MODULES.map(m => (
+            <button
+              key={m.id}
+              onClick={() => setSelectedId(m.id)}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                selectedId === m.id
+                  ? 'bg-felt-700 border-felt-500 text-white shadow-glow-green'
+                  : 'bg-gray-900/60 border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
+              }`}
             >
-              {module.comingSoon ? (
-                <div className="bg-gradient-to-br from-gold-900/10 to-gray-900/80 border border-gold-700/30 rounded-xl p-2.5 h-full opacity-60 cursor-default flex flex-col">
-                  <div className="flex items-center justify-end gap-1 mb-2 flex-wrap">
-                    <span className="flex items-center gap-1 bg-gold-900/70 border border-gold-700/60 text-gold-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
-                      👑 {t.home.badge_premium}
-                    </span>
-                    <span className="text-[10px] text-gray-400 font-medium px-2 py-0.5 bg-gray-800/90 border border-gray-700 rounded-full">
-                      {t.home.coming_soon}
-                    </span>
-                  </div>
-                  <ModuleCard
-                    icon={module.icon}
-                    title={module.title}
-                    subtitle={module.subtitle}
-                    badge={module.badge}
-                    badgeColor="bg-gray-800 text-gray-400"
-                    tiers={[]}
-                    startArrow="—"
-                    subtitleColor="text-gold-400/70"
-                    arrowColor="text-gray-600"
-                    description={module.id === 'bluff'
-                      ? (isEn ? 'Bluff frequency, hand selection, and unexploitable strategies.' : 'Fréquence de bluff, sélection de mains et stratégies non-exploitables.')
-                      : undefined}
-                  />
-                </div>
-              ) : (
-                <Link to={module.href} className="block group h-full">
-                  <div className="bg-gradient-to-br from-gold-900/20 to-gray-900/80 border border-gold-700/50 rounded-xl p-2.5 h-full transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-xl group-hover:border-gold-600 flex flex-col">
-                    <div className="flex items-center justify-end mb-2">
-                      <span className="flex items-center gap-1 bg-gold-900/70 border border-gold-700/60 text-gold-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
-                        👑 {t.home.badge_premium}
-                      </span>
-                    </div>
-                    <ModuleCard
-                      icon={module.icon}
-                      title={module.title}
-                      subtitle={module.subtitle}
-                      badge={module.badge}
-                      badgeColor="bg-gray-800 text-gray-400"
-                      tiers={module.tiers}
-                      startArrow={t.home.start_arrow}
-                      subtitleColor="text-gold-400/70"
-                    />
-                  </div>
-                </Link>
-              )}
-            </motion.div>
+              <span>{m.icon}</span>
+              <span>{isEn ? m.title.en : m.title.fr}</span>
+              {m.premium && <span className="text-gold-400 text-[10px] leading-none">👑</span>}
+            </button>
           ))}
         </div>
 
-        <p className="text-center text-xs text-gray-600 mt-1">
-          {t.home.premium_label}
-        </p>
+        {/* Detail panel */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selected.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+            className="bg-gray-900/50 border border-gray-800 rounded-xl px-3 py-2.5"
+          >
+            {/* Module header */}
+            <div className="flex items-center gap-2 mb-2.5">
+              <span className="text-2xl leading-none">{selected.icon}</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h3 className="text-sm font-bold text-white leading-tight">
+                    {isEn ? selected.title.en : selected.title.fr}
+                  </h3>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${selected.badgeColor}`}>
+                    {isEn ? selected.badge.en : selected.badge.fr}
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-400">
+                  {isEn ? selected.subtitle.en : selected.subtitle.fr}
+                </p>
+              </div>
+            </div>
+
+            {/* Mode cards */}
+            <div className="flex flex-col gap-2">
+              {selected.modes.map(m => (
+                <div
+                  key={m.mode}
+                  className={`rounded-lg border px-2.5 py-2 ${m.color.border} ${m.color.bg}`}
+                >
+                  <div className={`flex items-center gap-1.5 mb-1 ${m.color.text}`}>
+                    {m.icon}
+                    <span className="text-xs font-bold">{isEn ? m.label.en : m.label.fr}</span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 leading-snug mb-2">
+                    {isEn ? m.desc.en : m.desc.fr}
+                  </p>
+                  <Link to={`${selected.href}&mode=${m.mode}`}>
+                    <button className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${m.color.btn}`}>
+                      {isEn
+                        ? `Train — ${m.label.en}`
+                        : `S'entraîner — ${m.label.fr}`}
+                      <ArrowRight size={11} />
+                    </button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </AnimatePresence>
       </section>
 
       {/* Features */}
@@ -322,69 +510,14 @@ export function HomePage() {
         <h2 className="text-sm font-bold text-white mb-2">{t.home.features_title}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
           {FEATURES.map((f, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 + i * 0.1 }}
-              className="flex items-start gap-2 text-gray-300"
-            >
-              <span className="text-gold-400 shrink-0 mt-0.5">{f.icon}</span>
+            <div key={i} className="flex items-start gap-2 text-gray-300">
+              <span className="text-gold-400 shrink-0 mt-0.5"><f.Icon size={14} /></span>
               <span className="text-xs">{f.text}</span>
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>
+
     </div>
-  );
-}
-
-// ─── Shared card body ─────────────────────────────────────────────────────────
-
-function ModuleCard({
-  icon, title, subtitle, badge, badgeColor, tiers, startArrow,
-  subtitleColor = 'text-gray-400',
-  arrowColor = 'text-gold-400',
-  description,
-}: {
-  icon: string;
-  title: string;
-  subtitle: string;
-  badge: string;
-  badgeColor: string;
-  tiers: Tier[];
-  startArrow: string;
-  subtitleColor?: string;
-  arrowColor?: string;
-  description?: string;
-}) {
-  return (
-    <>
-      {/* Header */}
-      <div className="flex items-start gap-2 mb-2">
-        <span className="text-xl leading-none">{icon}</span>
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-            <h3 className="text-sm font-bold text-white leading-tight">{title}</h3>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${badgeColor}`}>{badge}</span>
-          </div>
-          <p className={`text-[11px] ${subtitleColor}`}>{subtitle}</p>
-        </div>
-      </div>
-
-      {/* Tier rows or description */}
-      <div className="flex flex-col gap-1 flex-1">
-        {tiers.length > 0
-          ? tiers.map((tier, i) => <TierRow key={i} tier={tier} />)
-          : description
-            ? <p className="text-xs text-gray-400 leading-snug">{description}</p>
-            : null}
-      </div>
-
-      {/* CTA */}
-      <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${arrowColor}`}>
-        <span>{startArrow}</span>
-      </div>
-    </>
   );
 }
