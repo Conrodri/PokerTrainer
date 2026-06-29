@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, ChevronUp, RotateCcw, Zap, Target, Sliders, Lightbulb, Check, X, BookOpen, Shield, TrendingUp } from 'lucide-react';
+import { ChevronRight, ChevronDown, ChevronUp, RotateCcw, Zap, Target, Sliders, Lightbulb, Check, X, BookOpen, Shield, TrendingUp, Crown, Flame } from 'lucide-react';
 import { SourcesFooter } from '../ui/SourcesFooter';
 import type { Source } from '../ui/SourcesFooter';
 
@@ -1113,16 +1113,16 @@ export function PreflopTrainer() {
                 </div>
                 <div className={gridCls}>
                   {cards.map(p => (
-                    <div key={p.label} className={`rounded-lg border px-2 py-1.5 ${p.border} ${p.bg}`}>
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className={`grid place-items-center w-5 h-5 rounded-md ${p.iconBg} shrink-0`}>{p.icon}</span>
-                        <div>
-                          <div className="text-white font-bold text-[11px] leading-none">{p.label}</div>
-                          <div className="text-gray-500 text-[9px] leading-none mt-0.5">{p.sub}</div>
+                    <div key={p.label} className={`rounded-lg border px-1.5 py-1 ${p.border} ${p.bg}`}>
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <span className={`grid place-items-center w-4 h-4 rounded ${p.iconBg} shrink-0`}>{p.icon}</span>
+                        <div className="min-w-0">
+                          <div className="text-white font-bold text-[10px] leading-none truncate">{p.label}</div>
+                          <div className="text-gray-500 text-[9px] leading-none mt-0.5 truncate">{p.sub}</div>
                         </div>
                       </div>
-                      <div className="text-[10px] text-gray-400 mb-1 leading-tight">{p.desc}</div>
-                      <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="text-[9px] text-gray-400 mb-0.5 leading-tight">{p.desc}</div>
+                      <div className="h-0.5 bg-gray-800 rounded-full overflow-hidden">
                         <div className={`h-full ${p.bar} rounded-full opacity-80`} style={{ width: `${Math.min(p.pct, 100)}%` }} />
                       </div>
                     </div>
@@ -1191,10 +1191,18 @@ export function PreflopTrainer() {
           bottomSlot={
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('training:open-ranges', { detail: { format, gameType } }))}
-              className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl border border-purple-800/50 bg-purple-950/20 hover:bg-purple-900/30 text-purple-300 hover:text-purple-200 font-semibold text-sm transition-colors"
+              className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl border border-purple-800/50 bg-purple-950/20 hover:bg-purple-900/30 text-purple-300 hover:text-purple-200 font-semibold text-xs transition-colors"
             >
-              <BookOpen size={15} className="text-purple-400 shrink-0" />
+              <BookOpen size={13} className="text-purple-400 shrink-0" />
               {isEn ? 'My Ranges' : 'Mes ranges'}
+              <span className="ml-auto flex items-center gap-1">
+                <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-900/50 text-yellow-400 border border-yellow-800/40">
+                  <Crown size={9} />{isEn ? 'Premium' : 'Premium'}
+                </span>
+                <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-900/50 text-purple-400 border border-purple-800/40">
+                  <Flame size={9} />{isEn ? 'Expert' : 'Expert'}
+                </span>
+              </span>
             </button>
           }
         />
