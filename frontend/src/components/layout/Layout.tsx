@@ -29,7 +29,7 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen text-white" style={{ backgroundColor: BG_THEMES[bgTheme].bg }}>
       <Navbar />
-      <main className="pt-14">
+      <main className="pt-14 pb-14 min-[560px]:pb-0">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
           {showBack && (
             <button

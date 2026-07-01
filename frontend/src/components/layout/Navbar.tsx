@@ -65,6 +65,15 @@ export function Navbar() {
     `relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
     ${active ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5'}`;
 
+  const bottomNavItems = [
+    { to: '/',             icon: <Home size={18} />,     label: isEn ? 'Home'     : 'Accueil',    active: location.pathname === '/' },
+    { to: '/rules',        icon: <span className="text-base leading-none">📚</span>, label: isEn ? 'Rules' : 'Règles', active: isRulesActive },
+    { to: '/training',     icon: <BookOpen size={18} />, label: isEn ? 'Training' : 'Training',  active: isTrainingActive },
+    ...(user ? [{ to: '/achievements', icon: <Medal size={18} />, label: isEn ? 'Achievements' : 'Succès', active: location.pathname.startsWith('/achievements') }] : []),
+    { to: '/stats',        icon: <BarChart2 size={18} />, label: isEn ? 'Stats'   : 'Stats',      active: location.pathname.startsWith('/stats') },
+    { to: '/leaderboard',  icon: <Trophy size={18} />,   label: isEn ? 'Ranking'  : 'Classement', active: location.pathname.startsWith('/leaderboard') },
+  ];
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-40 bg-felt-dark/95 backdrop-blur-sm border-b border-felt-900">
@@ -317,6 +326,22 @@ export function Navbar() {
           </div>
         </div>
       </header>
+
+      {/* ── Mobile bottom navigation bar (hidden at 560px+) ── */}
+      <nav className="min-[560px]:hidden fixed bottom-0 left-0 right-0 z-40 bg-felt-dark/95 backdrop-blur-sm border-t border-felt-900 flex items-stretch">
+        {bottomNavItems.map(item => (
+          <Link
+            key={item.to}
+            to={item.to}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[3.25rem] transition-colors ${
+              item.active ? 'text-yellow-400' : 'text-gray-500'
+            }`}
+          >
+            {item.icon}
+            <span className="text-[8px] font-medium leading-tight truncate w-full text-center px-0.5">{item.label}</span>
+          </Link>
+        ))}
+      </nav>
 
     </>
   );
