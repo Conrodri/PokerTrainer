@@ -1020,8 +1020,8 @@ export function initFullHandPool(): void {
 export async function getPostflopExercise(req: Request, res: Response): Promise<void> {
   try {
     const requestedStreet = req.query.street as string;
-    const difficulty      = req.query.difficulty as string | undefined;
-    const isExpert        = difficulty === 'expert';
+    const level    = req.query.level as string | undefined;
+    const isExpert = level === 'expert';
     // Expert: full 8×300 for accuracy; non-expert: 4×150 = 600 sims (4× faster, plenty for action decision)
     const eqSamples = isExpert ? 8 : 4;
     const eqRuns    = isExpert ? 300 : 150;
@@ -1130,9 +1130,9 @@ export async function getPostflopExercise(req: Request, res: Response): Promise<
 
 export async function getFullHandScenario(req: Request, res: Response): Promise<void> {
   try {
-    const mode = req.query.mode as string | undefined;
-    const isExpert = mode === 'expert';
-    const isBasic  = mode === 'basic';
+    const level = req.query.level as string | undefined;
+    const isExpert = level === 'expert';
+    const isBasic  = level === 'basic';
 
     // Serve from pool when available — skip pool for expert to ensure harder scenarios
     if (fullHandPool.length > 0 && !isExpert) {

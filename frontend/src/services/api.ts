@@ -95,16 +95,16 @@ export const trainingApi = {
   getEquityExercise: (level?: string) =>
     api.get('/training/equity/exercise', { params: level ? { level } : {} }).then(r => r.data.data),
 
-  getOutsExercise: (difficulty?: string) =>
-    api.get('/training/outs/exercise', { params: difficulty ? { difficulty } : {} }).then(r => r.data.data),
+  getOutsExercise: (level?: string) =>
+    api.get('/training/outs/exercise', { params: level ? { level } : {} }).then(r => r.data.data),
 
   getBBDefenseExercise: () =>
     api.get('/training/bbdefense/exercise').then(r => r.data.data),
   getBBDefenseRange: () =>
     api.get('/training/bbdefense/range').then(r => r.data.data),
 
-  getBluffExercise: (mode?: string) =>
-    api.get('/training/bluff/exercise', { params: mode ? { mode } : {} }).then(r => r.data.data),
+  getBluffExercise: (level?: string) =>
+    api.get('/training/bluff/exercise', { params: level ? { level } : {} }).then(r => r.data.data),
 
   recordResult: (payload: { module: string; isCorrect: boolean; xpEarned: number; timeTaken?: number; sessionId: string }) =>
     api.post('/training/record', payload).then(r => r.data.data).catch(() => null),
@@ -228,14 +228,14 @@ export const profilesApi = {
 
 // Postflop trainer (premium)
 export const postflopApi = {
-  getExercise: (street?: string, difficulty?: string) => {
+  getExercise: (street?: string, level?: string) => {
     const params: Record<string, string> = {};
     if (street) params.street = street;
-    if (difficulty) params.difficulty = difficulty;
+    if (level) params.level = level;
     return api.get('/postflop/exercise', { params }).then(r => r.data.data);
   },
-  getFullHandScenario: (mode?: string) =>
-    api.get('/postflop/full-hand', { params: mode ? { mode } : {} }).then(r => r.data.data),
+  getFullHandScenario: (level?: string) =>
+    api.get('/postflop/full-hand', { params: level ? { level } : {} }).then(r => r.data.data),
 };
 
 // Expert multi-action ranges (premium-expert tier). mix = flat 169×4 floats.

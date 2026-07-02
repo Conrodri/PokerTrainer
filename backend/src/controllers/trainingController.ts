@@ -202,7 +202,7 @@ export function getEquityExercise(req: Request, res: Response): void {
 export async function getOutsExercise(req: Request, res: Response): Promise<void> {
   try {
     const lang = getLang(req);
-    const difficulty = req.query.difficulty === 'expert' ? 'expert' : undefined;
+    const difficulty = req.query.level === 'expert' ? 'expert' : undefined;
     const exercise = generateOutsExercise(lang, difficulty);
     res.json({ success: true, data: exercise } as ApiResponse);
   } catch {
@@ -231,8 +231,8 @@ export async function getBBDefenseRange(_req: Request, res: Response): Promise<v
 
 export async function getBluffExercise(req: Request, res: Response): Promise<void> {
   try {
-    const mode = req.query.mode as string | undefined;
-    const exercise = generateBluffExercise(mode);
+    const level = req.query.level as string | undefined;
+    const exercise = generateBluffExercise(level);
     res.json({ success: true, data: exercise } as ApiResponse);
   } catch {
     res.status(500).json({ success: false, error: 'Failed to generate bluff exercise' } as ApiResponse);
