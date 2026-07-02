@@ -143,6 +143,9 @@ export interface BluffExercise {
     heroHand:     BluffFactor;
   };
   explanation: BluffBi;
+  /** Scenario builder that produced this exercise — used client-side to avoid
+   *  requesting the same template twice in a row. */
+  template?: string;
 }
 
 export interface ExerciseResult {

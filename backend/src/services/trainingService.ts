@@ -1,7 +1,7 @@
 import { Position, Position8, TableFormat, GameType, PreflopExercise, EquityExercise } from '../types';
 import { dealHand, toHandNotation } from './poker/cards';
 import { getCorrectAction } from './poker/ranges';
-import { getRandomScenario, generateClosePotOddsScenario, generateImpliedOddsScenario, calculatePotOdds, buildEquityExplanation, buildThresholdExplanation, buildImpliedOddsExplanation } from './poker/potOdds';
+import { getRandomScenario, generateEasyPotOddsScenario, generateClosePotOddsScenario, generateImpliedOddsScenario, calculatePotOdds, buildEquityExplanation, buildThresholdExplanation, buildImpliedOddsExplanation } from './poker/potOdds';
 import { getRandomOutsScenario, buildOutsOptions, buildOutsExplanation, estimateEquityFromOuts } from './poker/outs';
 import { getBBDefenseAction, buildBBDefenseExplanation } from './poker/bbDefense';
 
@@ -135,7 +135,10 @@ function buildPreflopExplanationEn(notation: string, position: Position8, action
 }
 
 export function generatePotOddsExercise(lang: 'fr' | 'en' = 'fr', level: 'basic' | 'advanced' | 'expert' = 'basic') {
-  const scenario = level === 'expert' ? generateImpliedOddsScenario(lang) : getRandomScenario();
+  const scenario =
+    level === 'expert'   ? generateImpliedOddsScenario(lang)
+    : level === 'advanced' ? (Math.random() < 0.6 ? generateClosePotOddsScenario(lang) : getRandomScenario(Math.random() < 0.5 ? 'medium' : 'hard'))
+    : (Math.random() < 0.6 ? generateEasyPotOddsScenario(lang) : getRandomScenario('easy'));
   const result = calculatePotOdds(scenario.potSize, scenario.betSize, scenario.heroEquity, lang);
 
   // Compute implied fields when present
@@ -181,65 +184,39 @@ const EQUITY_STREETS  = ['flop', 'turn', 'river'] as const;
 const EQUITY_BOUNTIES = [8, 10, 12, 15, 20, 25];
 const ALL_POSITIONS: Position[] = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
 
-// Pre-computed (pot, bet) pairs where bet/(pot+2*bet) = targetEquity/100 exactly (or very close).
+// (pot, bet) pairs where bet/(pot+2*bet) rounds exactly to targetEquity/100 —
+// generated algebraically (pot = bet × (100−2×equity)/equity) for every bet
+// size in EQUITY_BET_RANGE, instead of a handful of hand-picked pairs. Keeps
+// the explanation's displayed fraction (bet/totalPot ≈ target%) mathematically
+// honest while giving each difficulty tier dozens of distinct spots per equity
+// bucket — cuts the risk of seeing the same pot/bet numbers twice in a session.
 interface EquityScenario { potBB: number; betBB: number; targetEquity: number; }
 
-const BASIC_EQUITY_SCENARIOS: EquityScenario[] = [
-  // 10%: pot=8*bet
-  { potBB: 16, betBB: 2,  targetEquity: 10 },
-  { potBB: 24, betBB: 3,  targetEquity: 10 },
-  { potBB: 32, betBB: 4,  targetEquity: 10 },
-  { potBB: 40, betBB: 5,  targetEquity: 10 },
-  // 15%: 3/(14+6)=15%
-  { potBB: 14, betBB: 3,  targetEquity: 15 },
-  { potBB: 28, betBB: 6,  targetEquity: 15 },
-  { potBB: 42, betBB: 9,  targetEquity: 15 },
-  // 20%: pot=3*bet
-  { potBB: 12, betBB: 4,  targetEquity: 20 },
-  { potBB: 18, betBB: 6,  targetEquity: 20 },
-  { potBB: 24, betBB: 8,  targetEquity: 20 },
-  { potBB: 30, betBB: 10, targetEquity: 20 },
-  // 25%: pot=2*bet
-  { potBB: 10, betBB: 5,  targetEquity: 25 },
-  { potBB: 16, betBB: 8,  targetEquity: 25 },
-  { potBB: 20, betBB: 10, targetEquity: 25 },
-  { potBB: 24, betBB: 12, targetEquity: 25 },
-  // 30%: 3/(4+6)=30%
-  { potBB: 4,  betBB: 3,  targetEquity: 30 },
-  { potBB: 8,  betBB: 6,  targetEquity: 30 },
-  { potBB: 12, betBB: 9,  targetEquity: 30 },
-  { potBB: 16, betBB: 12, targetEquity: 30 },
-  // 33%: pot=bet → 1/3
-  { potBB: 10, betBB: 10, targetEquity: 33 },
-  { potBB: 15, betBB: 15, targetEquity: 33 },
-  { potBB: 20, betBB: 20, targetEquity: 33 },
-];
+const EQUITY_BET_RANGE = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24, 26, 28, 30];
 
-const ADVANCED_EQUITY_SCENARIOS: EquityScenario[] = [
-  // 12%: 3/(19+6)=12%
-  { potBB: 19, betBB: 3,  targetEquity: 12 },
-  { potBB: 38, betBB: 6,  targetEquity: 12 },
-  { potBB: 57, betBB: 9,  targetEquity: 12 },
-  // 16%: 4/(17+8)=16%
-  { potBB: 17, betBB: 4,  targetEquity: 16 },
-  { potBB: 34, betBB: 8,  targetEquity: 16 },
-  // 18%: 9/(32+18)=18%
-  { potBB: 32, betBB: 9,  targetEquity: 18 },
-  { potBB: 64, betBB: 18, targetEquity: 18 },
-  // 22%: 11/(28+22)=22%
-  { potBB: 28, betBB: 11, targetEquity: 22 },
-  { potBB: 56, betBB: 22, targetEquity: 22 },
-  // 28%: 7/(11+14)=28%
-  { potBB: 11, betBB: 7,  targetEquity: 28 },
-  { potBB: 22, betBB: 14, targetEquity: 28 },
-  { potBB: 33, betBB: 21, targetEquity: 28 },
-  // 34%: 17/(16+34)=34%
-  { potBB: 16, betBB: 17, targetEquity: 34 },
-  { potBB: 32, betBB: 34, targetEquity: 34 },
-];
+function buildEquityPool(targets: number[]): EquityScenario[] {
+  const seen = new Set<string>();
+  const pool: EquityScenario[] = [];
+  for (const targetEquity of targets) {
+    for (const betBB of EQUITY_BET_RANGE) {
+      const potBB = Math.round(betBB * (100 - 2 * targetEquity) / targetEquity);
+      if (potBB < 4 || potBB > 90) continue;
+      const actual = (betBB / (potBB + 2 * betBB)) * 100;
+      if (Math.round(actual) !== targetEquity) continue; // fraction must round back to the label
+      const key = `${potBB}-${betBB}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      pool.push({ potBB, betBB, targetEquity });
+    }
+  }
+  return pool;
+}
 
 const BASIC_OPTIONS_POOL    = [10, 15, 20, 25, 30, 33];
 const ADVANCED_OPTIONS_POOL = [12, 16, 18, 22, 28, 34];
+
+const BASIC_EQUITY_SCENARIOS: EquityScenario[]    = buildEquityPool(BASIC_OPTIONS_POOL);
+const ADVANCED_EQUITY_SCENARIOS: EquityScenario[] = buildEquityPool(ADVANCED_OPTIONS_POOL);
 
 function buildLevelOptions(correct: number, pool: number[]): number[] {
   const others = pool.filter(v => v !== correct).sort(() => Math.random() - 0.5).slice(0, 3);

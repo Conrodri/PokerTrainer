@@ -232,6 +232,33 @@ const CLOSE_DRAWS: CloseDraw[] = [
     drawType: { fr: 'un tirage par le ventre — 4 outs (≈16%)', en: 'a gutshot — 4 outs (≈16%)' } },
 ];
 
+/** Build a clearly-easy call/fold spot: required equity at least ~8 points away
+ *  from the hero's equity (not borderline), with clean pot/bet numbers — good
+ *  for basic mode, where the goal is an obvious decision, not a precise one. */
+export function generateEasyPotOddsScenario(lang: 'fr' | 'en' = 'fr'): PotOddsScenario {
+  const CLEAN_POTS = [8, 10, 12, 15, 16, 20, 24, 25, 30];
+  const FRACTIONS  = [1 / 4, 1 / 3, 1 / 2, 2 / 3, 1];
+  for (let attempts = 0; attempts < 200; attempts++) {
+    const d = pick(CLOSE_DRAWS);
+    const E = d.outs * (d.street === 'flop' ? 4 : 2);
+    const pot = pick(CLEAN_POTS);
+    const bet = Math.max(2, Math.round(pot * pick(FRACTIONS)));
+    const required = (bet / (pot + 2 * bet)) * 100;
+    if (Math.abs(E - required) < 8) continue; // must be clearly not borderline
+    const correctAction: 'call' | 'fold' = E >= required ? 'call' : 'fold';
+    return {
+      potSize: pot, betSize: bet, heroEquity: E, outs: d.outs,
+      correctAction, difficulty: 'easy', street: d.street,
+      heroCards: d.heroCards, board: d.board,
+      context: `Tu as ${d.drawType.fr}, face à une mise de ${bet}bb dans un pot de ${pot}bb.`,
+      contextEn: `You have ${d.drawType.en}, facing a ${bet}bb bet into a ${pot}bb pot.`,
+      drawType: d.drawType,
+    };
+  }
+  // Fallback (should not happen given the fraction/pot spread): a known-easy static scenario.
+  return POT_ODDS_SCENARIOS.find(s => s.difficulty === 'easy')!;
+}
+
 /** Build a borderline call/fold spot: required equity within ~3.5% of the
  *  hero's equity, with "ugly" pot/bet so it can't be eyeballed. */
 export function generateClosePotOddsScenario(lang: 'fr' | 'en' = 'fr'): PotOddsScenario {

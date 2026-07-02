@@ -103,8 +103,8 @@ export const trainingApi = {
   getBBDefenseRange: () =>
     api.get('/training/bbdefense/range').then(r => r.data.data),
 
-  getBluffExercise: (level?: string) =>
-    api.get('/training/bluff/exercise', { params: level ? { level } : {} }).then(r => r.data.data),
+  getBluffExercise: (level?: string, avoid?: string) =>
+    api.get('/training/bluff/exercise', { params: { ...(level ? { level } : {}), ...(avoid ? { avoid } : {}) } }).then(r => r.data.data),
 
   recordResult: (payload: { module: string; isCorrect: boolean; xpEarned: number; timeTaken?: number; sessionId: string }) =>
     api.post('/training/record', payload).then(r => r.data.data).catch(() => null),

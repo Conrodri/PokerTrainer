@@ -29,7 +29,12 @@ export interface BluffExercise {
     heroHand:     Factor;
   };
   explanation: Bi;
+  /** Which scenario builder produced this exercise — used to avoid repeating
+   *  the same template twice in a row across consecutive fetches. */
+  template: BluffTemplate;
 }
+
+export type BluffTemplate = 'dry' | 'wet' | 'semiBluff' | 'float' | 'oopMissed';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -60,7 +65,7 @@ function potRange(min: number, max: number): number {
 // Hero raised BTN/CO/SB, villain BB called, flop is A/K/Q/J-high dry rainbow.
 // BB checks. Hero should continuation-bet small (range bet, range advantage).
 
-function buildIpCbetDry(): BluffExercise {
+function buildIpCbetDry(): Omit<BluffExercise, 'template'> {
   const heroPositions = ['BTN', 'CO', 'SB'];
   const heroPos = rand(heroPositions);
   const villainPos = 'BB';
@@ -193,7 +198,7 @@ On a dry board with range advantage, the "range bet" at 1/3 pot is optimal. It's
 // Hero raised BTN, BB called, flop is low connected two-tone.
 // BB checks. Hero should check-fold (villain's range smashes this board).
 
-function buildIpCbetWet(): BluffExercise {
+function buildIpCbetWet(): Omit<BluffExercise, 'template'> {
   const heroPos = 'BTN';
   const villainPos = 'BB';
 
@@ -297,7 +302,7 @@ On this connected board, your BTN raising range doesn't connect well: you have f
 // Hero raised BTN, BB called, flop is two-tone. Hero has flush draw (same suit).
 // BB checks. Hero should bet 2/3 pot (semi-bluff with ~36% equity).
 
-function buildIpSemiBluff(): BluffExercise {
+function buildIpSemiBluff(): Omit<BluffExercise, 'template'> {
   const heroPos = rand(['BTN', 'CO'] as string[]);
   const villainPos = 'BB';
   const flushSuit = rand([...SUITS]) as Suit;
@@ -418,7 +423,7 @@ With a flush draw on a two-tone board, 2/3 pot is optimal: it maximizes fold equ
 // Flop: villain c-bet (expected), hero called (floating for position).
 // Turn: blank card, villain checks → hero steals with delayed c-bet.
 
-function buildFloatSteal(): BluffExercise {
+function buildFloatSteal(): Omit<BluffExercise, 'template'> {
   const villainPositions = ['UTG', 'HJ', 'CO'];
   const villainPos = rand(villainPositions);
   const heroPos = 'BTN';
@@ -559,7 +564,7 @@ This is the "delayed c-bet" or "float steal." You take initiative on the turn af
 // Flop: mid-connected two-tone — BTN's range connects perfectly.
 // Hero checks. BTN bets. Hero should fold.
 
-function buildOopMissedFlop(): BluffExercise {
+function buildOopMissedFlop(): Omit<BluffExercise, 'template'> {
   const heroPos = rand(['UTG', 'HJ'] as string[]);
   const villainPos = 'BTN';
 
@@ -660,19 +665,37 @@ OOP on a hostile board: checking is mandatory. When BTN bets ${villainBet} BB, f
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export function generateBluffExercise(mode?: string): BluffExercise {
+const BUILDERS: Record<BluffTemplate, () => Omit<BluffExercise, 'template'>> = {
+  dry:       buildIpCbetDry,
+  wet:       buildIpCbetWet,
+  semiBluff: buildIpSemiBluff,
+  float:     buildFloatSteal,
+  oopMissed: buildOopMissedFlop,
+};
+
+function pickTemplate(mode?: string): BluffTemplate {
   const r = Math.random();
   if (mode === 'expert') {
-    // Expert: heavier weight on harder spots — OOP scenarios, float steal, wet c-bet
-    // Skip the easy dry c-bet (scenario 1) entirely
-    if (r < 0.30) return buildIpCbetWet();
-    if (r < 0.55) return buildFloatSteal();
-    if (r < 0.80) return buildOopMissedFlop();
-    return buildIpSemiBluff();
+    // Expert: heavier weight on harder spots — OOP scenarios, float steal, wet c-bet.
+    if (r < 0.24) return 'wet';
+    if (r < 0.46) return 'float';
+    if (r < 0.68) return 'oopMissed';
+    if (r < 0.90) return 'semiBluff';
+    return 'dry';
   }
-  // Basic / advanced: original distribution
-  if (r < 0.30) return buildIpCbetDry();
-  if (r < 0.52) return buildIpCbetWet();
-  if (r < 0.76) return buildIpSemiBluff();
-  return buildFloatSteal();
+  // Basic / advanced: all 5 templates, weighted towards the easier dry c-bet.
+  if (r < 0.26) return 'dry';
+  if (r < 0.46) return 'wet';
+  if (r < 0.66) return 'semiBluff';
+  if (r < 0.86) return 'float';
+  return 'oopMissed';
+}
+
+export function generateBluffExercise(mode?: string, avoidTemplate?: string): BluffExercise {
+  let template = pickTemplate(mode);
+  // Re-roll once if it would repeat the previous exercise's template — a
+  // second draw from the full distribution, not a forced switch, so the
+  // weighting above is preserved.
+  if (template === avoidTemplate) template = pickTemplate(mode);
+  return { ...BUILDERS[template](), template };
 }

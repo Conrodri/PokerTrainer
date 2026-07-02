@@ -496,9 +496,10 @@ export function getRandomOutsScenario(difficulty?: 'expert'): OutsScenario {
     if (r < 0.94) return genComboFlushOESD();    // 15 outs (trap 17)
     return choice(EXPERT_OUTS_SCENARIOS);        // turn-spot variety (×2 rule)
   }
-  // 70% freshly generated (varied cards), 30% from the hand-verified list
-  // (which covers the combos/gutshots/OESD that aren't auto-generated).
-  if (Math.random() < 0.7) return choice(GENERATORS)();
+  // 85% freshly generated (near-infinite card variety), 15% from the small
+  // hand-verified list — kept for flavor, deprioritized since the generators
+  // already cover the same draw types with random cards each time.
+  if (Math.random() < 0.85) return choice(GENERATORS)();
   return OUTS_SCENARIOS[randInt(OUTS_SCENARIOS.length)];
 }
 

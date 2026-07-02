@@ -844,9 +844,10 @@ export function BetSizingTrainer() {
   // server-side before revealing each exercise (premium users never consume).
   const buildPool = (): BetSizingExercise[] => {
     if (mode === 'expert') {
-      // Hard sizing exercises appear twice + all frequency exercises (expert only)
-      const hard = EXERCISES.filter(e => e.difficulty === 'hard');
-      return shuffle([...EXERCISES, ...hard, ...FREQUENCY_EXERCISES, ...FREQUENCY_EXERCISES]);
+      // All sizing exercises + the frequency-quiz ones (expert only) — each
+      // appears once per pass, so a sprint never repeats the same exercise
+      // before the full 28-item pool has been seen.
+      return shuffle([...EXERCISES, ...FREQUENCY_EXERCISES]);
     }
     return shuffle(EXERCISES as BetSizingExercise[]);
   };

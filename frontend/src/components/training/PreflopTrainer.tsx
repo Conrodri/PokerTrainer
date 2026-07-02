@@ -395,53 +395,67 @@ export function PreflopTrainer() {
     if (phase === 'select_position') setCurrentPosition(selectedPosition);
   }, [selectedPosition, phase]);
 
-  // Expert quiz: when an exercise loads in expert mode with "Mes ranges" on,
-  // resolve the active range. If it's an expert profile (676), keep the full mix
-  // for the recap and slice out the current hand's 4-frequency mix for the quiz.
-  // Applies to both the open exercise and BB defense.
+  // Expert quiz: when an exercise loads in expert mode, try to resolve an active
+  // custom expert profile ("Mes ranges" on) for the full 4-action mix + recap.
+  // Falls back to a synthesized Fold/Raise-only mix from the standard GTO open
+  // frequency when no custom profile is active — so Expert always gets the
+  // action+frequency quiz, not just when the user configured custom ranges.
+  // Applies to both the open exercise and BB defense (custom-profile path only).
   useEffect(() => {
     let cancelled = false;
     const notation = isBBSession ? bbExercise?.notation : preflopExercise?.notation;
     const position = isBBSession ? 'BB' : preflopExercise?.position;
     (async () => {
-      if (phase !== 'exercise' || mode !== 'expert' || !preflopEnabled || !notation || !position) {
+      if (phase !== 'exercise' || mode !== 'expert' || !notation || !position) {
         return;
       }
-      try {
-        const resolved = await profilesApi.resolve(rangeKey(position), heroStack);
-        if (cancelled) return;
-        if (resolved?.cells && resolved.cells.length === 676) {
-          const [row, col] = getMatrixIndices(notation);
-          const idx = row * 13 + col;
-          const targetMix = resolved.cells.slice(idx * 4, idx * 4 + 4);
-          const pureFold = (targetMix[0] ?? 0) >= 0.999;
+      if (preflopEnabled) {
+        try {
+          const resolved = await profilesApi.resolve(rangeKey(position), heroStack);
+          if (cancelled) return;
+          if (resolved?.cells && resolved.cells.length === 676) {
+            const [row, col] = getMatrixIndices(notation);
+            const idx = row * 13 + col;
+            const targetMix = resolved.cells.slice(idx * 4, idx * 4 + 4);
+            const pureFold = (targetMix[0] ?? 0) >= 0.999;
 
-          // Profile set to skip 100%-fold hands → re-roll a fresh hand at the
-          // same position (capped so an all-fold tier can't loop forever).
-          if (resolved.includeFolds === false && pureFold && foldSkipRef.current < 30) {
-            foldSkipRef.current += 1;
-            if (isBBSession) {
-              setBBIsLoading(true);
-              try {
-                const ex = await trainingApi.getBBDefenseExercise();
-                if (!cancelled) setBBExercise(ex);
-              } catch { /* ignore */ }
-              if (!cancelled) setBBIsLoading(false);
-            } else if (preflopExercise) {
-              await fetchPreflopExercise(preflopExercise.position);
+            // Profile set to skip 100%-fold hands → re-roll a fresh hand at the
+            // same position (capped so an all-fold tier can't loop forever).
+            if (resolved.includeFolds === false && pureFold && foldSkipRef.current < 30) {
+              foldSkipRef.current += 1;
+              if (isBBSession) {
+                setBBIsLoading(true);
+                try {
+                  const ex = await trainingApi.getBBDefenseExercise();
+                  if (!cancelled) setBBExercise(ex);
+                } catch { /* ignore */ }
+                if (!cancelled) setBBIsLoading(false);
+              } else if (preflopExercise) {
+                await fetchPreflopExercise(preflopExercise.position);
+              }
+              return;
             }
+
+            setCustomMix(resolved.cells);
+            setExpertTarget(targetMix);
+            setResolvedLabel(resolved.profileName
+              ? `${resolved.profileName}${resolved.stackRangeLabel ? ` · ${resolved.stackRangeLabel}` : ''}`
+              : null);
             return;
           }
-
-          setCustomMix(resolved.cells);
-          setExpertTarget(targetMix);
-          setResolvedLabel(resolved.profileName
-            ? `${resolved.profileName}${resolved.stackRangeLabel ? ` · ${resolved.stackRangeLabel}` : ''}`
-            : null);
-        } else {
-          setExpertTarget(null);
-        }
-      } catch { if (!cancelled) setExpertTarget(null); }
+        } catch { /* fall through to the default GTO mix below */ }
+        if (cancelled) return;
+      }
+      // Default: no custom expert profile active — quiz on the standard GTO
+      // open frequency instead (Fold/Raise only; Call/All-in stay at 0%).
+      if (!isBBSession && preflopExercise) {
+        const freq = preflopExercise.correctFrequency ?? (preflopExercise.correctAction === 'raise' ? 1 : 0);
+        setCustomMix(null);
+        setExpertTarget([Math.max(0, 1 - freq), 0, freq, 0]);
+        setResolvedLabel(null);
+      } else {
+        setExpertTarget(null);
+      }
     })();
     return () => { cancelled = true; };
   }, [phase, isBBSession, mode, preflopEnabled, preflopExercise, bbExercise, heroStack]);
@@ -842,8 +856,10 @@ export function PreflopTrainer() {
   // Use localResult (custom range / BB) when available, fall back to GTO lastResult
   const result = localResult ?? lastResult;
 
-  // Expert 2-step quiz active: expert mode + "Mes ranges" on an expert profile.
-  const isExpertQuiz = mode === 'expert' && preflopEnabled && !!expertTarget;
+  // Expert 2-step quiz active: expert mode + a target mix resolved — a custom
+  // expert profile for BB defense (only path there), or for the open exercise
+  // either a custom profile ("Mes ranges" on) or the default GTO fallback mix.
+  const isExpertQuiz = mode === 'expert' && !!expertTarget;
 
   // Visual recap of an expert-quiz verdict: the hand's mix shown as a colored
   // stacked bar (same scheme as "Ta range") + the user's answer marked ✓/✗.
@@ -1817,12 +1833,14 @@ export function PreflopTrainer() {
               {/* Explanation (beginner, or always in the expert quiz) */}
               <ExplanationPanel text={result.explanation} plain forceShow={isExpertQuiz} />
 
-              {/* Custom range active badge */}
-              {localResult && (
+              {/* Range evaluation badge — custom profile vs default GTO fallback */}
+              {isExpertQuiz && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-900/30 border border-purple-700/50 rounded-lg text-xs text-purple-300 w-full justify-center flex-wrap">
                   <Sliders size={12} />
                   <span>
-                    {isEn ? 'Evaluated against your custom range' : 'Évalué selon votre range personnalisée'}
+                    {customMix
+                      ? (isEn ? 'Evaluated against your custom range' : 'Évalué selon votre range personnalisée')
+                      : (isEn ? 'Evaluated against the standard GTO frequency' : 'Évalué selon la fréquence GTO standard')}
                   </span>
                   {resolvedLabel && <span className="text-purple-400 font-bold">· {heroStack} bb</span>}
                 </div>

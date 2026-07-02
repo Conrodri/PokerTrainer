@@ -232,7 +232,8 @@ export async function getBBDefenseRange(_req: Request, res: Response): Promise<v
 export async function getBluffExercise(req: Request, res: Response): Promise<void> {
   try {
     const level = req.query.level as string | undefined;
-    const exercise = generateBluffExercise(level);
+    const avoid = req.query.avoid as string | undefined;
+    const exercise = generateBluffExercise(level, avoid);
     res.json({ success: true, data: exercise } as ApiResponse);
   } catch {
     res.status(500).json({ success: false, error: 'Failed to generate bluff exercise' } as ApiResponse);

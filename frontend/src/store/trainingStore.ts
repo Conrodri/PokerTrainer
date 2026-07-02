@@ -239,7 +239,8 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
     set({ isLoading: true, error: null, lastResult: null });
     try {
       const mode = useModeStore.getState().mode;
-      const exercise = await trainingApi.getBluffExercise(mode);
+      const prevTemplate = get().bluffExercise?.template;
+      const exercise = await trainingApi.getBluffExercise(mode, prevTemplate);
       set({ bluffExercise: exercise, isLoading: false });
     } catch {
       set({ error: 'Impossible de charger l\'exercice', isLoading: false });
