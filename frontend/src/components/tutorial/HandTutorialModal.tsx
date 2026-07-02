@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Hand } from '../poker/Card';
 import { RichLine } from '../ui/RichText';
@@ -129,40 +127,6 @@ export function TutorialHand({ isEn, onClose }: { isEn: boolean; onClose?: () =>
           </Link>
         )}
       </div>
-    </div>
-  );
-}
-
-// ─── Modal wrapper (used from Navbar) ────────────────────────────────────────
-
-export function HandTutorialModal({ isEn, onClose }: { isEn: boolean; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.12 }}
-        className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-lg flex flex-col shadow-2xl overflow-hidden"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 shrink-0">
-          <span className="font-bold text-white text-sm">
-            🎯 {isEn ? 'Step-by-step hand tutorial' : 'Tutoriel : une main pas à pas'}
-          </span>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-gray-800"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="px-5 py-5 overflow-y-auto max-h-[75vh]">
-          <TutorialHand isEn={isEn} onClose={onClose} />
-        </div>
-      </motion.div>
     </div>
   );
 }

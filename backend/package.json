@@ -8,7 +8,6 @@
     "dev": "npm run dev:schema && prisma generate --schema=prisma/dev.prisma && ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "gen:preflop-equity": "ts-node scripts/gen-preflop-equity.ts",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:push:dev": "npm run dev:schema && prisma db push --schema=prisma/dev.prisma",

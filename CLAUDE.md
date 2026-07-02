@@ -47,7 +47,6 @@ npm start                   # Lancer depuis dist/server.js
 npm run db:push:dev        # Push Prisma sur SQLite dev
 npm run db:studio          # Ouvrir Prisma Studio (DB visuelle)
 npm run db:seed            # Seeder les données initiales
-npm run gen:preflop-equity # Régénérer les tables d'équité pré-flop
 ```
 
 ### Frontend (dans `frontend/`)
@@ -66,10 +65,7 @@ npm run typecheck          # Vérifier les types sans émettre
 **Services poker** (`backend/src/services/poker/`)
 - `cards.ts` — Représentation des cartes et mains
 - `handEvaluator.ts` — Évaluation des combinaisons (quinte, couleur, etc.)
-- `equityAnalyzer.ts` — Calcul des équités (simulation ou lookup pré-flop)
-- `equity.ts` — Helpers equity (wraps equityAnalyzer pour les exercices)
-- `preflopEquity.generated.ts` — Tables pré-flop précalculées (169 mains)
-- `preflopEquity.ts` — Chargement et interpolation des tables générées
+- `equity.ts` — Calcul d'équité par simulation Monte Carlo (postflop)
 - `ranges.ts` — Représentation et manipulation des ranges (bitmask 169) pour tous les formats (6-max, 8-max, 3-max, HU) × (CG, MTT)
 - `potOdds.ts` — Calcul des cotes et de l'EV
 - `outs.ts` — Identification des outs (cartes utiles)
@@ -153,9 +149,6 @@ Un composant par module :
 - `RangeEditor.tsx` — Éditeur simple de range (169 mains, drag-to-select)
 - `ExpertRangeEditor.tsx` — Éditeur multi-actions (Fold/Call/Raise/All-in %)
 - `PokerTable.tsx` — Table de jeu stylisée (positions dynamiques selon format)
-- `PositionSelector.tsx` — Sélecteur de position (adapté au format actif)
-- `RangePresetsPanel.tsx` — Presets de ranges GTO/custom
-- `RangeProfilesPanel.tsx` — Profils sauvegardés
 - `MyRangesPanel.tsx` — Ranges personnalisées de l'utilisateur (tous formats)
 
 **Composants stats** (`frontend/src/components/stats/`)
@@ -167,8 +160,7 @@ Un composant par module :
 - `GuidedHand.tsx` — Main guidée interactive pour débutants
 
 **Composants tutorial** (`frontend/src/components/tutorial/`)
-- `Tutorial.tsx` — Tutorial interactif step-by-step
-- `HandTutorialModal.tsx` — Modal d'explication d'une main spécifique
+- `HandTutorialModal.tsx` — `TutorialHand`, main guidée pas-à-pas (utilisée dans la page de règles)
 
 **UI réutilisable** (`frontend/src/components/ui/`)
 - `ModeToggle.tsx` — Sélecteur Débutant / Avancé / Expert
@@ -176,7 +168,7 @@ Un composant par module :
 - `SpoilableHint.tsx` — Indice révélable (réinitialise le streak en avancé)
 - `VerdictBanner.tsx` — Verdict correct/incorrect/partiel avec explication
 - `ExplanationPanel.tsx` — Explication détaillée (GTO ranges, équité, EV, etc.)
-- `PremiumGate.tsx` / `QuotaLockPanel.tsx` — Paywalls
+- `QuotaLockPanel.tsx` — Paywall quota gratuit
 - `TrainerIntro.tsx` — Intro du module (objectif, conseils, bouton sprint)
 - `SprintTimer.tsx` — Compte à rebours du sprint (10 s avancé / 5 s expert)
 - `SessionStatsBar.tsx` — Barre de stats en cours de session (streak, correct, XP)
@@ -264,10 +256,9 @@ Client Axios centralisé. Appels couverts :
 - Les sessions enregistrent : correcte/incorrecte, temps, XP gagné, mode
 - Vérification du quota dans le middleware : `checkQuota` refusal si quota épuisé
 
-### **Équité pré-flop**
-- `preflopEquity.generated.ts` contient des tables précalculées (169 mains, situations courantes)
-- Régénération : `npm run gen:preflop-equity` (ts-node sur `scripts/gen-preflop-equity.ts`)
-- Pour les autres boards, `equityAnalyzer.ts` utilise simulation Monte Carlo (plus lent)
+### **Équité (module Training)**
+- Le module Équité ne compare pas des mains entre elles : il génère des scénarios pot/mise (bitBB, potBB) dont l'équité requise est calculée algébriquement (`buildEquityPool` dans `trainingService.ts`), pas de simulation ni de table précalculée.
+- Pour l'évaluation postflop réelle (Postflop, Main complète), `equity.ts` utilise une simulation Monte Carlo (`calculateEquity`).
 
 ### **Ranges en bitmask 13×13**
 - Chaque main = bit dans un int64 (JS BigInt)
@@ -279,7 +270,7 @@ Client Axios centralisé. Appels couverts :
 - **Premium** 👑 — accès illimité, éditeur ranges simple, badge classement, pas d'expert
 - **Premium Expert** 🔥 — tout Premium + mode Expert + éditeur ranges multi-actions
 - Accordés en DB manuellement (pas de facturation en ligne actuellement)
-- Vérification : middleware `requireTier('premium')`, `requireTier('expert')`
+- Les routes premium ne sont plus gatées par middleware (accès ouvert) ; le quota gratuit reste suivi côté client via `quotaApi.consume()` avant chaque exercice premium
 
 ### **Modes d'entraînement**
 > **Vocation : application à but éducatif.** L'objectif premier est l'apprentissage progressif du poker. Les 3 modes structurent une montée en difficulté graduelle.

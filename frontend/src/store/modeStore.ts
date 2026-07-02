@@ -25,6 +25,3 @@ export const useModeStore = create<ModeState>()(
     { name: 'poker-mode' }
   )
 );
-
-/** Returns true when hints and guidance should be displayed (easy mode). */
-export const showHints = (hints: HintsMode): boolean => hints === 'easy';

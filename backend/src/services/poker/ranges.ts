@@ -519,18 +519,6 @@ function openTable(format: TableFormat = '6max', gameType: GameType = 'cashgame'
   return format === '8max' ? OPEN_RAISE_8MAX : OPEN_RAISE;
 }
 
-export function getHandNotation(card1Rank: string, card2Rank: string, suited: boolean): string {
-  const r1Idx = RANKS_DISPLAY.indexOf(card1Rank);
-  const r2Idx = RANKS_DISPLAY.indexOf(card2Rank);
-
-  if (r1Idx === r2Idx) return `${card1Rank}${card2Rank}`; // pair
-
-  // Higher rank first
-  const hi = r1Idx < r2Idx ? card1Rank : card2Rank;
-  const lo = r1Idx < r2Idx ? card2Rank : card1Rank;
-  return `${hi}${lo}${suited ? 's' : 'o'}`;
-}
-
 export function getMatrixIndices(notation: string): [number, number] {
   if (notation.length === 2) {
     // Pair: AA, KK...
@@ -555,11 +543,6 @@ export function getRangeFrequency(position: Position8, notation: string, format:
   const matrix = openTable(format, gameType)[position];
   if (!matrix || row < 0 || col < 0) return 0;
   return matrix[row][col];
-}
-
-export function shouldPlay(position: Position8, notation: string, format: TableFormat = '6max', gameType: GameType = 'cashgame'): boolean {
-  const freq = getRangeFrequency(position, notation, format, gameType);
-  return Math.random() < freq;
 }
 
 export function getCorrectAction(position: Position8, notation: string, format: TableFormat = '6max', gameType: GameType = 'cashgame'): {

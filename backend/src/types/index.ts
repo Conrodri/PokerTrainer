@@ -13,15 +13,6 @@ export type TableFormat = '6max' | '8max' | '3max' | 'hu';
 // Game type — cash game (no antes, pure chip EV) vs tournament (antes, ICM).
 export type GameType = 'cashgame' | 'mtt';
 export type Action = 'fold' | 'call' | 'raise' | 'check' | '3bet' | '4bet';
-export type TrainingModule = 'preflop' | 'potodds' | 'equity' | 'postflop';
-export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
-
-export interface HandNotation {
-  rank1: Rank;
-  rank2: Rank;
-  suited: boolean;
-  notation: string; // e.g. 'AKs', 'QJo', 'AA'
-}
 
 export interface PreflopExercise {
   hand: [Card, Card];
@@ -33,16 +24,6 @@ export interface PreflopExercise {
   tableType: '6max' | '8max' | '3max' | 'hu' | 'fullring' | 'heads_up';
   correctAction: Action;
   correctFrequency: number; // 0-1, for mixed strategies
-  explanation: string;
-}
-
-export interface PotOddsExercise {
-  potSize: number;     // in big blinds
-  betSize: number;     // in big blinds
-  heroEquity: number;  // 0-100%
-  correctAction: 'call' | 'fold';
-  potOdds: number;     // calculated
-  requiredEquity: number; // calculated
   explanation: string;
 }
 
@@ -61,17 +42,6 @@ export interface EquityExercise {
   hasBounty: boolean;
   bountyBB: number;
   requiredEquityBounty: number; // adjusted required equity when bounty is counted
-}
-
-export interface PostflopExercise {
-  heroHand: [Card, Card];
-  board: Card[];
-  position: Position;
-  potSize: number;
-  betSize: number;
-  heroHandStrength: string;
-  correctAction: Action;
-  explanation: string;
 }
 
 export interface HandEvalResult {

@@ -13,10 +13,6 @@ export const SUIT_SYMBOL: Record<Suit, string> = {
   h: '♥', d: '♦', c: '♣', s: '♠',
 };
 
-export const SUIT_COLOR: Record<Suit, 'red' | 'black'> = {
-  h: 'red', d: 'red', c: 'black', s: 'black',
-};
-
 export function parseCard(str: string): { rank: Rank; suit: Suit; value: number } {
   const rank = str[0] as Rank;
   const suit = str[1] as Suit;
@@ -67,12 +63,6 @@ export function toHandNotation(card1: Card, card2: Card): string {
 export function dealHand(exclude: Card[] = []): [Card, Card] {
   const deck = shuffleDeck(removeCards(createDeck(), exclude));
   return [deck[0], deck[1]];
-}
-
-// Deal random board cards
-export function dealBoard(exclude: Card[], count: number): Card[] {
-  const deck = shuffleDeck(removeCards(createDeck(), exclude));
-  return deck.slice(0, count);
 }
 
 // Combinations: pick k items from array

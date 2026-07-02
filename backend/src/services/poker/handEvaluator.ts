@@ -282,15 +282,3 @@ export function compareHands(cards1: Card[], cards2: Card[]): -1 | 0 | 1 {
   return 0;
 }
 
-export const HAND_RANK_NAMES: Record<HandRank, string> = {
-  [HandRank.HIGH_CARD]: 'High Card',
-  [HandRank.PAIR]: 'Pair',
-  [HandRank.TWO_PAIR]: 'Two Pair',
-  [HandRank.THREE_OF_A_KIND]: 'Three of a Kind',
-  [HandRank.STRAIGHT]: 'Straight',
-  [HandRank.FLUSH]: 'Flush',
-  [HandRank.FULL_HOUSE]: 'Full House',
-  [HandRank.FOUR_OF_A_KIND]: 'Four of a Kind',
-  [HandRank.STRAIGHT_FLUSH]: 'Straight Flush',
-  [HandRank.ROYAL_FLUSH]: 'Royal Flush',
-};

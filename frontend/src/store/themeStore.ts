@@ -80,9 +80,6 @@ export const CARD_STYLES: Record<CardStyle, CardStyleDef> = {
 export const SUIT_COLORS: Record<CardStyle, Record<string, string>> =
   Object.fromEntries(Object.entries(CARD_STYLES).map(([k, v]) => [k, v.hex])) as any;
 
-export const SUIT_TEXT_CLASSES: Record<CardStyle, Record<string, string>> =
-  Object.fromEntries(Object.entries(CARD_STYLES).map(([k, v]) => [k, v.text])) as any;
-
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 interface ThemeState {

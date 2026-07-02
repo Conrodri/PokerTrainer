@@ -118,37 +118,6 @@ export const rangesApi = {
   getDefaults: () => api.get('/ranges/defaults').then(r => r.data.data) as Promise<Record<string, number[][]>>,
 };
 
-export interface RangePreset {
-  id: string;
-  name: string;
-  description: string;
-  isActive: boolean;
-  stackMin: number | null;
-  stackMax: number | null;
-  data: Record<string, number[][]>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PresetInput {
-  name: string;
-  description?: string;
-  stackMin?: number | null;
-  stackMax?: number | null;
-  data: Record<string, number[][]>;
-}
-
-// Range presets (premium)
-export const presetsApi = {
-  list: () => api.get('/ranges/presets').then(r => r.data.data) as Promise<RangePreset[]>,
-  getActive: () => api.get('/ranges/presets/active').then(r => r.data.data) as Promise<RangePreset | null>,
-  create: (input: PresetInput) => api.post('/ranges/presets', input).then(r => r.data.data) as Promise<RangePreset>,
-  update: (id: string, patch: Partial<PresetInput>) => api.put(`/ranges/presets/${id}`, patch).then(r => r.data.data) as Promise<RangePreset>,
-  delete: (id: string) => api.delete(`/ranges/presets/${id}`).then(r => r.data),
-  activate: (id: string) => api.post(`/ranges/presets/${id}/activate`).then(r => r.data),
-  deactivate: () => api.post('/ranges/presets/none/activate').then(r => r.data),
-};
-
 // ── Range Profiles (premium) ──────────────────────────────────────────────────
 
 export interface RangeStackRange {
@@ -236,16 +205,6 @@ export const postflopApi = {
   },
   getFullHandScenario: (level?: string) =>
     api.get('/postflop/full-hand', { params: level ? { level } : {} }).then(r => r.data.data),
-};
-
-// Expert multi-action ranges (premium-expert tier). mix = flat 169×4 floats.
-export const expertRangesApi = {
-  get: (position: string) =>
-    api.get(`/expert-ranges/${position}`).then(r => r.data.data as number[] | null),
-  save: (position: string, mix: number[]) =>
-    api.put(`/expert-ranges/${position}`, { mix }).then(r => r.data),
-  delete: (position: string) =>
-    api.delete(`/expert-ranges/${position}`).then(r => r.data),
 };
 
 // Exam mode best scores (per module, account-scoped)

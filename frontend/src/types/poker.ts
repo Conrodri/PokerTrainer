@@ -11,36 +11,7 @@ export type Position8 = Position | 'UTG1' | 'LJ';
 export type TableFormat = '6max' | '8max' | '3max' | 'hu';
 // Game type — cash game (no antes) vs tournament (antes, ICM).
 export type GameType = 'cashgame' | 'mtt';
-export type Action = 'fold' | 'call' | 'raise' | 'check' | '3bet' | '4bet';
 export type TrainingModule = 'preflop' | 'potodds' | 'equity' | 'outs' | 'bbdefense' | 'postflop' | 'fullhand' | 'rules' | 'betsizing' | 'bluff';
-
-export const SUIT_SYMBOL: Record<Suit, string> = {
-  h: '♥', d: '♦', c: '♣', s: '♠',
-};
-
-export const SUIT_COLOR: Record<Suit, string> = {
-  h: 'text-red-500', d: 'text-red-500', c: 'text-gray-900', s: 'text-gray-900',
-};
-
-export const POSITION_LABELS: Record<Position8, string> = {
-  UTG: 'Under the Gun', UTG1: 'UTG +1', LJ: 'Lojack', HJ: 'Hijack',
-  CO: 'Cutoff', BTN: 'Button', SB: 'Small Blind', BB: 'Big Blind',
-};
-
-export const POSITION_SHORT: Record<Position8, string> = {
-  UTG: 'UTG', UTG1: 'UTG+1', LJ: 'LJ', HJ: 'HJ', CO: 'CO', BTN: 'BTN', SB: 'SB', BB: 'BB',
-};
-
-export const POSITION_DESCRIPTIONS: Record<Position8, string> = {
-  UTG: 'Premier à parler — range la plus serrée',
-  UTG1: 'Early — range très serrée',
-  LJ: 'Early/intermédiaire — range serrée',
-  HJ: 'Position intermédiaire — range modérée',
-  CO: 'Bonne position — range assez large',
-  BTN: 'Meilleure position — range très large',
-  SB: 'Forced bet, désavantage post-flop',
-  BB: 'Forced bet, dernier à parler pré-flop',
-};
 
 export interface PreflopExercise {
   hand: [CardStr, CardStr];
@@ -162,18 +133,6 @@ export interface ExerciseResult {
   requiredEquity?: number;
   ev?: number;
   reasoning?: string;
-}
-
-export interface PlayerStats {
-  totalExercises: number;
-  totalCorrect: number;
-  streak: number;
-  longestStreak: number;
-  xp: number;
-  level: number;
-  preflopAccuracy: number;
-  potOddsAccuracy: number;
-  equityAccuracy: number;
 }
 
 export interface LeaderboardModuleStat {
