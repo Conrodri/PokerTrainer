@@ -788,10 +788,13 @@ export function initFlopPool(): void {
 
 // ─── Expert flop pool ─────────────────────────────────────────────────────────
 // Same pattern as flopPool but with 8×300 = 2400 sims (~57ms each).
-// Smaller target (10) — expert users are rarer; startup cost is ~570ms.
-
-const EXPERT_POOL_TARGET    = 10;
-const EXPERT_POOL_THRESHOLD = 3;
+// Expert flop generation averages ~46ms (measured) — the most expensive
+// exercise type in the app. A wider target/threshold gives more burst
+// headroom for rapid-fire sprint sessions before falling back to on-demand
+// generation. Mostly backed by data/pregenerated.json at startup (near-zero
+// cost); only the shortfall (if any) is generated live.
+const EXPERT_POOL_TARGET    = 30;
+const EXPERT_POOL_THRESHOLD = 10;
 const expertFlopPool: object[] = [];
 let   expertPoolRefilling    = false;
 

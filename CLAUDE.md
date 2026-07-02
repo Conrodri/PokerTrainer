@@ -47,6 +47,8 @@ npm start                   # Lancer depuis dist/server.js
 npm run db:push:dev        # Push Prisma sur SQLite dev
 npm run db:studio          # Ouvrir Prisma Studio (DB visuelle)
 npm run db:seed            # Seeder les données initiales
+npm test                   # Tests unitaires (Vitest) — logique GTO sensible (ranges, potOdds, outs)
+npm run pregenerate        # Régénère backend/data/pregenerated.json (flop/expertFlop/fullHand)
 ```
 
 ### Frontend (dans `frontend/`)
