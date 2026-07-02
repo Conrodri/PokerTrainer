@@ -1420,8 +1420,8 @@ export function PreflopTrainer() {
                     className="flex flex-col items-center gap-2.5 w-full sm:w-auto"
                   >
                     {isExpertQuiz ? renderExpertQuiz() :
-                     mode === 'advanced' && bb3betStep ? (
-                      /* Advanced step 2 — classify the 3-bet */
+                     (mode === 'advanced' || mode === 'expert') && bb3betStep ? (
+                      /* Advanced/Expert step 2 — classify the 3-bet */
                       <>
                         <p className="text-sm text-gray-300 font-semibold text-center">
                           {isEn ? 'This 3-bet — for value or as a bluff?' : 'Ce 3-bet — pour la valeur ou en bluff ?'}
@@ -1445,8 +1445,9 @@ export function PreflopTrainer() {
                         <Button
                           size="xl" variant="gold"
                           onClick={() => {
-                            // Advanced (GTO mode) → ask value/bluff. Beginner or "Mes ranges" → score directly.
-                            if (mode === 'advanced' && !preflopEnabled) { setBBSelected('3bet'); setBB3betStep(true); }
+                            // Advanced/Expert (GTO mode) → ask value/bluff. Beginner, or "Mes ranges"
+                            // active (real custom-profile quiz takes over instead), score directly.
+                            if ((mode === 'advanced' || mode === 'expert') && !preflopEnabled) { setBBSelected('3bet'); setBB3betStep(true); }
                             else handleAnswerBB('3bet');
                           }}
                           className="flex-1 sm:flex-none sm:min-w-[110px]"
