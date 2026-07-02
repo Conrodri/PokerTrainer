@@ -442,7 +442,7 @@ export function BluffTrainer() {
             </div>
 
             {/* Poker table */}
-            <div className="w-full max-w-xs sm:max-w-xl mx-auto">
+            <div className="w-full max-w-xs sm:max-w-md mx-auto">
               <PokerTable
                 heroPosition={heroPos}
                 interactive={false}
@@ -457,11 +457,11 @@ export function BluffTrainer() {
             </div>
 
             {/* Hero hand block */}
-            <div className="w-full max-w-xs sm:max-w-sm rounded-2xl border border-gray-700/60 bg-gray-900/50 px-4 py-3 flex flex-col items-center gap-2">
+            <div className="w-full max-w-xs sm:max-w-sm rounded-2xl border border-gray-700/60 bg-gray-900/50 px-4 py-1.5 flex flex-col items-center gap-1">
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 {isEn ? 'Your hand' : 'Votre main'}
               </span>
-              <Hand cards={ex.heroHand} size="md" gap="gap-2" animate={false} />
+              <Hand cards={ex.heroHand} size="sm" gap="gap-2" animate={false} />
             </div>
 
             {/* Context block — hand history + question */}

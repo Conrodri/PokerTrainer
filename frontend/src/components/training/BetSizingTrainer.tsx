@@ -1031,7 +1031,7 @@ export function BetSizingTrainer() {
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.97 }}
-            className="flex flex-col items-center gap-2 sm:gap-3"
+            className="flex flex-col items-center gap-2"
           >
             {/* Street badge — scenario context */}
             <div className="flex items-center gap-2 flex-wrap justify-center">
@@ -1059,8 +1059,8 @@ export function BetSizingTrainer() {
             </div>
 
             {/* Hero cards in a clearly separated info block */}
-            <div className="w-full max-w-xs sm:max-w-sm rounded-2xl border border-gray-700/60 bg-gray-900/50 px-4 py-3 flex items-center justify-center gap-3">
-              <Hand cards={ex.heroHand as any} size="md" gap="gap-2" animate={false} />
+            <div className="w-full max-w-xs sm:max-w-sm rounded-2xl border border-gray-700/60 bg-gray-900/50 px-4 py-2 flex items-center justify-center gap-2">
+              <Hand cards={ex.heroHand as any} size="sm" gap="gap-2" animate={false} />
             </div>
 
             {/* Context block */}
@@ -1131,7 +1131,7 @@ export function BetSizingTrainer() {
                       size="lg"
                       variant={SIZING_VARIANT[key]}
                       onClick={() => handleAnswer(key)}
-                      className="min-w-[150px] flex flex-col items-center gap-0.5 py-3"
+                      className="min-w-[150px] flex flex-col items-center gap-0.5 py-2"
                     >
                       <span className="font-bold">
                         {isEn ? cfg.labelEn(bb ?? 0) : cfg.labelFr(bb ?? 0)}
